@@ -3,6 +3,8 @@
  *********************************/
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.w3c.dom.Document;
+
 
 import java.util.List;
 
@@ -23,10 +25,6 @@ public interface DependencyUpdater {
      */
     String metaData = "/maven-metadata.xml";
 
-    /**
-     * Jackson object to get data from a given URI
-     */
-    ObjectMapper mapper = new ObjectMapper();
 
     /**
      * Abstract method which should ultimately concatenate the dependencies with the prefix of the static URL
@@ -36,4 +34,11 @@ public interface DependencyUpdater {
     List<String> getURIs(List<String> dps);
 
 
+    /**
+     * Function that loads a xml document from a URL
+     * @param s a URL of a xml file
+     * @return a Document object created by the URL
+     * @throws Exception
+     */
+    Document loadDocument(String s) throws Exception;
 }
