@@ -1,7 +1,8 @@
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.w3c.dom.Document;
+
 import javax.xml.transform.TransformerException;
 import java.util.List;
+import java.util.Map;
 
 /*********************************
  * Created by Fabian Oraze on 22.10.20
@@ -25,8 +26,9 @@ public interface DependencyUpdater {
 
 
     /**
-     * Abstract method which should ultimately concatenate the dependencies with the prefix of the static URL
-     * @param groupIds a List containing Strings of the used dependencies
+     * Abstract method which should ultimately process the dependencies depending on the implementation
+     *
+     * @param groupIds    a List containing Strings of the used dependencies
      * @param artifactIds a List with the corresponding artifactId to each groupId
      * @return List with the processed dps regarding their group and artifact id
      */
@@ -35,6 +37,7 @@ public interface DependencyUpdater {
 
     /**
      * Function that loads a xml document from a URL
+     *
      * @param urls a List with URLs of xml files
      * @return a List with Document objects created by the corresponding URL
      * @throws Exception if document can not be properly loaded with a given url
@@ -44,6 +47,7 @@ public interface DependencyUpdater {
 
     /**
      * Should transform and display a given Document to the console for debugging/visualizing purposes
+     *
      * @param doc Document object containing the XML
      * @throws TransformerException if Document could not be properly transformed
      */
@@ -52,8 +56,17 @@ public interface DependencyUpdater {
 
     /**
      * Gets the newest versions of a dp from the given XML in form of a Document object
+     *
      * @param docs List of Document objects, each containing the XML for a dp
-     * @return List of Strings with the newest version for each dp
+     * @return Map of key value pairs for each dp and its version
      */
-    List<String> getVersions(List<Document> docs);
+    Map<String, String> getVersions(List<Document> docs);
+
+    /**
+     * String representation of a given map
+     * @param map key value pairs corresponding to the implementation
+     * @return readable String of a map
+     */
+    String mapToString(Map<String, String> map);
+
 }

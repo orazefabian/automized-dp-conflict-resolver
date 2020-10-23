@@ -10,7 +10,9 @@ import javax.xml.transform.stream.StreamResult;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /*********************************
  Created by Fabian Oraze on 22.10.20
@@ -42,6 +44,7 @@ public class ImplNaive implements DependencyUpdater {
 
     /**
      * Helper function to replace the '.' in each dp to '/'
+     *
      * @param s groupId
      * @return replaced version of the groupId with '/' in between
      */
@@ -55,7 +58,7 @@ public class ImplNaive implements DependencyUpdater {
      * @return the correct postfix with metadata.xml
      */
     private String getPostfix() {
-        return  DependencyUpdater.metaData;
+        return DependencyUpdater.metaData;
     }
 
 
@@ -95,15 +98,30 @@ public class ImplNaive implements DependencyUpdater {
      * implementation of the abstract method which
      *
      * @param docs List of Document objects, each containing the XML for a dp
-     * @return List with the final string representation of the latest versions of each dp
+     * @return HashMap with the groupId , latest version pairs for each dp
      */
-    public List<String> getVersions(List<Document> docs) {
-        List<String> dpNewest = new ArrayList<String>();
+    public Map<String, String> getVersions(List<Document> docs) {
+        Map<String, String> dpNewest = new HashMap<String, String>();
         for (Document doc : docs) {
             NodeList groupId = doc.getElementsByTagName("groupId");
-            NodeList list = doc.getElementsByTagName("latest");
-            dpNewest.add("\n" + "Latest version: [" + list.item(0).getTextContent() + "] for dependency: \t" + groupId.item(0).getTextContent());
+            NodeList version = doc.getElementsByTagName("latest");
+            dpNewest.put(groupId.item(0).getTextContent(), version.item(0).getTextContent());
         }
         return dpNewest;
     }
+
+    /**
+     * ToString function to represent final map of groupId version pairs
+     * @param map containing groupIds as a key and the corresponding latest version as values
+     * @return String representation for better readability
+     */
+    public String mapToString(Map<String, String> map) {
+        StringBuilder builder = new StringBuilder();
+        for (String gid : map.keySet()) {
+            builder.append("\nDependency: \t\t" + gid + "\nLatest version: \t" + map.get(gid) +
+                    "\n-------------------------------------------------------------");
+        }
+        return builder.toString();
+    }
+
 }

@@ -1,6 +1,8 @@
 import org.w3c.dom.Document;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /*********************************
  Created by Fabian Oraze on 22.10.20
@@ -28,8 +30,8 @@ public class Main {
 
 
         List<Document> docs = impl.loadDocuments(urIs);
-        List<String> versions = impl.getVersions(docs);
-        System.out.println(versions);
+        Map<String, String> finals = impl.getVersions(docs);
+        System.out.println(impl.mapToString(finals));
 
     }
 
