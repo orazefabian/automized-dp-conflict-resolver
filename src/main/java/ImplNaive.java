@@ -29,7 +29,7 @@ public class ImplNaive implements DependencyUpdater {
      * @param groupIds a List containing Strings of the used dependencies
      * @return List with the final URLs
      */
-    public List<String> getURIs(List<String> groupIds, List<String> artifactIds) {
+    public List<String> processDependencies(List<String> groupIds, List<String> artifactIds) {
         List<String> finals = new ArrayList<String>();
         for (int i = 0; i < groupIds.size(); i++) {
             String gid = groupIds.get(i);

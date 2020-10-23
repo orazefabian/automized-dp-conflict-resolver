@@ -23,7 +23,7 @@ public class Main {
         artifactIds.add("jackson-databind");
         artifactIds.add("dom");
 
-        List<String> urIs = impl.getURIs(groupIds, artifactIds);
+        List<String> urIs = impl.processDependencies(groupIds, artifactIds);
         System.out.println(urIs);
 
 
