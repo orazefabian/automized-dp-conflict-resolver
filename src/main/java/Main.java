@@ -1,10 +1,6 @@
-
 import org.w3c.dom.Document;
-
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,8 +14,8 @@ public class Main {
 
         DependencyUpdater impl = new ImplNaive();
 
-        // Test list with dependencies, groupID
-        List<String> dps = new ArrayList();
+        // Test list with dependencies (groupIDs)
+        List<String> dps = new ArrayList<String>();
         dps.add("org/junit/jupiter");
         dps.add("com/fasterxml/jackson/core");
 
@@ -27,18 +23,11 @@ public class Main {
         System.out.println(urIs);
 
 
-        Document doc = impl.loadDocument(urIs.get(0));
-
-
-        TransformerFactory transformerFactory= TransformerFactory.newInstance();
-        Transformer xForm = transformerFactory.newTransformer();
-
-        xForm.transform(new DOMSource(doc), new StreamResult(System.out));
+        List<Document> docs = impl.loadDocuments(urIs);
+        List<String> versions = impl.getVersions(docs);
+        System.out.println(versions);
 
     }
-
-
-
 
 
 }
