@@ -1,6 +1,4 @@
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,11 +13,17 @@ public class Main {
         DependencyUpdater impl = new ImplNaive();
 
         // Test list with dependencies (groupIDs)
-        List<String> dps = new ArrayList<String>();
-        dps.add("org/junit/jupiter");
-        dps.add("com/fasterxml/jackson/core");
+        List<String> groupIds = new ArrayList<String>();
+        groupIds.add("org.junit.jupiter");
+        groupIds.add("com.fasterxml.jackson.core");
+        groupIds.add("org.w3c");
 
-        List<String> urIs = impl.getURIs(dps);
+        List<String> artifactIds = new ArrayList<String>();
+        artifactIds.add("junit-jupiter-api");
+        artifactIds.add("jackson-databind");
+        artifactIds.add("dom");
+
+        List<String> urIs = impl.getURIs(groupIds, artifactIds);
         System.out.println(urIs);
 
 

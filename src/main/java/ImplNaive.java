@@ -1,6 +1,4 @@
-import com.sun.deploy.net.MessageHeader;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -28,28 +26,36 @@ public class ImplNaive implements DependencyUpdater {
     /**
      * implementation which computes full URLs to then access the metadata xml file for all dependencies
      *
-     * @param dps a List containing Strings of the used dependencies
+     * @param groupIds a List containing Strings of the used dependencies
      * @return List with the final URLs
      */
-    public List<String> getURIs(List<String> dps) {
+    public List<String> getURIs(List<String> groupIds, List<String> artifactIds) {
         List<String> finals = new ArrayList<String>();
-        for (String dp : dps) {
-            finals.add(DependencyUpdater.url + dp + getPostfix(dp) + DependencyUpdater.metaData);
+        for (int i = 0; i < groupIds.size(); i++) {
+            String gid = groupIds.get(i);
+            String aid = artifactIds.get(i);
+            finals.add(DependencyUpdater.url + replaceDot(gid) + "/" + aid + getPostfix());
         }
         return finals;
+    }
 
+
+    /**
+     * Helper function to replace the '.' in each dp to '/'
+     * @param s groupId
+     * @return replaced version of the groupId with '/' in between
+     */
+    private String replaceDot(String s) {
+        return s.replace('.', '/');
     }
 
     /**
-     * Helper function to get the proper postfix to a given dependency
+     * Helper function to get the proper postfix to access meta-data.xml
      *
-     * @param url String from pom.xml file with the group id of the dependency
-     * @return the correct postfix with '-' instead of '/'
+     * @return the correct postfix with metadata.xml
      */
-    private String getPostfix(String url) {
-        String[] subStr = url.split("/");
-        int len = subStr.length;
-        return "/" + subStr[len - 2] + "-" + subStr[len - 1];
+    private String getPostfix() {
+        return  DependencyUpdater.metaData;
     }
 
 
@@ -87,6 +93,7 @@ public class ImplNaive implements DependencyUpdater {
 
     /**
      * implementation of the abstract method which
+     *
      * @param docs List of Document objects, each containing the XML for a dp
      * @return List with the final string representation of the latest versions of each dp
      */

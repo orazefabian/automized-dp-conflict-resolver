@@ -26,10 +26,11 @@ public interface DependencyUpdater {
 
     /**
      * Abstract method which should ultimately concatenate the dependencies with the prefix of the static URL
-     * @param dps a List containing Strings of the used dependencies
+     * @param groupIds a List containing Strings of the used dependencies
+     * @param artifactIds a List with the corresponding artifactId to each groupId
      * @return List with the final URIs for the {@link ObjectMapper}
      */
-    List<String> getURIs(List<String> dps);
+    List<String> getURIs(List<String> groupIds, List<String> artifactIds);
 
 
     /**
