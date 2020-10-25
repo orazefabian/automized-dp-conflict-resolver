@@ -1,6 +1,5 @@
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
-
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -32,7 +31,7 @@ public class ImplNaive implements DependencyUpdater {
      * @return List with the final URLs
      */
     public List<String> processDependencies(List<String> groupIds, List<String> artifactIds) {
-        List<String> finals = new ArrayList<String>();
+        List<String> finals = new ArrayList<>();
         for (int i = 0; i < groupIds.size(); i++) {
             String gid = groupIds.get(i);
             String aid = artifactIds.get(i);
@@ -70,7 +69,7 @@ public class ImplNaive implements DependencyUpdater {
      * @throws Exception when parsing via the connection through the url fails
      */
     public List<Document> loadDocuments(List<String> urls) throws Exception {
-        List<Document> documents = new ArrayList<Document>();
+        List<Document> documents = new ArrayList<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
         for (String s : urls) {
@@ -101,7 +100,7 @@ public class ImplNaive implements DependencyUpdater {
      * @return HashMap with the groupId , latest version pairs for each dp
      */
     public Map<String, String> getVersions(List<Document> docs) {
-        Map<String, String> dpNewest = new HashMap<String, String>();
+        Map<String, String> dpNewest = new HashMap<>();
         for (Document doc : docs) {
             NodeList groupId = doc.getElementsByTagName("groupId");
             NodeList version = doc.getElementsByTagName("latest");
@@ -118,8 +117,7 @@ public class ImplNaive implements DependencyUpdater {
     public String mapToString(Map<String, String> map) {
         StringBuilder builder = new StringBuilder();
         for (String gid : map.keySet()) {
-            builder.append("\nDependency: \t\t" + gid + "\nLatest version: \t" + map.get(gid) +
-                    "\n-------------------------------------------------------------");
+            builder.append("\nDependency: \t\t").append(gid).append("\nLatest version: \t").append(map.get(gid)).append("\n-------------------------------------------------------------");
         }
         return builder.toString();
     }
