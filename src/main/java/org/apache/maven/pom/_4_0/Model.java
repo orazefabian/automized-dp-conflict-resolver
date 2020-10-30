@@ -9,6 +9,7 @@
 package org.apache.maven.pom._4_0;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.w3c.dom.Element;
 
 import javax.xml.bind.annotation.*;
@@ -181,12 +182,12 @@ import java.util.List;
  * 
  * 
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Model", propOrder = {
 })
 public class Model {
 
-    protected String schemaLocation;
     protected String modelVersion;
     protected Parent parent;
     protected String groupId;
@@ -219,14 +220,6 @@ public class Model {
     protected Reports reports;
     protected Reporting reporting;
     protected Profiles profiles;
-
-    public String getSchemaLocation() {
-        return schemaLocation;
-    }
-
-    public void setSchemaLocation(String schemaLocation) {
-        this.schemaLocation = schemaLocation;
-    }
 
     /**
      * Ruft den Wert der modelVersion-Eigenschaft ab.

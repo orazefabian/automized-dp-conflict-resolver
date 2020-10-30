@@ -8,6 +8,7 @@
 
 package org.apache.maven.pom._4_0;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.w3c.dom.Element;
 
 import javax.xml.bind.annotation.*;
@@ -104,6 +105,7 @@ public class Plugin {
     protected Goals goals;
     protected String inherited;
     protected Configuration configuration;
+
 
     /**
      * Ruft den Wert der groupId-Eigenschaft ab.
@@ -341,6 +343,7 @@ public class Plugin {
      * 
      * 
      */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlType(name = "", propOrder = {
         "any"
