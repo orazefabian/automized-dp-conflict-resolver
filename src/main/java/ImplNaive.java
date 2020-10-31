@@ -1,11 +1,9 @@
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import org.apache.maven.pom._4_0.Dependency;
-import org.apache.maven.pom._4_0.Model;
-import org.w3c.dom.Document;
+import org.paukov.combinatorics3.Generator;
 
+import javax.xml.bind.JAXBException;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /*********************************
@@ -18,50 +16,47 @@ import java.util.List;
  */
 public class ImplNaive extends DPUpdaterBase {
 
+    private List<Object> configurations;
+    private List<Object> workingConfigurations;
+    private int maxConfigurations;
 
-    protected List<List<String>> fullDPsWithVersions;
-
-    public ImplNaive(String pathToRepo) throws IOException {
+    public ImplNaive(String pathToRepo, int maxConfigurations) throws IOException {
         super(pathToRepo);
-        this.fullDPsWithVersions = new ArrayList<>();
+        this.configurations = new ArrayList<>();
+        this.maxConfigurations = maxConfigurations;
+        this.workingConfigurations = new ArrayList<>();
     }
 
     @Override
-    public DPConfiguration computeVersionConfiguration() {
-        DPConfiguration configuration;
-        // TODO: calculate different versions of dps
-        String xml = null;
-        File file = new File(path + "pom.xml");
-        FileWriter fileWriter;
-        getPomModel().getDependencies().getDependency().get(0).setVersion("4.13.1");
-        getPomModel().getDependencies().getDependency().get(1).setVersion("0.8.6");
-        getPomModel().getDependencies().getDependency().get(2).setVersion("3.6.0");
-
-       /* mapper.enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT,DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-        .disable(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES,DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    public void computeVersionConfiguration() {
         try {
-            xml = mapper.writeValueAsString(pomModel);
-            fileWriter = new FileWriter(file);
-            fileWriter.write(xml);
-            fileWriter.close();
-        } catch (IOException e) {
+            saveDependencies();
+        } catch (Exception e) {
             e.printStackTrace();
-        }*/
-        return null;
+        }
+        Generator.cartesianProduct(fullDPsWithVersions.toArray(new ArrayList[fullDPsWithVersions.size()]))
+                .stream().forEach(x -> this.configurations.add(x));
+        buildConfiguration();
+
     }
 
-    @Override
-    public void getDependencies() throws Exception {
-        Model.Dependencies dps = this.pomModel.getDependencies();
-        List<Dependency> dp = dps.getDependency();
-        Document doc;
-        String url;
-        this.fullDPsWithVersions = null;
-        for (Dependency d : dp) {
-            url = processDependencies(d.getGroupId(), d.getArtifactId());
-            doc = loadDocument(url);
-            this.versions = getVersions(doc);
-            this.fullDPsWithVersions.add(versions);
+    private void buildConfiguration() {
+        if (this.maxConfigurations > configurations.size()) this.maxConfigurations = configurations.size();
+        for (int j = this.configurations.size() - 1; j >= this.configurations.size() - maxConfigurations; j--) {
+            for (int i = 0; i < getPomModel().getDependencies().getDependency().size(); i++) {
+                List<String> tempConf = (List<String>) configurations.get(j);
+                getPomModel().getDependencies().getDependency().get(i).setVersion(tempConf.get(i));
+            }
+            try {
+                System.out.println(pomModel);
+                writePom(new File(path + "pom.xml"), pomModel);
+                boolean buildSuccess = getBuildSuccess(false);
+                if (buildSuccess) workingConfigurations.add(configurations.get(j));
+                System.out.println(buildSuccess);
+
+            } catch (JAXBException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

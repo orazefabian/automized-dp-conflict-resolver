@@ -55,12 +55,12 @@ public interface DPUpdater {
     boolean getBuildSuccess(boolean printOutput);
 
     /**
-     * print the dependencies of the current model object
+     * save the dependencies of the current model object
      * @throws Exception when reading from model object fails
      */
-    void getDependencies() throws Exception;
+    void saveDependencies() throws Exception;
 
 
 
-    DPConfiguration computeVersionConfiguration();
+    void computeVersionConfiguration();
 }

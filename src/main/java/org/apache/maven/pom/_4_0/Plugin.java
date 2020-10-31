@@ -9,6 +9,7 @@
 package org.apache.maven.pom._4_0;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import org.w3c.dom.Element;
 
 import javax.xml.bind.annotation.*;
@@ -343,12 +344,34 @@ public class Plugin {
      * 
      * 
      */
-    @JsonIgnoreProperties(ignoreUnknown = true)
+    //@JsonIgnoreProperties(ignoreUnknown = true)
     @XmlAccessorType(XmlAccessType.FIELD)
-    @XmlType(name = "", propOrder = {
+    @XmlType(name = "", propOrder = {"source", "target",
         "any"
     })
     public static class Configuration {
+
+        @JacksonXmlProperty(localName = "source")
+        protected String source;
+
+        @JacksonXmlProperty(localName = "target")
+        protected String target;
+
+        public String getSource() {
+            return source;
+        }
+
+        public void setSource(String source) {
+            this.source = source;
+        }
+
+        public String getTarget() {
+            return target;
+        }
+
+        public void setTarget(String target) {
+            this.target = target;
+        }
 
         @XmlAnyElement
         protected List<Element> any;

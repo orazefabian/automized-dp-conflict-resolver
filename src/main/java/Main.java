@@ -1,4 +1,12 @@
+import com.ctc.wstx.exc.WstxOutputException;
+import org.paukov.combinatorics3.Generator;
+
+import javax.crypto.spec.PSource;
 import java.io.*;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /*********************************
  Created by Fabian Oraze on 22.10.20
@@ -8,37 +16,18 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
+        String sample = "/Users/fabian/Projects/Sample/sample_project/";
+        String target = "/Users/fabian/Projects/Sample/target_project/";
 
-        // Test list with dependencies (groupIDs)
-        /*List<String> groupIds = new ArrayList<>();
-        groupIds.add("org.junit.jupiter");
-        groupIds.add("com.fasterxml.jackson.core");
-        groupIds.add("org.w3c");
 
-        List<String> artifactIds = new ArrayList<>();
-        artifactIds.add("junit-jupiter-api");
-        artifactIds.add("jackson-databind");
-        artifactIds.add("dom");*/
-
-        String repo = "/Users/fabian/Projects/Sample/sample_project/";
-
-        DPUpdaterBase impl = new ImplNaive(repo);
-
+        DPUpdaterBase impl = new ImplNaive(target, 5);
+        System.out.println(impl.getPomModel());
         impl.getBuildSuccess(false);
 
         impl.computeVersionConfiguration();
 
-        impl.writePom(new File("/Users/fabian/Projects/Sample/pom.xml"), impl.getPomModel());
 
-
-        /*PrintStream stream = new PrintStream("new.txt");
-
-        impl.buildProject(null, stream, null);
-
-        System.out.println(stream);*/
     }
-
-
 
 
 }

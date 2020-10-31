@@ -1,6 +1,9 @@
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import org.apache.maven.pom._4_0.Dependency;
 import org.apache.maven.pom._4_0.Model;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -50,14 +53,14 @@ public abstract class DPUpdaterBase implements DPUpdater {
     protected String buildOutput;
     protected File repo;
     protected Model pomModel;
-    protected List<String> versions;
     protected ObjectMapper mapper;
+    protected List<ArrayList<String>> fullDPsWithVersions;
 
     public DPUpdaterBase(String pathToRepo) throws IOException {
         this.repo = new File(pathToRepo);
         this.path = pathToRepo;
-        this.versions = new ArrayList<>();
         this.pomModel = createPomModel(pathToRepo);
+        this.fullDPsWithVersions = new ArrayList<ArrayList<String>>();
     }
 
 
@@ -121,12 +124,12 @@ public abstract class DPUpdaterBase implements DPUpdater {
 
     /**
      * @param doc Document object, containing the metadata XML for a dp
-     * @return HashMap with the groupId , latest version pairs for each dp
+     * @return List with all versions available for a given metadata.xml for a single dp
      */
     public List<String> getVersions(Document doc) {
         List<String> versions = new ArrayList<>();
 
-        NodeList list = doc.getElementsByTagName("versions");
+        NodeList list = doc.getElementsByTagName("version");
         for (int i = 0; i < list.getLength(); i++) {
             versions.add(list.item(i).getTextContent());
         }
@@ -149,7 +152,8 @@ public abstract class DPUpdaterBase implements DPUpdater {
 
     /**
      * should write a pom.xml file given a model object representation
-     * @param file output file which the model should be written to
+     *
+     * @param file  output file which the model should be written to
      * @param model {@link Model} object which is a java representation of a pom file
      * @throws JAXBException when marshalling fails
      */
@@ -186,28 +190,28 @@ public abstract class DPUpdaterBase implements DPUpdater {
 
     @Override
     public void buildProject(File repoFolder, PrintStream buildOutputStream, String cmd) throws IOException, InterruptedException {
-            // FixSummary.put("buildStart",LocalDateTime.now());
-            if (cmd == null) {
-                cmd = "mvn -U -DskipTests=true clean package";
-            }
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            if (buildOutputStream == null) {
-                buildOutputStream = new PrintStream(outputStream);
-            }
+        // FixSummary.put("buildStart",LocalDateTime.now());
+        if (cmd == null) {
+            cmd = "mvn -U -DskipTests=true clean package";
+        }
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        if (buildOutputStream == null) {
+            buildOutputStream = new PrintStream(outputStream);
+        }
 
-            ProcessBuilder pb;
+        ProcessBuilder pb;
 
-            if (System.getProperty("os.name").startsWith("Windows")) {
-                pb = new ProcessBuilder("cmd.exe", "/c", "cd " + repoFolder + " && " + cmd);
-            } else {
-                pb = new ProcessBuilder("/bin/bash", "-c", "cd " + repoFolder + " ; " + cmd);
-            }
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            pb = new ProcessBuilder("cmd.exe", "/c", "cd " + repoFolder + " && " + cmd);
+        } else {
+            pb = new ProcessBuilder("/bin/bash", "-c", "cd " + repoFolder + " ; " + cmd);
+        }
 
-            Process p = pb.start();
-            System.out.println("  Waiting for the build to end... ");
+        Process p = pb.start();
+        System.out.println("  Waiting for the build to end... ");
 
-            BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(p.getInputStream()));
+        BufferedReader reader =
+                new BufferedReader(new InputStreamReader(p.getInputStream()));
 
         String content = "";
         List<String> lines = new ArrayList<>();
@@ -250,5 +254,26 @@ public abstract class DPUpdaterBase implements DPUpdater {
         System.out.println("Build successful: " + success);
         if (printOutput) System.out.println(buildOutput);
         return success;
+    }
+
+    @Override
+    public void saveDependencies() throws Exception {
+        if (this.fullDPsWithVersions.size() == 0) {
+            Model.Dependencies dps = this.pomModel.getDependencies();
+            List<Dependency> dp = dps.getDependency();
+            Document doc;
+            String url;
+            List<String> versions;
+            for (Dependency d : dp) {
+                url = processDependencies(d.getGroupId(), d.getArtifactId());
+                doc = loadDocument(url);
+                versions = getVersions(doc);
+                this.fullDPsWithVersions.add((ArrayList<String>) versions);
+            }
+        }
+    }
+
+    public List<ArrayList<String>> getFullDPsWithVersions() {
+        return fullDPsWithVersions;
     }
 }
