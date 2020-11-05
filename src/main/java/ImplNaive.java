@@ -80,7 +80,6 @@ public class ImplNaive extends DPUpdaterBase {
                 List<String> tempConf = (List<String>) configurations.get(j);
                 getPomModel().getDependencies().getDependency().get(i).setVersion(tempConf.get(i));
             }
-            configurations.remove(configurations.get(j));
             try {
                 boolean success = buildPom(j);
                 if (success && findFistWorkingConfig) break;
