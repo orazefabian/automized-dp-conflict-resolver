@@ -30,9 +30,9 @@ public interface DPUpdater {
      * deserialization of a pom file to a java object given the path to a repo
      * @param repoPath String with the absolute path to a maven repo folder
      * @return a {@link Model} object which should represent the pom.xml
-     * @throws IOException when creating the file given a path fails or reading is not possible
-     */
-    Model createPomModel(String repoPath) throws IOException;
+     * @throws Exception when Error occurs during process
+     * */
+    Model createPomModel(String repoPath) throws Exception;
 
     /**
      * serialization of a java object back to a pom.xml file
@@ -61,6 +61,16 @@ public interface DPUpdater {
     void saveDependencies() throws Exception;
 
 
+    /**
+     * most important method of the interface, handles the different approaches for updating the dependencies and
+     * computes different version-configurations based on the implementation
+     * the method should always save the successful configurations for later usage
+     */
+    void updateDependencies();
 
-    void computeVersionConfiguration();
+    /**
+     * should be used to get the successful version configurations after updateDependencies method has been run
+     * @return List with objects used in a specific implementation which contain the configurations
+     */
+    List<Object> getWorkingConfigurations();
 }

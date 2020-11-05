@@ -7,9 +7,6 @@
 
 
 package org.apache.maven.pom._4_0;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.w3c.dom.Element;
 
 import javax.xml.bind.annotation.*;
@@ -182,7 +179,7 @@ import java.util.List;
  * 
  * 
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
+//@JsonIgnoreProperties(ignoreUnknown = true)
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Model", propOrder = {
 })
@@ -210,7 +207,6 @@ public class Model {
     protected IssueManagement issueManagement;
     protected CiManagement ciManagement;
     protected DistributionManagement distributionManagement;
-    @JsonIgnore
     protected Properties properties;
     protected DependencyManagement dependencyManagement;
     protected Dependencies dependencies;

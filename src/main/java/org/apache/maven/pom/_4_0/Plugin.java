@@ -8,8 +8,6 @@
 
 package org.apache.maven.pom._4_0;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import org.w3c.dom.Element;
 
 import javax.xml.bind.annotation.*;
@@ -18,16 +16,14 @@ import java.util.List;
 
 
 /**
- * 
- *         
- *         The <code>&lt;plugin&gt;</code> element contains informations required for a plugin.
- *         
- *       
- * 
+ * The <code>&lt;plugin&gt;</code> element contains informations required for a plugin.
+ *
+ *
+ *
  * <p>Java-Klasse für Plugin complex type.
- * 
+ *
  * <p>Das folgende Schemafragment gibt den erwarteten Content an, der in dieser Klasse enthalten ist.
- * 
+ *
  * <pre>
  * &lt;complexType name="Plugin">
  *   &lt;complexContent>
@@ -87,8 +83,6 @@ import java.util.List;
  *   &lt;/complexContent>
  * &lt;/complexType>
  * </pre>
- * 
- * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Plugin", propOrder = {
@@ -111,10 +105,8 @@ public class Plugin {
     /**
      * Ruft den Wert der groupId-Eigenschaft ab.
      *
-     * @return
-     *     possible object is
-     *     {@link String }
-     *
+     * @return possible object is
+     * {@link String }
      */
     public String getGroupId() {
         return groupId;
@@ -123,10 +115,8 @@ public class Plugin {
     /**
      * Legt den Wert der groupId-Eigenschaft fest.
      *
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setGroupId(String value) {
         this.groupId = value;
@@ -135,10 +125,8 @@ public class Plugin {
     /**
      * Ruft den Wert der artifactId-Eigenschaft ab.
      *
-     * @return
-     *     possible object is
-     *     {@link String }
-     *
+     * @return possible object is
+     * {@link String }
      */
     public String getArtifactId() {
         return artifactId;
@@ -147,10 +135,8 @@ public class Plugin {
     /**
      * Legt den Wert der artifactId-Eigenschaft fest.
      *
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setArtifactId(String value) {
         this.artifactId = value;
@@ -159,10 +145,8 @@ public class Plugin {
     /**
      * Ruft den Wert der version-Eigenschaft ab.
      *
-     * @return
-     *     possible object is
-     *     {@link String }
-     *
+     * @return possible object is
+     * {@link String }
      */
     public String getVersion() {
         return version;
@@ -171,10 +155,8 @@ public class Plugin {
     /**
      * Legt den Wert der version-Eigenschaft fest.
      *
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setVersion(String value) {
         this.version = value;
@@ -183,10 +165,8 @@ public class Plugin {
     /**
      * Ruft den Wert der extensions-Eigenschaft ab.
      *
-     * @return
-     *     possible object is
-     *     {@link String }
-     *
+     * @return possible object is
+     * {@link String }
      */
     public String getExtensions() {
         return extensions;
@@ -195,10 +175,8 @@ public class Plugin {
     /**
      * Legt den Wert der extensions-Eigenschaft fest.
      *
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setExtensions(String value) {
         this.extensions = value;
@@ -207,10 +185,8 @@ public class Plugin {
     /**
      * Ruft den Wert der executions-Eigenschaft ab.
      *
-     * @return
-     *     possible object is
-     *     {@link Executions }
-     *
+     * @return possible object is
+     * {@link Executions }
      */
     public Executions getExecutions() {
         return executions;
@@ -219,10 +195,8 @@ public class Plugin {
     /**
      * Legt den Wert der executions-Eigenschaft fest.
      *
-     * @param value
-     *     allowed object is
-     *     {@link Executions }
-     *
+     * @param value allowed object is
+     *              {@link Executions }
      */
     public void setExecutions(Executions value) {
         this.executions = value;
@@ -231,10 +205,8 @@ public class Plugin {
     /**
      * Ruft den Wert der dependencies-Eigenschaft ab.
      *
-     * @return
-     *     possible object is
-     *     {@link Dependencies }
-     *
+     * @return possible object is
+     * {@link Dependencies }
      */
     public Dependencies getDependencies() {
         return dependencies;
@@ -243,10 +215,8 @@ public class Plugin {
     /**
      * Legt den Wert der dependencies-Eigenschaft fest.
      *
-     * @param value
-     *     allowed object is
-     *     {@link Dependencies }
-     *
+     * @param value allowed object is
+     *              {@link Dependencies }
      */
     public void setDependencies(Dependencies value) {
         this.dependencies = value;
@@ -255,10 +225,8 @@ public class Plugin {
     /**
      * Ruft den Wert der goals-Eigenschaft ab.
      *
-     * @return
-     *     possible object is
-     *     {@link Goals }
-     *
+     * @return possible object is
+     * {@link Goals }
      */
     public Goals getGoals() {
         return goals;
@@ -267,10 +235,8 @@ public class Plugin {
     /**
      * Legt den Wert der goals-Eigenschaft fest.
      *
-     * @param value
-     *     allowed object is
-     *     {@link Goals }
-     *
+     * @param value allowed object is
+     *              {@link Goals }
      */
     public void setGoals(Goals value) {
         this.goals = value;
@@ -279,10 +245,8 @@ public class Plugin {
     /**
      * Ruft den Wert der inherited-Eigenschaft ab.
      *
-     * @return
-     *     possible object is
-     *     {@link String }
-     *
+     * @return possible object is
+     * {@link String }
      */
     public String getInherited() {
         return inherited;
@@ -291,10 +255,8 @@ public class Plugin {
     /**
      * Legt den Wert der inherited-Eigenschaft fest.
      *
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *
+     * @param value allowed object is
+     *              {@link String }
      */
     public void setInherited(String value) {
         this.inherited = value;
@@ -303,10 +265,8 @@ public class Plugin {
     /**
      * Ruft den Wert der configuration-Eigenschaft ab.
      *
-     * @return
-     *     possible object is
-     *     {@link Configuration }
-     *
+     * @return possible object is
+     * {@link Configuration }
      */
     public Configuration getConfiguration() {
         return configuration;
@@ -315,10 +275,8 @@ public class Plugin {
     /**
      * Legt den Wert der configuration-Eigenschaft fest.
      *
-     * @param value
-     *     allowed object is
-     *     {@link Configuration }
-     *
+     * @param value allowed object is
+     *              {@link Configuration }
      */
     public void setConfiguration(Configuration value) {
         this.configuration = value;
@@ -327,9 +285,9 @@ public class Plugin {
 
     /**
      * <p>Java-Klasse für anonymous complex type.
-     * 
+     *
      * <p>Das folgende Schemafragment gibt den erwarteten Content an, der in dieser Klasse enthalten ist.
-     * 
+     *
      * <pre>
      * &lt;complexType>
      *   &lt;complexContent>
@@ -341,17 +299,15 @@ public class Plugin {
      *   &lt;/complexContent>
      * &lt;/complexType>
      * </pre>
-     * 
-     * 
      */
     //@JsonIgnoreProperties(ignoreUnknown = true)
     @XmlAccessorType(XmlAccessType.FIELD)
-    @XmlType(name = "", propOrder = {"source", "target",
-        "any"
+    @XmlType(name = "", propOrder = {
+            "any"
     })
     public static class Configuration {
 
-        @JacksonXmlProperty(localName = "source")
+       /* @JacksonXmlProperty(localName = "source")
         protected String source;
 
         @JacksonXmlProperty(localName = "target")
@@ -371,32 +327,30 @@ public class Plugin {
 
         public void setTarget(String target) {
             this.target = target;
-        }
+        }*/
 
         @XmlAnyElement
         protected List<Element> any;
 
         /**
          * Gets the value of the any property.
-         * 
+         *
          * <p>
          * This accessor method returns a reference to the live list,
          * not a snapshot. Therefore any modification you make to the
          * returned list will be present inside the JAXB object.
          * This is why there is not a <CODE>set</CODE> method for the any property.
-         * 
+         *
          * <p>
          * For example, to add a new item, do as follows:
          * <pre>
          *    getAny().add(newItem);
          * </pre>
-         * 
-         * 
+         *
+         *
          * <p>
          * Objects of the following type(s) are allowed in the list
          * {@link Element }
-         * 
-         * 
          */
         public List<Element> getAny() {
             if (any == null) {
@@ -410,9 +364,9 @@ public class Plugin {
 
     /**
      * <p>Java-Klasse für anonymous complex type.
-     * 
+     *
      * <p>Das folgende Schemafragment gibt den erwarteten Content an, der in dieser Klasse enthalten ist.
-     * 
+     *
      * <pre>
      * &lt;complexType>
      *   &lt;complexContent>
@@ -424,12 +378,10 @@ public class Plugin {
      *   &lt;/complexContent>
      * &lt;/complexType>
      * </pre>
-     * 
-     * 
      */
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlType(name = "", propOrder = {
-        "dependency"
+            "dependency"
     })
     public static class Dependencies {
 
@@ -437,25 +389,23 @@ public class Plugin {
 
         /**
          * Gets the value of the dependency property.
-         * 
+         *
          * <p>
          * This accessor method returns a reference to the live list,
          * not a snapshot. Therefore any modification you make to the
          * returned list will be present inside the JAXB object.
          * This is why there is not a <CODE>set</CODE> method for the dependency property.
-         * 
+         *
          * <p>
          * For example, to add a new item, do as follows:
          * <pre>
          *    getDependency().add(newItem);
          * </pre>
-         * 
-         * 
+         *
+         *
          * <p>
          * Objects of the following type(s) are allowed in the list
          * {@link Dependency }
-         * 
-         * 
          */
         public List<Dependency> getDependency() {
             if (dependency == null) {
@@ -469,9 +419,9 @@ public class Plugin {
 
     /**
      * <p>Java-Klasse für anonymous complex type.
-     * 
+     *
      * <p>Das folgende Schemafragment gibt den erwarteten Content an, der in dieser Klasse enthalten ist.
-     * 
+     *
      * <pre>
      * &lt;complexType>
      *   &lt;complexContent>
@@ -483,12 +433,10 @@ public class Plugin {
      *   &lt;/complexContent>
      * &lt;/complexType>
      * </pre>
-     * 
-     * 
      */
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlType(name = "", propOrder = {
-        "execution"
+            "execution"
     })
     public static class Executions {
 
@@ -496,25 +444,23 @@ public class Plugin {
 
         /**
          * Gets the value of the execution property.
-         * 
+         *
          * <p>
          * This accessor method returns a reference to the live list,
          * not a snapshot. Therefore any modification you make to the
          * returned list will be present inside the JAXB object.
          * This is why there is not a <CODE>set</CODE> method for the execution property.
-         * 
+         *
          * <p>
          * For example, to add a new item, do as follows:
          * <pre>
          *    getExecution().add(newItem);
          * </pre>
-         * 
-         * 
+         *
+         *
          * <p>
          * Objects of the following type(s) are allowed in the list
          * {@link PluginExecution }
-         * 
-         * 
          */
         public List<PluginExecution> getExecution() {
             if (execution == null) {
@@ -528,9 +474,9 @@ public class Plugin {
 
     /**
      * <p>Java-Klasse für anonymous complex type.
-     * 
+     *
      * <p>Das folgende Schemafragment gibt den erwarteten Content an, der in dieser Klasse enthalten ist.
-     * 
+     *
      * <pre>
      * &lt;complexType>
      *   &lt;complexContent>
@@ -542,12 +488,10 @@ public class Plugin {
      *   &lt;/complexContent>
      * &lt;/complexType>
      * </pre>
-     * 
-     * 
      */
     @XmlAccessorType(XmlAccessType.FIELD)
     @XmlType(name = "", propOrder = {
-        "any"
+            "any"
     })
     public static class Goals {
 
@@ -556,25 +500,23 @@ public class Plugin {
 
         /**
          * Gets the value of the any property.
-         * 
+         *
          * <p>
          * This accessor method returns a reference to the live list,
          * not a snapshot. Therefore any modification you make to the
          * returned list will be present inside the JAXB object.
          * This is why there is not a <CODE>set</CODE> method for the any property.
-         * 
+         *
          * <p>
          * For example, to add a new item, do as follows:
          * <pre>
          *    getAny().add(newItem);
          * </pre>
-         * 
-         * 
+         *
+         *
          * <p>
          * Objects of the following type(s) are allowed in the list
          * {@link Element }
-         * 
-         * 
          */
         public List<Element> getAny() {
             if (any == null) {

@@ -9,10 +9,9 @@
         xmlns = {@XmlNs(prefix = "", namespaceURI = "http://maven.apache.org/POM/4.0.0")},
         elementFormDefault = javax.xml.bind.annotation.XmlNsForm.QUALIFIED)*/
 
-@XmlSchema(elementFormDefault = XmlNsForm.QUALIFIED, attributeFormDefault = XmlNsForm.UNQUALIFIED,
-        xmlns = {@XmlNs(namespaceURI = "http://maven.apache.org/POM/4.0.0", prefix = "xsi")})
-
+@javax.xml.bind.annotation.XmlSchema(namespace = "http://maven.apache.org/POM/4.0.0", elementFormDefault = javax.xml.bind.annotation.XmlNsForm.QUALIFIED)
 package org.apache.maven.pom._4_0;
+
 
 import javax.xml.bind.annotation.XmlNs;
 import javax.xml.bind.annotation.XmlNsForm;
