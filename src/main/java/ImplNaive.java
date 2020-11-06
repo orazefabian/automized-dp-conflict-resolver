@@ -3,6 +3,7 @@ import org.paukov.combinatorics3.Generator;
 import javax.xml.bind.JAXBException;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /*********************************
@@ -17,37 +18,67 @@ public class ImplNaive extends DPUpdaterBase {
 
     private List<Object> configurations;
     private List<Object> workingConfigurations;
-    private int maxConfigurations;
-    private List<String> refVersion;
+    private int maxDistanceDepth;
+    private boolean stopAtFirstWorkingConf;
 
     /**
-     * Default constructor, generates impl of a given repo and sets maxConfigurations to -1 which
+     * class configuration, if true each build output will be printed to console, default false
+     */
+    static boolean PRINT_OUTPUT = false;
+
+    /**
+     * final distance measure list, specifies how deep a single configuration can be switched back
+     */
+    private final List<Integer> DISTANCE_MEASURE = new ArrayList<>(Arrays.asList(0, 1, 2, 3, 4, 5));
+
+    /**
+     * Default constructor, generates impl of a given repo and sets maxConfigurations to 0 which
      * means it the algorithm will only find and save the first working version configuration
+     *
      * @param pathToRepo String with the absolute path to the repo
      */
-    public ImplNaive(String pathToRepo)  {
+    public ImplNaive(String pathToRepo) {
         super(pathToRepo);
         this.configurations = new ArrayList<>();
-        this.maxConfigurations = -1;
+        this.maxDistanceDepth = 0;
         this.workingConfigurations = new ArrayList<>();
+        this.stopAtFirstWorkingConf = true;
     }
 
     /**
-     * special constructor with additional parameter
+     * overloaded constructor with additional parameter for depth measure
+     *
      * @param pathToRepo String with the absolute path to the repo
-     * @param maxConfigurations sets the variable to a limit when the search for additional version configurations should stop
+     * @param maxDepth   sets the depth limit when the search for additional version configurations should stop
      */
-    public ImplNaive(String pathToRepo, int maxConfigurations)  {
+    public ImplNaive(String pathToRepo, int maxDepth) {
         super(pathToRepo);
         this.configurations = new ArrayList<>();
-        if (maxConfigurations < -1) this.maxConfigurations = -1;
-        else this.maxConfigurations = maxConfigurations;
+        if (maxDepth < 0) this.maxDistanceDepth = 0;
+        else this.maxDistanceDepth = maxDepth;
         this.workingConfigurations = new ArrayList<>();
+        this.stopAtFirstWorkingConf = true;
     }
 
+    /**
+     * overloaded constructor with additional two parameters fo depth measure and stopping configuration
+     *
+     * @param pathToRepo String with the absolute path to the repo
+     * @param maxDepth sets the depth limit when the search for additional version configurations should stop
+     * @param stopAtFirstWorkingConf boolean value that specifies if algorithm should stop at the firs working build or check all configurations for a given depth
+     */
+    public ImplNaive(String pathToRepo, int maxDepth, boolean stopAtFirstWorkingConf) {
+        super(pathToRepo);
+        this.configurations = new ArrayList<>();
+        if (maxDepth < 0) this.maxDistanceDepth = 0;
+        else this.maxDistanceDepth = maxDepth;
+        this.workingConfigurations = new ArrayList<>();
+        this.stopAtFirstWorkingConf = stopAtFirstWorkingConf;
+    }
 
     /**
      * the core method of the implementation used to get the dependency-versions and update them in pom
+     *
      * creates a {@link Generator} and computes the cartesian product of all versions of the dependencies used in the pom
      * adds the computed products to the configuration list and calls the buildConfigurations method which tries to build one configuration
      * after another, all working configurations will be stored in a class variable
@@ -59,30 +90,50 @@ public class ImplNaive extends DPUpdaterBase {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Generator.cartesianProduct(dpVersionList.toArray(new ArrayList[dpVersionList.size()]))
-                .stream().forEach(x -> this.configurations.add(x));
-        this.refVersion = (List<String>) configurations.get(configurations.size()-1);
-        buildConfiguration();
 
+        for (int i = 0; i <= maxDistanceDepth; i++) {
+            int finalI = i;
+            Generator.permutation(DISTANCE_MEASURE).withRepetitions(dpVersionList.size()).stream().forEach(x -> {
+                if (checkDistance(finalI, x)) {
+                    List<String> curr = new ArrayList<>();
+                    for (int j = 0; j < x.size(); j++) {
+                        int len = dpVersionList.get(j).size() - 1;
+                        curr.add(dpVersionList.get(j).get(len - x.get(j)));
+                    }
+                    configurations.add(curr);
+                }
+            });
+        }
+        buildConfiguration();
+    }
+
+    /**
+     * private helper function to calculate the distance measure for a list of versions
+     *
+     * @param maxDist the depth distance that is currently searched for
+     * @param list Integers referring to the version lists, each number representing how many versions the dp at that index is turned back
+     * @return weather the current list has the specified depth distance
+     */
+    private boolean checkDistance(int maxDist, List<Integer> list) {
+        int currDist = 0;
+        for (Integer num : list) {
+            currDist += num;
+        }
+        return (currDist == maxDist);
     }
 
     /**
      * loops over the configurations and sets the dependencies of the model for each time, then calls buildPom
      */
     private void buildConfiguration() {
-        boolean findFistWorkingConfig = false;
-        if (this.maxConfigurations == -1) findFistWorkingConfig = true;
-        if (this.maxConfigurations > configurations.size() || this.maxConfigurations == -1)
-            this.maxConfigurations = configurations.size();
-        // TODO: travers the configs with a distance measure
-        for (int j = this.configurations.size() - 1; j >= this.configurations.size() - maxConfigurations; j--) {
+        for (int j = 0; j < this.configurations.size(); j++) {
             for (int i = 0; i < getPomModel().getDependencies().getDependency().size(); i++) {
                 List<String> tempConf = (List<String>) configurations.get(j);
                 getPomModel().getDependencies().getDependency().get(i).setVersion(tempConf.get(i));
             }
             try {
                 boolean success = buildPom(j);
-                if (success && findFistWorkingConfig) break;
+                if (success && this.stopAtFirstWorkingConf) break;
             } catch (JAXBException e) {
                 e.printStackTrace();
             }
@@ -91,15 +142,15 @@ public class ImplNaive extends DPUpdaterBase {
 
     /**
      * tries to build current version of the pom model by deserializing it back to a xml file and then running the mvn command
+     *
      * @param index the current index of the configurations that was used in this build
      * @return boolean whether the build was successful
      * @throws JAXBException when marshalling fails
      */
     private boolean buildPom(int index) throws JAXBException {
         writePom(new File(path + "pom.xml"), pomModel);
-        boolean buildSuccess = getBuildSuccess(true);
+        boolean buildSuccess = getBuildSuccess(PRINT_OUTPUT);
         if (buildSuccess) workingConfigurations.add(configurations.get(index));
-        System.out.println(buildSuccess);
         return buildSuccess;
     }
 

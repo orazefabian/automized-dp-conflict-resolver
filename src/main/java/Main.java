@@ -4,18 +4,18 @@ public class Main {
     public static void main(String[] args) {
 
 
-        String sample = "/Users/fabian/Projects/Sample/commons-collections/";
-        String target = "/Users/fabian/Projects/Sample/target_project/";
+        String target = "/Users/fabian/Projects/Sample/commons-collections/";
+        String sample = "/Users/fabian/Projects/Sample/sample_project/";
 
 
-        DPUpdaterBase impl = new ImplNaive(sample);
+        DPUpdaterBase impl = new ImplNaive(sample, 2);
+
 
         impl.updateDependencies();
-
         System.out.println(impl.getWorkingConfigurations());
 
-    }
 
+    }
 
 
 }
