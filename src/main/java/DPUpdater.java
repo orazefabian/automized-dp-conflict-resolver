@@ -1,18 +1,15 @@
 import org.apache.maven.pom._4_0.Model;
-import org.w3c.dom.Document;
-
 import javax.xml.bind.JAXBException;
-import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.List;
-import java.util.Map;
 
 /*********************************
  * Created by Fabian Oraze on 22.10.20
  *********************************
  *
+ * interface for the dependency updater tool, which contains all abstract methods that are necessary for each implementation
  */
 public interface DPUpdater {
 

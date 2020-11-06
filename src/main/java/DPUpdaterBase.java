@@ -1,10 +1,8 @@
-
 import org.apache.maven.pom._4_0.Dependency;
 import org.apache.maven.pom._4_0.Model;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
-
 import javax.xml.bind.*;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -20,7 +18,6 @@ import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /*********************************
  Created by Fabian Oraze on 29.10.20
@@ -54,6 +51,7 @@ public abstract class DPUpdaterBase implements DPUpdater {
      * base constructor for abstract updater class
      * initializes a new {@link File} given a String parameter, a java object {@link Model} representing
      * the pom.xml of the repo and creates a empty list of lists for later storing of the versions for each dependency
+     *
      * @param pathToRepo String pointing to the root repo directory
      */
     public DPUpdaterBase(String pathToRepo) {
@@ -61,6 +59,11 @@ public abstract class DPUpdaterBase implements DPUpdater {
         this.path = pathToRepo;
         this.pomModel = createPomModel(pathToRepo);
         this.dpVersionList = new ArrayList<ArrayList<String>>();
+        try {
+            saveDependencies();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -162,7 +165,7 @@ public abstract class DPUpdaterBase implements DPUpdater {
         jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 
 //        new QName()
-        jaxbMarshaller.marshal(new JAXBElement<Model>(new QName("http://maven.apache.org/POM/4.0.0","project",""),Model.class,model),file);
+        jaxbMarshaller.marshal(new JAXBElement<Model>(new QName("http://maven.apache.org/POM/4.0.0", "project", ""), Model.class, model), file);
 //        jaxbMarshaller.marshal(model, file);
 //        jaxbMarshaller.marshal(model, System.out);
     }
@@ -177,8 +180,9 @@ public abstract class DPUpdaterBase implements DPUpdater {
 
     /**
      * parses the pom.xml to a java object with the
+     *
      * @param repoPath String with the absolute path to a maven repo folder
-     * @return object {@link Model} 
+     * @return object {@link Model}
      */
     @Override
     public Model createPomModel(String repoPath) {
@@ -191,8 +195,8 @@ public abstract class DPUpdaterBase implements DPUpdater {
 
 //            LOG.info("Creating POM Model finished");
             return feed.getValue();
-        }catch(Exception e) { //currently we do nothing!
-                e.printStackTrace();
+        } catch (Exception e) { //currently we do nothing!
+            e.printStackTrace();
 //            LOG.info("Could not generate pomModel: "+ e.getMessage());
 //            LOG.info("  "+pomFile.getAbsolutePath());
 //            LOG.error("",e);
@@ -205,10 +209,11 @@ public abstract class DPUpdaterBase implements DPUpdater {
 
     /**
      * starts a process that builds the current pom.xml file of the repo folder and saves the build log to a class variable
-     * @param repoFolder the root folder which contains the pom
+     *
+     * @param repoFolder        the root folder which contains the pom
      * @param buildOutputStream a {@link PrintStream} which can be specified to contain the log of the process
-     * @param cmd additional command e.d. "maven -U clean package"
-     * @throws IOException when reading the repoFolder fails
+     * @param cmd               additional command e.d. "maven -U clean package"
+     * @throws IOException          when reading the repoFolder fails
      * @throws InterruptedException when process is interrupted
      */
     @Override
@@ -266,6 +271,7 @@ public abstract class DPUpdaterBase implements DPUpdater {
 
     /**
      * calls buildProject method and then checks the build-output whether it was successful or not via verifying if the output contains "BUILD SUCCESS"
+     *
      * @param printOutput if true then the buildLog of the last build should also printed to the console
      * @return true if the last build was successful
      */
@@ -288,6 +294,7 @@ public abstract class DPUpdaterBase implements DPUpdater {
     /**
      * saves the dependencies of the current pom object to a class variable
      * uses method processDependencies to get all versions from central maven repo
+     *
      * @throws Exception if accessing url fails
      */
     @Override
@@ -310,15 +317,15 @@ public abstract class DPUpdaterBase implements DPUpdater {
     /**
      * @return list each containing a nested list of strings of all versions of the current pom model
      * Structure of the returning list containing N dependencies and Ki versions for each:
-     *
+     * <p>
      * &list(
-     *      ["DP_1"] &list (["Version_1" , "Version_2", ... ,"Version_K1"])
-     *      ["DP_2"] &list (["Version_1" , "Version_2", ... ,"Version_K2"])
-     *      .
-     *      .
-     *      .
-     *      ["DP_N"] &list (["Version_1" , "Version_2", ... ,"Version_KN"])
-     *      )
+     * ["DP_1"] &list (["Version_1" , "Version_2", ... ,"Version_K1"])
+     * ["DP_2"] &list (["Version_1" , "Version_2", ... ,"Version_K2"])
+     * .
+     * .
+     * .
+     * ["DP_N"] &list (["Version_1" , "Version_2", ... ,"Version_KN"])
+     * )
      */
     public List<ArrayList<String>> getDpVersionList() {
         return dpVersionList;
