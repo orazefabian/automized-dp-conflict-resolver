@@ -330,4 +330,11 @@ public abstract class DPUpdaterBase implements DPUpdater {
     public List<ArrayList<String>> getDpVersionList() {
         return dpVersionList;
     }
+
+    /**
+     * @return the build output of the last process
+     */
+    public String getBuildOutput() {
+        return buildOutput;
+    }
 }
