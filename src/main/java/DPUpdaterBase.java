@@ -3,6 +3,7 @@ import org.apache.maven.pom._4_0.Model;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
+
 import javax.xml.bind.*;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -154,20 +155,17 @@ public abstract class DPUpdaterBase implements DPUpdater {
      */
     @Override
     public void writePom(File file, Model model) throws JAXBException {
-        //LOG.info("Updating pom: "+file.getAbsolutePath());
         JAXBContext jaxbContext = JAXBContext.newInstance(Model.class);
         Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
 
-//        jaxbMarshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, "http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd");
         jaxbMarshaller.setProperty(Marshaller.JAXB_NO_NAMESPACE_SCHEMA_LOCATION, "http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd");
 
         // output pretty printed
         jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 
-//        new QName()
         jaxbMarshaller.marshal(new JAXBElement<Model>(new QName("http://maven.apache.org/POM/4.0.0", "project", ""), Model.class, model), file);
-//        jaxbMarshaller.marshal(model, file);
-//        jaxbMarshaller.marshal(model, System.out);
+        // jaxbMarshaller.marshal(model, file);
+        // jaxbMarshaller.marshal(model, System.out);
     }
 
     /**

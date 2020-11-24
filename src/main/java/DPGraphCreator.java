@@ -13,12 +13,12 @@ import java.util.List;
  Created by Fabian Oraze on 17.11.20
  *********************************/
 
-public class ConflictSeeker extends DPUpdaterBase {
+public class DPGraphCreator extends DPUpdaterBase {
 
 
     public static final String CURR_DIRECTORY = System.getProperty("user.dir");
 
-    public ConflictSeeker(String pathToRepo) {
+    public DPGraphCreator(String pathToRepo) {
         super(pathToRepo);
         insertPlugin();
     }
@@ -137,7 +137,7 @@ public class ConflictSeeker extends DPUpdaterBase {
      * function that creates .dot file representing the dependency graph
      * and via the .dot file then creates a .png graph of the pom dependencies
      */
-    public void createGraphPNG() {
+    public void createPNG() {
         String cmd = "mvn depgraph:graph -DshowConflicts -DshowVersions";
         for (int i = 0; i <= 1; i++) {
             ProcessBuilder pb = getProcessBuilder(cmd);
