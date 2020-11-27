@@ -1,3 +1,5 @@
+package dp;
+
 import org.apache.maven.pom._4_0.Build;
 import org.apache.maven.pom._4_0.Model;
 import org.apache.maven.pom._4_0.Plugin;

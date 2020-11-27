@@ -1,3 +1,4 @@
+package dp;
 import org.paukov.combinatorics3.Generator;
 import javax.xml.bind.JAXBException;
 import java.io.*;
@@ -9,7 +10,7 @@ import java.util.List;
  Created by Fabian Oraze on 22.10.20
  *********************************
  *
- * Implementation of the DPUpdater interface
+ * Implementation of the dp.DPUpdater interface
  * Naive approach which just gets the latest versions of a provided List with the groupIDs of a number of dependencies
  *
  */
