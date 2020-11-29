@@ -190,8 +190,13 @@ public abstract class DPUpdaterBase implements DPUpdater {
     public Model createPomModel(String repoPath) {
 //        LOG.info("Creating POM Model "+pomFile.getAbsolutePath());
         try {
+            File pomFile;
             JAXBContext jc = JAXBContext.newInstance(Model.class);
-            File pomFile = new File(repoPath + "pom.xml");
+            if (repoPath.endsWith(".jar")) {
+                pomFile = new File(repoPath.replace(".jar", ".pom"));
+            } else {
+                pomFile = new File(repoPath + "pom.xml");
+            }
             Unmarshaller unmarshaller = jc.createUnmarshaller();
             JAXBElement<Model> feed = unmarshaller.unmarshal(new StreamSource(new FileInputStream(pomFile)), Model.class);
 
