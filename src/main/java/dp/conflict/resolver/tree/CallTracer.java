@@ -1,5 +1,4 @@
-package ast;
-
+package dp.conflict.resolver.tree;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,16 +16,16 @@ public class CallTracer {
     public CallTracer(String pathToRepo) {
         this.jars = new HashMap<>();
         this.invokedMethods = new ArrayList<>();
-        this.model = SpoonModel.getSpoonModel(pathToRepo);
+        this.model = new SpoonModel(pathToRepo, false);
     }
 
     public void callSpoonASTModes() {
         this.jars.putAll(this.model.computeJarPaths());
-        this.invokedMethods.addAll(this.model.iterateMethods());
+       // this.invokedMethods.addAll(this.model.iterateMethods());
         while (jarsToTraverseLeft()) {
             String targetNew = getNonTraversedJar();
             if (this.model.setJarLauncher(targetNew)){
-                this.invokedMethods.addAll(this.model.iterateMethods());
+               // this.invokedMethods.addAll(this.model.iterateMethods());
                 //TODO: make sure dependencies are not traversed endlessly in a circular path
                 try {
                     this.jars.putAll(this.model.computeJarPaths());

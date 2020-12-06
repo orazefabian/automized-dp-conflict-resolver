@@ -1,4 +1,4 @@
-package dp;
+package dp.conflict.resolver.base;
 
 import org.apache.maven.pom._4_0.Model;
 import javax.xml.bind.JAXBException;
@@ -65,7 +65,7 @@ public interface DPUpdater {
      * computes different version-configurations based on the implementation
      * the method should always save the successful configurations for later usage
      */
-    void updateDependencies();
+    void updateDependencies() throws Exception;
 
     /**
      * should be used to get the successful version configurations after updateDependencies method has been run

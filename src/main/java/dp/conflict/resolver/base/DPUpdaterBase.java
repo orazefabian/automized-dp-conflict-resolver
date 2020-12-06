@@ -1,4 +1,4 @@
-package dp;
+package dp.conflict.resolver.base;
 
 import org.apache.maven.pom._4_0.Dependency;
 import org.apache.maven.pom._4_0.Model;
@@ -64,11 +64,10 @@ public abstract class DPUpdaterBase implements DPUpdater {
         this.dpVersionList = new ArrayList<ArrayList<String>>();
         try {
             saveDependencies();
-        } catch (FileNotFoundException e) {
-            System.err.println("no entry at central maven repo found for given dependency: " + e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
         }
+
     }
 
 
