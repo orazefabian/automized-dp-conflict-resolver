@@ -80,20 +80,6 @@ public class SpoonModel {
         }
     }
 
-    public boolean setJarLauncher(String jarPath) {
-        try {
-            this.launcher = new JarLauncher(jarPath);
-            this.ctModel = this.launcher.buildModel();
-            this.base = new ImplSpoon(jarPath, this.pathM2);
-            initClassNames();
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Launcher could not be build");
-            return false;
-        }
-    }
-
 
     public Map<String, Boolean> computeJarPaths() {
         this.jarPaths.clear();
@@ -121,22 +107,11 @@ public class SpoonModel {
         }
     }
 
-    public List<CallNode> iterateMethods(List<Invocation> leafInvocations) {
-        /*List<CtType<?>> classes = this.ctModel.filterChildren(new Filter<CtClass>() {
-            @Override
-            public boolean matches(CtClass ctElement) {
-                if (launcher instanceof MavenLauncher) return true;
-                else
-                    return ctElement instanceof CtClass && alreadyInvokedMethods.contains(((CtClass) ctElement).getSimpleName());
-            }
-        }).list();*/
-
+    public List<CallNode> iterateClasses(List<Invocation> leafInvocations) {
         // iterate over all classes in model
         for (CtType<?> s : this.ctModel.getAllTypes()) {
             try {
                 for (CtMethod<?> m : s.getAllMethods()) {
-                    /*if (this.launcher instanceof MavenLauncher || (this.launcher instanceof JarLauncher &&
-                            alreadyInvokedMethods.contains(s.getSimpleName()) && alreadyInvokedMethods.contains(m.getSimpleName())))*/
                     searchInvocation(m, s.getSimpleName(), leafInvocations);
                 }
             } catch (SpoonException e) {
@@ -159,8 +134,6 @@ public class SpoonModel {
             if (declaringType != null && checkJDKClasses(declaringType.getQualifiedName()) && !this.classNames.contains(declaringType.getSimpleName())) {
                 String methodSignature = element.getExecutable().getSimpleName();
                 currNode.addInvocation(new Invocation(methodSignature, declaringType.toString(), currNode));
-                /*this.alreadyInvokedMethods.add(element.getExecutable().getDeclaringType().toString());
-                this.alreadyInvokedMethods.add(element.getExecutable().getSimpleName());*/
             }
         }
     }

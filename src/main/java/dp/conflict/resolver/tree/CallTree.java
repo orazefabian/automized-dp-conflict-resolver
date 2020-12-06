@@ -26,7 +26,7 @@ public class CallTree {
         this.jars = new HashMap<>();
         this.jars.putAll(this.model.computeJarPaths());
         // compute starting nodes for call tree
-        this.startNodes.addAll(this.model.iterateMethods(null));
+        this.startNodes.addAll(this.model.iterateClasses(null));
         this.currLeafs = new ArrayList<>();
         // set current leaf elements
         for (CallNode node : this.startNodes) {
@@ -34,6 +34,9 @@ public class CallTree {
         }
     }
 
+    /**
+     * @return complete call tree
+     */
     public List<CallNode> getCallTree() {
         return this.startNodes;
     }
@@ -43,14 +46,16 @@ public class CallTree {
      * the root project pointing to other dependencies recursively
      */
     public void computeCallTree() {
-
         createNewModel();
-        this.model.iterateMethods(this.currLeafs);
+        this.model.iterateClasses(this.currLeafs);
         computeLeafElements();
         if (jarsToTraverseLeft())
             computeCallTree();
     }
 
+    /**
+     * helper function to create new {@link SpoonModel} for next jar
+     */
     private void createNewModel() {
         List<CallNode> prevCallNodes = this.model.getCallNodes();
         try {
@@ -62,6 +67,11 @@ public class CallTree {
         }
     }
 
+    /**
+     * helper function to compute the current leaf elements of the whole call tree
+     * new leaf elements are appended via the next() method from callNodes class to invocation objects
+     * old leafs are then removed
+     */
     private void computeLeafElements() {
         for (Invocation invocation : this.currLeafs) {
             if (invocation.getNextNode() != null) {
@@ -73,6 +83,11 @@ public class CallTree {
         }
     }
 
+    /**
+     * helper function to determine if jars which still need to be traversed are left
+     *
+     * @return true if there are jars left otherwise false
+     */
     private boolean jarsToTraverseLeft() {
         for (Boolean traversed : this.jars.values()) {
             if (!traversed) return true;
@@ -80,6 +95,11 @@ public class CallTree {
         return false;
     }
 
+    /**
+     * helper function to get the next jar to be analyzed
+     *
+     * @return String representation of a jar
+     */
     private String getNonTraversedJar() {
         for (String path : this.jars.keySet()) {
             if (!this.jars.get(path)) {
