@@ -126,13 +126,16 @@ public class SpoonModel {
     private void searchInvocation(CtMethod method, String currClass, List<Invocation> leafInvocations) {
         // get all method body elements
         List<CtInvocation> elements = method.getElements(new TypeFilter<>(CtInvocation.class));
-        if (elements.size() != 0) this.callNodes.add(new CallNode(currClass, currProjectPath, this.jarPaths.keySet()));
-        CallNode currNode = getNodeByName(currClass);
-        if (leafInvocations != null && currNode != null) appendNodeToLeaf(currNode, leafInvocations);
+        CallNode currNode = null;
+        if (elements.size() != 0) {
+            this.callNodes.add(new CallNode(currClass, this.currProjectPath, this.jarPaths.keySet()));
+            currNode = getNodeByName(currClass, this.currProjectPath);
+            if (leafInvocations != null && currNode != null) appendNodeToLeaf(currNode, leafInvocations);
+        }
         for (CtInvocation element : elements) {
             CtTypeReference declaringType = element.getExecutable().getDeclaringType();
-            if (declaringType != null && checkJDKClasses(declaringType.getQualifiedName()) && !this.classNames.contains(declaringType.getSimpleName())) {
-                String methodSignature = element.getExecutable().getSimpleName();
+            if (declaringType != null && checkJDKClasses(declaringType.getQualifiedName()) /*&& !this.classNames.contains(declaringType.getSimpleName()*/) {
+                String methodSignature = element.getExecutable().toString();
                 currNode.addInvocation(new Invocation(methodSignature, declaringType.toString(), currNode));
             }
         }
@@ -146,9 +149,9 @@ public class SpoonModel {
         }
     }
 
-    private CallNode getNodeByName(String currClass) {
+    private CallNode getNodeByName(String currClass, String jarPath) {
         for (CallNode n : this.callNodes) {
-            if (n.getClassName().equals(currClass)) return n;
+            if (n.getClassName().equals(currClass) && n.getFromJar().equals(jarPath)) return n;
         }
         return null;
     }

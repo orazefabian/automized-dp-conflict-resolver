@@ -43,6 +43,7 @@ public class Main {
             e.printStackTrace();
         }
         tree.computeCallTree();
+        tree.getCallTree();
         long curr = (System.currentTimeMillis() - time) / 1000 / 60;
 
     }

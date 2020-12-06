@@ -73,14 +73,15 @@ public class CallTree {
      * old leafs are then removed
      */
     private void computeLeafElements() {
-        for (Invocation invocation : this.currLeafs) {
+        List<Invocation> toBeRemoved = new ArrayList<>();
+        for (int i = 0; i < this.currLeafs.size(); i++) {
+            Invocation invocation = this.currLeafs.get(i);
             if (invocation.getNextNode() != null) {
                 this.currLeafs.addAll(invocation.getNextNode().getInvocations());
-                this.currLeafs.remove(invocation);
-                //TODO: make loop not break, but not cause error because list gets updated dynamically!
-                break;
+                toBeRemoved.add(invocation);
             }
         }
+        this.currLeafs.removeAll(toBeRemoved);
     }
 
     /**
