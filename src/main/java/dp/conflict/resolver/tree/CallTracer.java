@@ -13,7 +13,7 @@ public class CallTracer {
     private List<List<String>> invokedMethods;
     private SpoonModel model;
 
-    public CallTracer(String pathToRepo) {
+    public CallTracer(String pathToRepo) throws Exception {
         this.jars = new HashMap<>();
         this.invokedMethods = new ArrayList<>();
         this.model = new SpoonModel(pathToRepo, false);

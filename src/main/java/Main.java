@@ -36,7 +36,12 @@ public class Main {
 
 
         long time = System.currentTimeMillis();
-        CallTree tree = new CallTree(target);
+        CallTree tree = null;
+        try {
+            tree = new CallTree(target);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         tree.computeCallTree();
         long curr = (System.currentTimeMillis() - time) / 1000 / 60;
 

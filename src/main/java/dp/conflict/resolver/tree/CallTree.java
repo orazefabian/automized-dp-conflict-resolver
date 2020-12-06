@@ -1,9 +1,6 @@
 package dp.conflict.resolver.tree;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /*********************************
  Created by Fabian Oraze on 03.12.20
@@ -22,13 +19,13 @@ public class CallTree {
      *
      * @param targetProjectPath path to maven project which is to be analyzed
      */
-    public CallTree(String targetProjectPath) {
+    public CallTree(String targetProjectPath) throws Exception {
         this.targetProjectPath = targetProjectPath;
         this.startNodes = new ArrayList<>();
         this.model = new SpoonModel(targetProjectPath, false);
         this.jars = new HashMap<>();
-        // compute starting nodes for call tree
         this.jars.putAll(this.model.computeJarPaths());
+        // compute starting nodes for call tree
         this.startNodes.addAll(this.model.iterateMethods(null));
         this.currLeafs = new ArrayList<>();
         // set current leaf elements
@@ -46,10 +43,23 @@ public class CallTree {
      * the root project pointing to other dependencies recursively
      */
     public void computeCallTree() {
-        this.model = new SpoonModel(getNonTraversedJar(), true);
+
+        createNewModel();
         this.model.iterateMethods(this.currLeafs);
         computeLeafElements();
-        if (jarsToTraverseLeft()) computeCallTree();
+        if (jarsToTraverseLeft())
+            computeCallTree();
+    }
+
+    private void createNewModel() {
+        List<CallNode> prevCallNodes = this.model.getCallNodes();
+        try {
+            this.model = new SpoonModel(getNonTraversedJar(), true);
+            this.model.setCallNodes(prevCallNodes);
+            this.jars.putAll(this.model.computeJarPaths());
+        } catch (Exception e) {
+            System.err.println("New launcher model could not be built");
+        }
     }
 
     private void computeLeafElements() {
@@ -57,12 +67,10 @@ public class CallTree {
             if (invocation.getNextNode() != null) {
                 this.currLeafs.addAll(invocation.getNextNode().getInvocations());
                 this.currLeafs.remove(invocation);
+                //TODO: make loop not break, but not cause error because list gets updated dynamically!
+                break;
             }
         }
-    }
-
-    private void addNodes(List<CallNode> freshNodes) {
-        //TODO: attach new nodes to correct edges
     }
 
     private boolean jarsToTraverseLeft() {

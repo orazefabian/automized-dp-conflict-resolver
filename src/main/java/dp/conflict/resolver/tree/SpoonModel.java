@@ -34,7 +34,7 @@ public class SpoonModel {
     private List<CallNode> callNodes;
 
 
-    public SpoonModel(String pathToProject, boolean analyzeFromJar) {
+    public SpoonModel(String pathToProject, boolean analyzeFromJar) throws Exception {
         this.currProjectPath = pathToProject;
         setPathM2();
         initLauncher(analyzeFromJar);
@@ -46,6 +46,14 @@ public class SpoonModel {
         callNodes = new ArrayList<>();
         initClassNames();
         computeJarPaths();
+    }
+
+    public List<CallNode> getCallNodes() {
+        return callNodes;
+    }
+
+    public void setCallNodes(List<CallNode> callNodes) {
+        this.callNodes = callNodes;
     }
 
     private void initLauncher(boolean analyzeFromJar) {
@@ -129,7 +137,7 @@ public class SpoonModel {
                 for (CtMethod<?> m : s.getAllMethods()) {
                     /*if (this.launcher instanceof MavenLauncher || (this.launcher instanceof JarLauncher &&
                             alreadyInvokedMethods.contains(s.getSimpleName()) && alreadyInvokedMethods.contains(m.getSimpleName())))*/
-                        searchInvocation(m, s.getSimpleName(), leafInvocations);
+                    searchInvocation(m, s.getSimpleName(), leafInvocations);
                 }
             } catch (SpoonException e) {
                 System.err.println("could not iterate over methods in class: " + s.getSimpleName());
@@ -145,6 +153,7 @@ public class SpoonModel {
         List<CtInvocation> elements = method.getElements(new TypeFilter<>(CtInvocation.class));
         if (elements.size() != 0) this.callNodes.add(new CallNode(currClass, currProjectPath, this.jarPaths.keySet()));
         CallNode currNode = getNodeByName(currClass);
+        if (leafInvocations != null && currNode != null) appendNodeToLeaf(currNode, leafInvocations);
         for (CtInvocation element : elements) {
             CtTypeReference declaringType = element.getExecutable().getDeclaringType();
             if (declaringType != null && checkJDKClasses(declaringType.getQualifiedName()) && !this.classNames.contains(declaringType.getSimpleName())) {
@@ -153,6 +162,14 @@ public class SpoonModel {
                 /*this.alreadyInvokedMethods.add(element.getExecutable().getDeclaringType().toString());
                 this.alreadyInvokedMethods.add(element.getExecutable().getSimpleName());*/
             }
+        }
+    }
+
+    private void appendNodeToLeaf(CallNode currNode, List<Invocation> leafInvocations) {
+        for (Invocation invocation : leafInvocations) {
+            if (invocation.getDeclaringType().equals(currNode.getClassName())
+                    && invocation.getParentNode().getCurrPomJarDependencies().contains(currNode.getFromJar()))
+                invocation.setNextNode(currNode);
         }
     }
 
