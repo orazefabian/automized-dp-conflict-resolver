@@ -58,12 +58,13 @@ public class CallTree {
      */
     private void createNewModel() {
         List<CallNode> prevCallNodes = this.model.getCallNodes();
+        String nextJar = getNonTraversedJar();
         try {
-            this.model = new SpoonModel(getNonTraversedJar(), true);
+            this.model = new SpoonModel(nextJar, true);
             this.model.setCallNodes(prevCallNodes);
             this.jars.putAll(this.model.computeJarPaths());
         } catch (Exception e) {
-            System.err.println("New launcher model could not be built");
+            System.err.println("New launcher model could not be built for: " + nextJar);
         }
     }
 

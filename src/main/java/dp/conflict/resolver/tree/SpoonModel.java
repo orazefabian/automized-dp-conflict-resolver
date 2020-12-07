@@ -112,7 +112,9 @@ public class SpoonModel {
         for (CtType<?> s : this.ctModel.getAllTypes()) {
             try {
                 for (CtMethod<?> m : s.getAllMethods()) {
-                    searchInvocation(m, s.getSimpleName(), leafInvocations);
+                    if (checkMethodFromCallChain(m, leafInvocations)) {
+                        searchInvocation(m, s.getQualifiedName(), leafInvocations);
+                    }
                 }
             } catch (SpoonException e) {
                 System.err.println("could not iterate over methods in class: " + s.getSimpleName());
@@ -122,24 +124,32 @@ public class SpoonModel {
         return this.callNodes;
     }
 
+    private boolean checkMethodFromCallChain(CtMethod method, List<Invocation> leafs) {
+        if (leafs == null) return true;
+        for (Invocation invocation : leafs) {
+            if (invocation.getMethodSignature().equals(method.getSignature())) return true;
+        }
+        return false;
+    }
+
 
     private void searchInvocation(CtMethod method, String currClass, List<Invocation> leafInvocations) {
         // get all method body elements
         List<CtInvocation> elements = method.getElements(new TypeFilter<>(CtInvocation.class));
         CallNode currNode = null;
         if (elements.size() != 0) {
-            this.callNodes.add(new CallNode(currClass, this.currProjectPath, this.jarPaths.keySet()));
             currNode = getNodeByName(currClass, this.currProjectPath);
             if (leafInvocations != null && currNode != null) appendNodeToLeaf(currNode, leafInvocations);
         }
         for (CtInvocation element : elements) {
             CtTypeReference declaringType = element.getExecutable().getDeclaringType();
-            if (declaringType != null && checkJDKClasses(declaringType.getQualifiedName()) /*&& !this.classNames.contains(declaringType.getSimpleName()*/) {
+            if (declaringType != null && checkJDKClasses(declaringType.getQualifiedName()) && !this.classNames.contains(declaringType.getSimpleName())) {
                 String methodSignature = element.getExecutable().toString();
                 currNode.addInvocation(new Invocation(methodSignature, declaringType.toString(), currNode));
             }
         }
     }
+
 
     private void appendNodeToLeaf(CallNode currNode, List<Invocation> leafInvocations) {
         for (Invocation invocation : leafInvocations) {
@@ -153,7 +163,9 @@ public class SpoonModel {
         for (CallNode n : this.callNodes) {
             if (n.getClassName().equals(currClass) && n.getFromJar().equals(jarPath)) return n;
         }
-        return null;
+        CallNode currNode = new CallNode(currClass, this.currProjectPath, this.jarPaths.keySet());
+        this.callNodes.add(currNode);
+        return currNode;
     }
 
     private boolean checkJDKClasses(String qualifiedName) {

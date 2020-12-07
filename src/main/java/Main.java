@@ -16,8 +16,8 @@ public class Main {
      /*
         String target = "/Users/fabian/Projects/automized-DP-conflict-resolver/automized-dp-conflict-resolver/";
         String target = "/Users/fabian/Projects/Sample/conflict_sample/";
-        String target = "/Users/fabian/Projects/Sample/commons-collections/";
         String target = "/Users/fabian/Projects/Sample/sample_project/";
+        String target = "/Users/fabian/Projects/Sample/commons-collections/";
         String jar = "/Users/fabian/.m2/repository/org/example/Project_A/1.0/Project_A-1.0.jar";
 
 
@@ -48,31 +48,5 @@ public class Main {
 
     }
 
-
-    public static List getClasseNames(String jarName) {
-        ArrayList classes = new ArrayList();
-
-        try {
-            JarInputStream jarFile = new JarInputStream(new FileInputStream(
-                    jarName));
-            JarEntry jarEntry;
-
-            while (true) {
-                jarEntry = jarFile.getNextJarEntry();
-                if (jarEntry == null) {
-                    break;
-                }
-                if (jarEntry.getName().endsWith(".class")) {
-
-                    System.out.println("Found "
-                            + jarEntry.getName().replaceAll("/", "\\."));
-                    classes.add(jarEntry.getName().replaceAll("/", "\\."));
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return classes;
-    }
 
 }
