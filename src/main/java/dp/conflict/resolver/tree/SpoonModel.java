@@ -34,6 +34,12 @@ public class SpoonModel {
     private List<CallNode> callNodes;
 
 
+    /**
+     * object which builds a new spoon launcher which provides a AST
+     * @param pathToProject String to a project, can be maven root folder or path to .jar file
+     * @param analyzeFromJar boolean whether the pathToProject is a .jar file
+     * @throws Exception if building the spoon model fails
+     */
     public SpoonModel(String pathToProject, boolean analyzeFromJar) throws Exception {
         this.currProjectPath = pathToProject;
         setPathM2();
@@ -48,14 +54,25 @@ public class SpoonModel {
         computeJarPaths();
     }
 
+    /**
+     * @return list of CallNodes of the current model
+     */
     public List<CallNode> getCallNodes() {
         return callNodes;
     }
 
+    /**
+     * set the available CallNodes for current model
+     * @param callNodes
+     */
     public void setCallNodes(List<CallNode> callNodes) {
         this.callNodes = callNodes;
     }
 
+    /**
+     * function which initializes a new spoon launcher
+     * @param analyzeFromJar whether the launcher will be a JarLauncher of MavenLauncher
+     */
     private void initLauncher(boolean analyzeFromJar) {
         if (!analyzeFromJar) {
             this.launcher = new MavenLauncher(this.currProjectPath, MavenLauncher.SOURCE_TYPE.ALL_SOURCE);
@@ -64,11 +81,17 @@ public class SpoonModel {
         }
     }
 
+    /**
+     * function which initializes all local class names for current model
+     */
     private void initClassNames() {
         this.classNames.clear();
         for (CtType<?> c : this.ctModel.getAllTypes()) this.classNames.add(c.getSimpleName());
     }
 
+    /**
+     * creates path to local repository folder where maven dependency jars are saved
+     */
     private void setPathM2() {
         String user = System.getProperty("user.name");
         if (System.getProperty("os.name").startsWith("Mac")) {
@@ -80,7 +103,10 @@ public class SpoonModel {
         }
     }
 
-
+    /**
+     * compute jar paths for all dependencies of the current spoon model
+     * @return HashMap with String pathsToJar as keys and a initial boolean value false
+     */
     public Map<String, Boolean> computeJarPaths() {
         this.jarPaths.clear();
         try {
@@ -107,6 +133,13 @@ public class SpoonModel {
         }
     }
 
+
+    /**
+     * function that iterates over all methods of all classes of the current spoon model and analyzes the invocations of
+     * used methods
+     * @param leafInvocations a list of current leafInvocations that represent the bottom of the current call tree
+     * @return list of current used CallNodes
+     */
     public List<CallNode> iterateClasses(List<Invocation> leafInvocations) {
         // iterate over all classes in model
         for (CtType<?> s : this.ctModel.getAllTypes()) {
@@ -120,10 +153,15 @@ public class SpoonModel {
                 System.err.println("could not iterate over methods in class: " + s.getSimpleName());
             }
         }
-
         return this.callNodes;
     }
 
+    /**
+     * helper function that check if a method is part of current call chain
+     * @param method currently iterated method
+     * @param leafs list of current leaf Invocations
+     * @return true if method is part of call chain
+     */
     private boolean checkMethodFromCallChain(CtMethod method, List<Invocation> leafs) {
         if (leafs == null) return true;
         for (Invocation invocation : leafs) {
@@ -132,7 +170,13 @@ public class SpoonModel {
         return false;
     }
 
-
+    /**
+     * called by iterateClasses for each method that is part of call chain, than searches for invocations that point to non-local classes and if needed adds them
+     * to the call chain of the call tree
+     * @param method current method to analyze
+     * @param currClass String signature of class which current method belongs to
+     * @param leafInvocations List of current leaf Invocations
+     */
     private void searchInvocation(CtMethod method, String currClass, List<Invocation> leafInvocations) {
         // get all method body elements
         List<CtInvocation> elements = method.getElements(new TypeFilter<>(CtInvocation.class));
@@ -150,15 +194,12 @@ public class SpoonModel {
         }
     }
 
-
-    private void appendNodeToLeaf(CallNode currNode, List<Invocation> leafInvocations) {
-        for (Invocation invocation : leafInvocations) {
-            if (invocation.getDeclaringType().equals(currNode.getClassName())
-                    && invocation.getParentNode().getCurrPomJarDependencies().contains(currNode.getFromJar()))
-                invocation.setNextNode(currNode);
-        }
-    }
-
+    /**
+     * helper function that gets a CallNode from local list of callNodes
+     * @param currClass String name of current class
+     * @param jarPath String path of jar where class should be located
+     * @return {@link CallNode}
+     */
     private CallNode getNodeByName(String currClass, String jarPath) {
         for (CallNode n : this.callNodes) {
             if (n.getClassName().equals(currClass) && n.getFromJar().equals(jarPath)) return n;
@@ -168,6 +209,24 @@ public class SpoonModel {
         return currNode;
     }
 
+    /**
+     * helper function to append a CallNode to the correct Invocation from the leaf elements
+     * @param currNode CallNode which corresponds to current Class
+     * @param leafInvocations list of invocations from current bottom of call tree
+     */
+    private void appendNodeToLeaf(CallNode currNode, List<Invocation> leafInvocations) {
+        for (Invocation invocation : leafInvocations) {
+            if (invocation.getDeclaringType().equals(currNode.getClassName())
+                    && invocation.getParentNode().getCurrPomJarDependencies().contains(currNode.getFromJar()))
+                invocation.setNextNode(currNode);
+        }
+    }
+
+    /**
+     * helper function which checks if a class is part of the JDK
+     * @param qualifiedName String name of class
+     * @return true if class is not part of JDK
+     */
     private boolean checkJDKClasses(String qualifiedName) {
         String[] strings = qualifiedName.split("[.]");
         if (strings.length == 1) return true;
