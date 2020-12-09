@@ -320,7 +320,6 @@ public abstract class DPUpdaterBase implements DPUpdater {
         }
     }
 
-    //TODO: integrate method to spoon model algorithm
     public File createEffectivePom(File pom) throws IOException, InterruptedException {
         System.out.println("Create Effective POM File: "+pom.getAbsolutePath());
 

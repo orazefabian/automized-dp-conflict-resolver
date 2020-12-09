@@ -6,7 +6,6 @@ package dp.conflict.api.github;
 
 public class JSONLoader {
 
-    // TODO: !Optional! implement alternative way to get repos via GitHub Api
 
     /*
         String query = "https://api.github.com/repos/spotify/docker-maven-plugin/contents/pom.xml";
