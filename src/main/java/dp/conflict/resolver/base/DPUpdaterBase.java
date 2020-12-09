@@ -320,6 +320,25 @@ public abstract class DPUpdaterBase implements DPUpdater {
         }
     }
 
+    //TODO: integrate method to spoon model algorithm
+    public File createEffectivePom(File pom) throws IOException, InterruptedException {
+        System.out.println("Create Effective POM File: "+pom.getAbsolutePath());
+
+        File baseFolder = new File(pom.getAbsolutePath().substring(0,pom.getAbsolutePath().lastIndexOf(File.separator)));
+        System.out.println("BASEFOLDER: "+baseFolder.getAbsolutePath());
+        File outputFile = new File(baseFolder, "effectivePom.xml");
+        System.out.println("OutputFile: "+outputFile.getAbsolutePath());
+        String cmd="mvn help:effective-pom -Doutput="+outputFile.getAbsolutePath();
+
+        ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c","cd "+baseFolder+" ; " +cmd);
+        Process p = pb.start();
+
+        System.out.println("  Waiting for the build to end...");
+        p.waitFor();
+        System.out.println(" Build ended...");
+        return outputFile;
+    }
+
     /**
      * @return list each containing a nested list of strings of all versions of the current pom model
      * Structure of the returning list containing N dependencies and Ki versions for each:

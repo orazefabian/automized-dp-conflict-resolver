@@ -3,6 +3,7 @@ package dp.conflict.resolver.tree;
 import dp.conflict.resolver.base.DPUpdaterBase;
 import dp.conflict.resolver.base.ImplSpoon;
 import org.apache.maven.pom._4_0.Dependency;
+import org.apache.maven.pom._4_0.Model;
 import spoon.JarLauncher;
 import spoon.Launcher;
 import spoon.MavenLauncher;
@@ -14,7 +15,8 @@ import spoon.reflect.declaration.CtType;
 import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.filter.TypeFilter;
 
-import java.io.File;
+import java.io.*;
+import java.net.URL;
 import java.util.*;
 
 /*********************************
@@ -23,7 +25,7 @@ import java.util.*;
 
 public class SpoonModel {
 
-    private DPUpdaterBase base;
+    private ImplSpoon base;
     private Launcher launcher;
     private CtModel ctModel;
     private String pathM2;
@@ -36,7 +38,8 @@ public class SpoonModel {
 
     /**
      * object which builds a new spoon launcher which provides a AST
-     * @param pathToProject String to a project, can be maven root folder or path to .jar file
+     *
+     * @param pathToProject  String to a project, can be maven root folder or path to .jar file
      * @param analyzeFromJar boolean whether the pathToProject is a .jar file
      * @throws Exception if building the spoon model fails
      */
@@ -47,11 +50,15 @@ public class SpoonModel {
         this.classNames = new ArrayList<>();
         this.jarPaths = new HashMap<>();
         this.alreadyInvokedMethods = new HashSet<>();
-        this.ctModel = this.launcher.buildModel();
         this.base = new ImplSpoon(pathToProject, this.pathM2);
+        this.ctModel = this.launcher.buildModel();
         callNodes = new ArrayList<>();
         initClassNames();
-        computeJarPaths();
+        try {
+            computeJarPaths();
+        } catch (NullPointerException e) {
+            System.err.println("No dependencies for project: " + pathToProject);
+        }
     }
 
     /**
@@ -63,6 +70,7 @@ public class SpoonModel {
 
     /**
      * set the available CallNodes for current model
+     *
      * @param callNodes
      */
     public void setCallNodes(List<CallNode> callNodes) {
@@ -71,14 +79,45 @@ public class SpoonModel {
 
     /**
      * function which initializes a new spoon launcher
+     *
      * @param analyzeFromJar whether the launcher will be a JarLauncher of MavenLauncher
      */
     private void initLauncher(boolean analyzeFromJar) {
         if (!analyzeFromJar) {
             this.launcher = new MavenLauncher(this.currProjectPath, MavenLauncher.SOURCE_TYPE.ALL_SOURCE);
         } else {
+            File jar = new File(this.currProjectPath);
+            if (!jar.exists()) {
+                System.out.println("Jar not found... proceeding with download");
+                downloadJar(this.currProjectPath);
+            }
             this.launcher = new JarLauncher(this.currProjectPath);
+
         }
+    }
+
+    /**
+     * helper function which loads the needed jar from central maven repo
+     *
+     * @param currProjectPath path from jar, is then appended with the correct prefix
+     */
+    private void downloadJar(String currProjectPath) {
+        String url = "https://repo1.maven.org/maven2" + currProjectPath.split("/repository")[1];
+        System.out.println("Downloading jar from central repo...");
+        try (BufferedInputStream inputStream = new BufferedInputStream(new URL(url).openStream());
+             FileOutputStream fileOS = new FileOutputStream(currProjectPath)) {
+            byte data[] = new byte[1024];
+            int byteContent;
+            //TODO: create folder structure if not given
+            while ((byteContent = inputStream.read(data, 0, 1024)) != -1) {
+                fileOS.write(data, 0, byteContent);
+            }
+            System.out.println("Download finished");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     /**
@@ -105,38 +144,45 @@ public class SpoonModel {
 
     /**
      * compute jar paths for all dependencies of the current spoon model
+     *
      * @return HashMap with String pathsToJar as keys and a initial boolean value false
      */
-    public Map<String, Boolean> computeJarPaths() {
+    public Map<String, Boolean> computeJarPaths() throws NullPointerException, IOException, InterruptedException {
         this.jarPaths.clear();
-        try {
-            for (Dependency dp : this.base.getPomModel().getDependencies().getDependency()) {
-                if (dp.toString().contains("${")) {
-                    File directoryPath = new File(this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '/'));
-                    String versions[] = directoryPath.list();
-                    dp.setVersion(versions[0]);
+        for (Dependency dp : this.base.getPomModel().getDependencies().getDependency()) {
+            if (dp.getVersion().contains("${")) {
+                //TODO: create effective pom
+                File effectivePom = this.base.createEffectivePom(new File(this.currProjectPath));
+                Model pomModel = this.base.createEffectivePomModel(effectivePom);
+                for (Dependency dpEff : pomModel.getDependencies().getDependency()) {
+                    if (dpEff.getGroupId().equals(dp.getGroupId()) && dpEff.getArtifactId().equals(dp.getArtifactId())) {
+                        // set the correct version to the current base pom model
+                        dp.setVersion(dpEff.getVersion());
+                    }
                 }
-                String postFixJar = dp.getArtifactId() + "-" + dp.getVersion() + ".jar";
-                String currPath = "";
-                if (System.getProperty("os.name").startsWith("Windows")) {
-                    currPath = this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '\\') + "\\" + dp.getVersion() + "\\" + postFixJar;
-                } else {
-                    currPath = this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '/') + "/" + dp.getVersion() + "/" + postFixJar;
-                }
-
-                jarPaths.put(currPath, false);
+                /*File directoryPath = new File(this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '/'));
+                String versions[] = directoryPath.list();
+                dp.setVersion(versions[0]);*/
             }
-            return this.jarPaths;
-        } catch (NullPointerException e) {
-            System.out.println("No Dependencies found for given project");
-            return null;
+            String postFixJar = dp.getArtifactId() + "-" + dp.getVersion() + ".jar";
+            String currPath = "";
+            if (System.getProperty("os.name").startsWith("Windows")) {
+                currPath = this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '\\') + "\\" + dp.getVersion() + "\\" + postFixJar;
+            } else {
+                currPath = this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '/') + "/" + dp.getVersion() + "/" + postFixJar;
+            }
+
+            jarPaths.put(currPath, false);
         }
+        return this.jarPaths;
+
     }
 
 
     /**
      * function that iterates over all methods of all classes of the current spoon model and analyzes the invocations of
      * used methods
+     *
      * @param leafInvocations a list of current leafInvocations that represent the bottom of the current call tree
      * @return list of current used CallNodes
      */
@@ -158,8 +204,9 @@ public class SpoonModel {
 
     /**
      * helper function that check if a method is part of current call chain
+     *
      * @param method currently iterated method
-     * @param leafs list of current leaf Invocations
+     * @param leafs  list of current leaf Invocations
      * @return true if method is part of call chain
      */
     private boolean checkMethodFromCallChain(CtMethod method, List<Invocation> leafs) {
@@ -173,8 +220,9 @@ public class SpoonModel {
     /**
      * called by iterateClasses for each method that is part of call chain, than searches for invocations that point to non-local classes and if needed adds them
      * to the call chain of the call tree
-     * @param method current method to analyze
-     * @param currClass String signature of class which current method belongs to
+     *
+     * @param method          current method to analyze
+     * @param currClass       String signature of class which current method belongs to
      * @param leafInvocations List of current leaf Invocations
      */
     private void searchInvocation(CtMethod method, String currClass, List<Invocation> leafInvocations) {
@@ -196,8 +244,9 @@ public class SpoonModel {
 
     /**
      * helper function that gets a CallNode from local list of callNodes
+     *
      * @param currClass String name of current class
-     * @param jarPath String path of jar where class should be located
+     * @param jarPath   String path of jar where class should be located
      * @return {@link CallNode}
      */
     private CallNode getNodeByName(String currClass, String jarPath) {
@@ -211,7 +260,8 @@ public class SpoonModel {
 
     /**
      * helper function to append a CallNode to the correct Invocation from the leaf elements
-     * @param currNode CallNode which corresponds to current Class
+     *
+     * @param currNode        CallNode which corresponds to current Class
      * @param leafInvocations list of invocations from current bottom of call tree
      */
     private void appendNodeToLeaf(CallNode currNode, List<Invocation> leafInvocations) {
@@ -224,6 +274,7 @@ public class SpoonModel {
 
     /**
      * helper function which checks if a class is part of the JDK
+     *
      * @param qualifiedName String name of class
      * @return true if class is not part of JDK
      */

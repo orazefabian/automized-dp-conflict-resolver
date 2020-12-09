@@ -1,5 +1,8 @@
 package dp.conflict.resolver.tree;
 
+import spoon.compiler.ModelBuildingException;
+
+import java.io.IOException;
 import java.util.*;
 
 /*********************************
@@ -12,7 +15,7 @@ public class CallTree {
     private String targetProjectPath;
     private SpoonModel model;
     private Map<String, Boolean> jars;
-    private List<Invocation> currLeafs;
+    private List<Invocation> currLeaves;
 
     /**
      * Tree data structure which contains all method call traces from a given root project
@@ -22,15 +25,12 @@ public class CallTree {
     public CallTree(String targetProjectPath) throws Exception {
         this.targetProjectPath = targetProjectPath;
         this.startNodes = new ArrayList<>();
-        this.model = new SpoonModel(targetProjectPath, false);
         this.jars = new HashMap<>();
-        this.jars.putAll(this.model.computeJarPaths());
-        // compute starting nodes for call tree
-        this.startNodes.addAll(this.model.iterateClasses(null));
-        this.currLeafs = new ArrayList<>();
+        initModel();
+        this.currLeaves = new ArrayList<>();
         // set current leaf elements
         for (CallNode node : this.startNodes) {
-            currLeafs.addAll(node.getInvocations());
+            currLeaves.addAll(node.getInvocations());
         }
     }
 
@@ -47,10 +47,28 @@ public class CallTree {
      */
     public void computeCallTree() {
         createNewModel();
-        this.model.iterateClasses(this.currLeafs);
+        this.model.iterateClasses(this.currLeaves);
         computeLeafElements();
         if (jarsToTraverseLeft())
             computeCallTree();
+    }
+
+    /**
+     * initialize first spoon model from a maven launcher for a targetProject
+     */
+    private void initModel() {
+        // compute starting nodes for call tree
+        try {
+            this.model = new SpoonModel(targetProjectPath, false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            this.jars.putAll(this.model.computeJarPaths());
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        this.startNodes.addAll(this.model.iterateClasses(null));
     }
 
     /**
@@ -63,9 +81,17 @@ public class CallTree {
             this.model = new SpoonModel(nextJar, true);
             this.model.setCallNodes(prevCallNodes);
             this.jars.putAll(this.model.computeJarPaths());
+        } catch (ModelBuildingException e) {
+            System.err.println("Error building models: " + e.getMessage());
+        } catch (NullPointerException e) {
+            System.out.println("No Dependencies found for given project");
+        } catch (InterruptedException | IOException e) {
+            e.printStackTrace();
         } catch (Exception e) {
             System.err.println("New launcher model could not be built for: " + nextJar);
+            e.printStackTrace();
         }
+
     }
 
     /**
@@ -75,14 +101,14 @@ public class CallTree {
      */
     private void computeLeafElements() {
         List<Invocation> toBeRemoved = new ArrayList<>();
-        for (int i = 0; i < this.currLeafs.size(); i++) {
-            Invocation invocation = this.currLeafs.get(i);
+        for (int i = 0; i < this.currLeaves.size(); i++) {
+            Invocation invocation = this.currLeaves.get(i);
             if (invocation.getNextNode() != null) {
-                this.currLeafs.addAll(invocation.getNextNode().getInvocations());
+                this.currLeaves.addAll(invocation.getNextNode().getInvocations());
                 toBeRemoved.add(invocation);
             }
         }
-        this.currLeafs.removeAll(toBeRemoved);
+        this.currLeaves.removeAll(toBeRemoved);
     }
 
     /**
