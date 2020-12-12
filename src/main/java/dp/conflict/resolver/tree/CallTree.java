@@ -16,6 +16,7 @@ public class CallTree {
     private SpoonModel model;
     private Map<String, Boolean> jars;
     private List<Invocation> currLeaves;
+    private List<CallNode> conflicts;
 
     /**
      * Tree data structure which contains all method call traces from a given root project
@@ -26,6 +27,7 @@ public class CallTree {
         this.targetProjectPath = targetProjectPath;
         this.startNodes = new ArrayList<>();
         this.jars = new HashMap<>();
+        this.conflicts = new ArrayList<>();
         initModel();
         this.currLeaves = new ArrayList<>();
         // set current leaf elements
@@ -51,6 +53,55 @@ public class CallTree {
         computeLeafElements();
         if (jarsToTraverseLeft())
             computeCallTree();
+    }
+
+    /**
+     * helper function which computes the possible conflicts based on a
+     * already computed call tree
+     */
+    private void computeConflicts() {
+        List<CallNode> trace = new ArrayList<>();
+        for (CallNode node : this.startNodes) {
+            recursiveSearch(node, trace);
+        }
+        for (CallNode call : trace) {
+            for (CallNode checkCall : trace) {
+                if (checkForConflict(call, checkCall)) {
+                    this.conflicts.add(call);
+                }
+            }
+        }
+    }
+
+    /**
+     * helper function which checks if two different CallNodes cause a possible conflict (must have the same fullyQualifiedName and be from different Jars)
+     * @param first {@link CallNode}
+     * @param second {@link CallNode}
+     * @return true if two calleNodes cause a possible thread
+     */
+    private boolean checkForConflict(CallNode first, CallNode second) {
+        if(!first.equals(second) && first.getClassName().equals(second.getClassName()) && !first.getFromJar().equals(second.getFromJar())) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * computes the conflicts if called the first time
+     * @return {@link List<CallNode>} which cause an issue
+     */
+    public List<CallNode> getConflicts() {
+        if (this.conflicts.size() == 0) {
+            computeConflicts();
+        }
+        return conflicts;
+    }
+
+    private void recursiveSearch(CallNode callNode, List<CallNode> trace) {
+        trace.add(callNode);
+        for (Invocation inv : callNode.getInvocations()) {
+            recursiveSearch(inv.getNextNode(), trace);
+        }
     }
 
     /**

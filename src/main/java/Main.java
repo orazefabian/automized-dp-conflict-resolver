@@ -1,11 +1,5 @@
 import dp.conflict.resolver.tree.CallTree;
 
-import java.io.FileInputStream;
-import java.util.*;
-import java.util.List;
-import java.util.jar.JarEntry;
-import java.util.jar.JarInputStream;
-
 public class Main {
 
     public static void main(String[] args) {
@@ -41,7 +35,7 @@ public class Main {
             e.printStackTrace();
         }
         tree.computeCallTree();
-        tree.getCallTree();
+        tree.getConflicts();
         long curr = (System.currentTimeMillis() - time) / 1000 / 60;
 
     }

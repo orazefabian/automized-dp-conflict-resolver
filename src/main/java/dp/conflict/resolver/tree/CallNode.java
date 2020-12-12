@@ -14,12 +14,22 @@ public class CallNode {
     private String fromJar;
     private List<Invocation> invocations;
     private Set<String> currPomJarDependencies;
+    private CallNode previous;
 
-    public CallNode(String className, String fromJar, Set<String> jarDependencies) {
+    public CallNode(String className, String fromJar, Set<String> jarDependencies, CallNode previous) {
         this.className = className;
         this.fromJar = fromJar;
         this.invocations = new ArrayList<>();
         this.currPomJarDependencies = jarDependencies;
+        this.previous = previous;
+    }
+
+    public CallNode getPrevious() {
+        return previous;
+    }
+
+    public void setPrevious(CallNode previous) {
+        this.previous = previous;
     }
 
     public Set<String> getCurrPomJarDependencies() {

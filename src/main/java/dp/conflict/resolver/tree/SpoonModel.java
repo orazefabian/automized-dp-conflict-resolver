@@ -113,7 +113,6 @@ public class SpoonModel {
         downloadJar(currProjectPath);
         downloadPom(currProjectPath);
 
-
     }
 
     /**
@@ -286,7 +285,7 @@ public class SpoonModel {
         for (CallNode n : this.callNodes) {
             if (n.getClassName().equals(currClass) && n.getFromJar().equals(jarPath)) return n;
         }
-        CallNode currNode = new CallNode(currClass, this.currProjectPath, this.jarPaths.keySet());
+        CallNode currNode = new CallNode(currClass, this.currProjectPath, this.jarPaths.keySet(), null);
         this.callNodes.add(currNode);
         return currNode;
     }
@@ -300,8 +299,10 @@ public class SpoonModel {
     private void appendNodeToLeaf(CallNode currNode, List<Invocation> leafInvocations) {
         for (Invocation invocation : leafInvocations) {
             if (invocation.getDeclaringType().equals(currNode.getClassName())
-                    && invocation.getParentNode().getCurrPomJarDependencies().contains(currNode.getFromJar()))
+                    && invocation.getParentNode().getCurrPomJarDependencies().contains(currNode.getFromJar())) {
                 invocation.setNextNode(currNode);
+                currNode.setPrevious(invocation.getParentNode());
+            }
         }
     }
 
