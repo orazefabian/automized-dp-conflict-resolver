@@ -57,7 +57,7 @@ public class ImplSpoon extends DPUpdaterBase {
     }
 
     @Override
-    public void updateDependencies() throws Exception {
+    public void updateDependencies() {
 
     }
 

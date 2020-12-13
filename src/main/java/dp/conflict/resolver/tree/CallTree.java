@@ -2,7 +2,8 @@ package dp.conflict.resolver.tree;
 
 import spoon.compiler.ModelBuildingException;
 
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /*********************************
@@ -11,19 +12,19 @@ import java.util.*;
 
 public class CallTree {
 
-    private List<CallNode> startNodes;
-    private String targetProjectPath;
+    private final List<CallNode> startNodes;
+    private final String targetProjectPath;
     private SpoonModel model;
-    private Map<String, Boolean> jars;
-    private List<Invocation> currLeaves;
-    private List<CallNode> conflicts;
+    private final Map<String, Boolean> jars;
+    private final List<Invocation> currLeaves;
+    private final List<CallNode> conflicts;
 
     /**
      * Tree data structure which contains all method call traces from a given root project
      *
      * @param targetProjectPath path to maven project which is to be analyzed
      */
-    public CallTree(String targetProjectPath) throws Exception {
+    public CallTree(String targetProjectPath) {
         this.targetProjectPath = targetProjectPath;
         this.startNodes = new ArrayList<>();
         this.jars = new HashMap<>();
@@ -75,19 +76,18 @@ public class CallTree {
 
     /**
      * helper function which checks if two different CallNodes cause a possible conflict (must have the same fullyQualifiedName and be from different Jars)
-     * @param first {@link CallNode}
+     *
+     * @param first  {@link CallNode}
      * @param second {@link CallNode}
      * @return true if two calleNodes cause a possible thread
      */
     private boolean checkForConflict(CallNode first, CallNode second) {
-        if(!first.equals(second) && first.getClassName().equals(second.getClassName()) && !first.getFromJar().equals(second.getFromJar())) {
-            return true;
-        }
-        return false;
+        return !first.equals(second) && first.getClassName().equals(second.getClassName()) && !first.getFromJar().equals(second.getFromJar());
     }
 
     /**
      * computes the conflicts if called the first time
+     *
      * @return {@link List<CallNode>} which cause an issue
      */
     public List<CallNode> getConflicts() {
@@ -127,6 +127,14 @@ public class CallTree {
      */
     private void createNewModel() {
         List<CallNode> prevCallNodes = this.model.getCallNodes();
+        List<String> jarsToRemove = new ArrayList<>();
+        for (String jarPath : this.jars.keySet()) {
+            // remove non used jars
+            if (checkIfJarUsed(jarPath, this.model.getCallNodes())) jarsToRemove.add(jarPath);
+        }
+        for (String key : jarsToRemove) {
+            this.jars.remove(key);
+        }
         String nextJar = getNonTraversedJar();
         try {
             this.model = new SpoonModel(nextJar, true);
@@ -148,7 +156,7 @@ public class CallTree {
     /**
      * helper function to compute the current leaf elements of the whole call tree
      * new leaf elements are appended via the next() method from callNodes class to invocation objects
-     * old leafs are then removed
+     * old leaves are then removed
      */
     private void computeLeafElements() {
         List<Invocation> toBeRemoved = new ArrayList<>();
@@ -187,6 +195,85 @@ public class CallTree {
             }
         }
         return null;
+    }
+
+    /**
+     * function that checks if a given jar is used by any call of the current invocations
+     *
+     * @param jarPath       String representation of the complete path to the Jar to be checked for usage
+     * @param prevCallNodes a list of all callNodes that are already traversed
+     * @return true if the given jar is not used
+     */
+    private boolean checkIfJarUsed(String jarPath, List<CallNode> prevCallNodes) {
+        String jarContent = null;
+        try {
+            jarContent = parseJar(jarPath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        boolean remove = true;
+        for (CallNode node : prevCallNodes) {
+            for (Invocation invocation : node.getInvocations()) {
+                if (jarContent.contains(invocation.getDeclaringType() + ".class")) {
+                    remove = false;
+                    break;
+                }
+            }
+        }
+        return remove;
+    }
+
+    /**
+     * helper function which parses the contents from a .jar file to a string
+     * @param jarPath the complete path to the jar file
+     * @return a String containing all declared files (classes) in a jar
+     * @throws IOException if reading file is not possible
+     * @throws InterruptedException if the process gets interrupted
+     */
+    private String parseJar(String jarPath) throws IOException, InterruptedException {
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream buildOutputStream = new PrintStream(outputStream);
+
+        // maybe adapt for windows?
+        String[] structure = jarPath.split("/");
+        StringBuilder folder = new StringBuilder();
+        String jar = structure[structure.length - 1];
+        for (int i = 0; i < structure.length - 1; i++) {
+            folder.append(structure[i]).append("/");
+        }
+        ProcessBuilder pb;
+
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            pb = new ProcessBuilder("cmd.exe", "/c", "cd " + folder.toString() + " && jar tf " + jar);
+        } else {
+            pb = new ProcessBuilder("/bin/bash", "-c", "cd " + folder.toString() + " ; jar tf " + jar);
+        }
+
+        Process p = pb.start();
+        BufferedReader reader =
+                new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+        //String content = "";
+        List<String> lines = new ArrayList<>();
+        String line = "";
+        while ((line = reader.readLine()) != null) {
+            lines.add(line);
+            //content = content + line + System.getProperty("line.separator");
+            if (buildOutputStream != null) {
+                buildOutputStream.println(line);
+                //listener //Refactor that only listeners get called here (and make a listener for the print stream
+                String finalLine = line;
+                // this.repairListeners.forEach(x->x.newBuildLine(finalLine));
+            }
+        }
+        p.waitFor();
+        String content = outputStream.toString(StandardCharsets.UTF_8);
+        outputStream.flush();
+        buildOutputStream.flush();
+        return content;
     }
 
 

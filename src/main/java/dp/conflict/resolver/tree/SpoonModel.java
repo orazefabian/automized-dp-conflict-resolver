@@ -24,14 +24,13 @@ import java.util.*;
 
 public class SpoonModel {
 
-    private ImplSpoon base;
+    private final ImplSpoon base;
     private Launcher launcher;
-    private CtModel ctModel;
+    private final CtModel ctModel;
     private String pathM2;
-    private List<String> classNames;
-    private Map<String, Boolean> jarPaths;
-    private HashSet<String> alreadyInvokedMethods;
-    private String currProjectPath;
+    private final List<String> classNames;
+    private final Map<String, Boolean> jarPaths;
+    private final String currProjectPath;
     private List<CallNode> callNodes;
 
 
@@ -48,7 +47,6 @@ public class SpoonModel {
         initLauncher(analyzeFromJar);
         this.classNames = new ArrayList<>();
         this.jarPaths = new HashMap<>();
-        this.alreadyInvokedMethods = new HashSet<>();
         this.base = new ImplSpoon(pathToProject, this.pathM2);
         this.ctModel = this.launcher.buildModel();
         callNodes = new ArrayList<>();
@@ -70,7 +68,7 @@ public class SpoonModel {
     /**
      * set the available CallNodes for current model
      *
-     * @param callNodes
+     * @param callNodes list of {@link CallNode}
      */
     public void setCallNodes(List<CallNode> callNodes) {
         this.callNodes = callNodes;
@@ -124,7 +122,7 @@ public class SpoonModel {
         String url = "https://repo1.maven.org/maven2" + currProjectPath.split("/repository")[1];
         try (BufferedInputStream inputStream = new BufferedInputStream(new URL(url).openStream());
              FileOutputStream fileOS = new FileOutputStream(currProjectPath)) {
-            byte data[] = new byte[1024];
+            byte[] data = new byte[1024];
             int byteContent;
             while ((byteContent = inputStream.read(data, 0, 1024)) != -1) {
                 fileOS.write(data, 0, byteContent);
@@ -145,7 +143,7 @@ public class SpoonModel {
         url.replace(".jar", ".pom");
         try (BufferedInputStream inputStream = new BufferedInputStream(new URL(url).openStream());
              FileOutputStream fileOS = new FileOutputStream(currProjectPath.replace(".jar", ".pom"))) {
-            byte data[] = new byte[1024];
+            byte[] data = new byte[1024];
             int byteContent;
             while ((byteContent = inputStream.read(data, 0, 1024)) != -1) {
                 fileOS.write(data, 0, byteContent);
@@ -197,7 +195,7 @@ public class SpoonModel {
                 }
             }
             String postFixJar = dp.getArtifactId() + "-" + dp.getVersion() + ".jar";
-            String currPath = "";
+            String currPath;
             if (System.getProperty("os.name").startsWith("Windows")) {
                 currPath = this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '\\') + "\\" + dp.getVersion() + "\\" + postFixJar;
             } else {
@@ -238,12 +236,12 @@ public class SpoonModel {
      * helper function that check if a method is part of current call chain
      *
      * @param method currently iterated method
-     * @param leafs  list of current leaf Invocations
+     * @param leaves  list of current leaf Invocations
      * @return true if method is part of call chain
      */
-    private boolean checkMethodFromCallChain(CtMethod method, List<Invocation> leafs) {
-        if (leafs == null) return true;
-        for (Invocation invocation : leafs) {
+    private boolean checkMethodFromCallChain(CtMethod method, List<Invocation> leaves) {
+        if (leaves == null) return true;
+        for (Invocation invocation : leaves) {
             if (invocation.getMethodSignature().equals(method.getSignature())) return true;
         }
         return false;
@@ -263,7 +261,7 @@ public class SpoonModel {
         CallNode currNode = null;
         if (elements.size() != 0) {
             currNode = getNodeByName(currClass, this.currProjectPath);
-            if (leafInvocations != null && currNode != null) appendNodeToLeaf(currNode, leafInvocations);
+            if (leafInvocations != null) appendNodeToLeaf(currNode, leafInvocations);
         }
         for (CtInvocation element : elements) {
             CtTypeReference declaringType = element.getExecutable().getDeclaringType();
