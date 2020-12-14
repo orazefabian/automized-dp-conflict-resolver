@@ -135,7 +135,7 @@ public class CallTree {
         for (String jarPath : this.jars.keySet()) {
             // remove non used jars
             checkIfJarExists(jarPath);
-            if (checkIfJarUsed(jarPath, this.model.getCallNodes())) jarsToRemove.add(jarPath);
+            if (checkIfJarUsed(jarPath, prevCallNodes)) jarsToRemove.add(jarPath);
         }
         for (String key : jarsToRemove) {
             this.jars.remove(key);
@@ -233,14 +233,14 @@ public class CallTree {
             e.printStackTrace();
         }
         boolean remove = true;
-        for (CallNode node : prevCallNodes) {
-            for (Invocation invocation : node.getInvocations()) {
-                if (jarContent.contains(invocation.getDeclaringType().replace(".", "/") + ".class")) {
+        //for (CallNode node : prevCallNodes) {
+            for (Invocation invocation : this.currLeaves) {
+                if (jarContent.contains(invocation.getDeclaringType().replace(".", "/"))) {
                     remove = false;
                     break;
                 }
             }
-        }
+        //}
         return remove;
     }
 

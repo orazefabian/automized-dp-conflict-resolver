@@ -269,7 +269,7 @@ public class SpoonModel {
         }
         for (CtInvocation element : elements) {
             CtTypeReference declaringType = element.getExecutable().getDeclaringType();
-            if (declaringType != null && checkJDKClasses(declaringType.getQualifiedName()) && !this.classNames.contains(declaringType.getSimpleName())) {
+            if (declaringType != null && checkJDKClasses(declaringType.getQualifiedName()) /*&& !this.classNames.contains(declaringType.getSimpleName())*/) {
                 String methodSignature = element.getExecutable().toString();
                 currNode.addInvocation(new Invocation(methodSignature, declaringType.toString(), currNode));
             }
