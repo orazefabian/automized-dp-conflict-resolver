@@ -61,7 +61,7 @@ public class CallTree {
      * already computed call tree
      */
     private void computeConflicts() {
-        List<CallNode> trace = new ArrayList<>();
+        Set<CallNode> trace = new HashSet<>();
         for (CallNode node : this.startNodes) {
             recursiveSearch(node, trace);
         }
@@ -97,10 +97,14 @@ public class CallTree {
         return conflicts;
     }
 
-    private void recursiveSearch(CallNode callNode, List<CallNode> trace) {
+    private void recursiveSearch(CallNode callNode, Set<CallNode> trace) {
         trace.add(callNode);
-        for (Invocation inv : callNode.getInvocations()) {
-            recursiveSearch(inv.getNextNode(), trace);
+        try {
+            for (Invocation inv : callNode.getInvocations()) {
+                if (inv.getNextNode() != null) recursiveSearch(inv.getNextNode(), trace);
+            }
+        } catch (NullPointerException e) {
+            e.printStackTrace();
         }
     }
 
@@ -130,6 +134,7 @@ public class CallTree {
         List<String> jarsToRemove = new ArrayList<>();
         for (String jarPath : this.jars.keySet()) {
             // remove non used jars
+            checkIfJarExists(jarPath);
             if (checkIfJarUsed(jarPath, this.model.getCallNodes())) jarsToRemove.add(jarPath);
         }
         for (String key : jarsToRemove) {
@@ -151,6 +156,20 @@ public class CallTree {
             e.printStackTrace();
         }
 
+    }
+
+    /**
+     * additional check if jar is not existent, it should be downloaded with the spoonModel
+     *
+     * @param nextJar jar to be checked if existent
+     */
+    private void checkIfJarExists(String nextJar) {
+        File jar = new File(nextJar);
+        File pom = new File(nextJar.replace(".jar", ".pom"));
+        if (!jar.exists() || !pom.exists()) {
+            System.out.println("Jar and/or pom not found... proceeding with download");
+            this.model.downloadMissingFiles(nextJar);
+        }
     }
 
     /**
@@ -216,7 +235,7 @@ public class CallTree {
         boolean remove = true;
         for (CallNode node : prevCallNodes) {
             for (Invocation invocation : node.getInvocations()) {
-                if (jarContent.contains(invocation.getDeclaringType() + ".class")) {
+                if (jarContent.contains(invocation.getDeclaringType().replace(".", "/") + ".class")) {
                     remove = false;
                     break;
                 }
@@ -227,9 +246,10 @@ public class CallTree {
 
     /**
      * helper function which parses the contents from a .jar file to a string
+     *
      * @param jarPath the complete path to the jar file
      * @return a String containing all declared files (classes) in a jar
-     * @throws IOException if reading file is not possible
+     * @throws IOException          if reading file is not possible
      * @throws InterruptedException if the process gets interrupted
      */
     private String parseJar(String jarPath) throws IOException, InterruptedException {

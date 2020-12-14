@@ -321,15 +321,15 @@ public abstract class DPUpdaterBase implements DPUpdater {
     }
 
     public File createEffectivePom(File pom) throws IOException, InterruptedException {
-        System.out.println("Create Effective POM File: "+pom.getAbsolutePath());
+        System.out.println("Create Effective POM File: " + pom.getAbsolutePath());
 
-        File baseFolder = new File(pom.getAbsolutePath().substring(0,pom.getAbsolutePath().lastIndexOf(File.separator)));
-        System.out.println("BASEFOLDER: "+baseFolder.getAbsolutePath());
+        File baseFolder = new File(pom.getAbsolutePath().substring(0, pom.getAbsolutePath().lastIndexOf(File.separator)));
+        System.out.println("BASEFOLDER: " + baseFolder.getAbsolutePath());
         File outputFile = new File(baseFolder, "effectivePom.xml");
-        System.out.println("OutputFile: "+outputFile.getAbsolutePath());
-        String cmd="mvn help:effective-pom -Doutput="+outputFile.getAbsolutePath();
+        System.out.println("OutputFile: " + outputFile.getAbsolutePath());
+        String cmd = "mvn help:effective-pom -Doutput=" + outputFile.getAbsolutePath();
 
-        ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c","cd "+baseFolder+" ; " +cmd);
+        ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", "cd " + baseFolder.getAbsolutePath() + " ; " + cmd);
         Process p = pb.start();
 
         System.out.println("  Waiting for the build to end...");

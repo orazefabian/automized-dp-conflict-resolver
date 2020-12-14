@@ -95,11 +95,12 @@ public class SpoonModel {
     }
 
     /**
-     * helper function which creates the missing folder structure for a non existent jar
+     * public helper function which creates the missing folder structure for a non existent jar and
+     * then downloads missing jars and poms from central maven repo
      *
      * @param currProjectPath path from jar, is then appended with the correct prefix
      */
-    private void downloadMissingFiles(String currProjectPath) {
+    public synchronized void downloadMissingFiles(String currProjectPath) {
         String[] dirNames = currProjectPath.split("/");
         StringBuilder dirNameNew = new StringBuilder();
         for (int i = 0; i < dirNames.length - 1; i++) {
@@ -236,13 +237,16 @@ public class SpoonModel {
      * helper function that check if a method is part of current call chain
      *
      * @param method currently iterated method
-     * @param leaves  list of current leaf Invocations
+     * @param leaves list of current leaf Invocations
      * @return true if method is part of call chain
      */
     private boolean checkMethodFromCallChain(CtMethod method, List<Invocation> leaves) {
         if (leaves == null) return true;
         for (Invocation invocation : leaves) {
-            if (invocation.getMethodSignature().equals(method.getSignature())) return true;
+            if (invocation.getMethodSignature().split("\\(")[0].equals(method.getSimpleName())
+                    && checkJDKClasses(method.getDeclaringType().getQualifiedName())) {
+                return true;
+            }
         }
         return false;
     }
@@ -297,7 +301,7 @@ public class SpoonModel {
     private void appendNodeToLeaf(CallNode currNode, List<Invocation> leafInvocations) {
         for (Invocation invocation : leafInvocations) {
             if (invocation.getDeclaringType().equals(currNode.getClassName())
-                    && invocation.getParentNode().getCurrPomJarDependencies().contains(currNode.getFromJar())) {
+                    && invocation.getParentNode().getCurrPomJarDependencies().contains(currNode.getFromJar()) && invocation.getNextNode() == null) {
                 invocation.setNextNode(currNode);
                 currNode.setPrevious(invocation.getParentNode());
             }

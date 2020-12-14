@@ -4,13 +4,11 @@ public class Main {
 
     public static void main(String[] args) {
 
-        String jar = "/Users/fabian/.m2/repository/javax/xml/bind/jaxb-api/2.2.3/jaxb-api-2.2.3.jar";
-
-        String target = "/Users/fabian/Projects/Sample/runtime_conflict_sample/Project_A/";
-     /*
         String target = "/Users/fabian/Projects/automized-DP-conflict-resolver/automized-dp-conflict-resolver/";
-        String target = "/Users/fabian/Projects/Sample/conflict_sample/";
+     /*
+        String target = "/Users/fabian/Projects/Sample/runtime_conflict_sample/Project_A/";
         String target = "/Users/fabian/Projects/Sample/sample_project/";
+        String target = "/Users/fabian/Projects/Sample/conflict_sample/";
         String target = "/Users/fabian/Projects/Sample/commons-collections/";
         String jar = "/Users/fabian/.m2/repository/org/example/Project_A/1.0/Project_A-1.0.jar";
 
