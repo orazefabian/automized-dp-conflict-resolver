@@ -234,12 +234,12 @@ public class CallTree {
         }
         boolean remove = true;
         //for (CallNode node : prevCallNodes) {
-            for (Invocation invocation : this.currLeaves) {
-                if (jarContent.contains(invocation.getDeclaringType().replace(".", "/"))) {
-                    remove = false;
-                    break;
-                }
+        for (Invocation invocation : this.currLeaves) {
+            if (jarContent.contains(invocation.getDeclaringType().replace(".", "/"))) {
+                remove = false;
+                break;
             }
+        }
         //}
         return remove;
     }
@@ -279,6 +279,7 @@ public class CallTree {
         //String content = "";
         List<String> lines = new ArrayList<>();
         String line = "";
+        System.out.println("Preprocessing jar: " + jarPath + "...");
         while ((line = reader.readLine()) != null) {
             lines.add(line);
             //content = content + line + System.getProperty("line.separator");

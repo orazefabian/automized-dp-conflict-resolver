@@ -48,7 +48,9 @@ public class SpoonModel {
         this.classNames = new ArrayList<>();
         this.jarPaths = new HashMap<>();
         this.base = new ImplSpoon(pathToProject, this.pathM2);
+        System.out.println("Starting to build spoon model from " + pathToProject + "...");
         this.ctModel = this.launcher.buildModel();
+        System.out.println("Building spoon model finished");
         callNodes = new ArrayList<>();
         initClassNames();
         try {
@@ -90,7 +92,6 @@ public class SpoonModel {
                 downloadMissingFiles(this.currProjectPath);
             }
             this.launcher = new JarLauncher(this.currProjectPath);
-
         }
     }
 
@@ -219,6 +220,8 @@ public class SpoonModel {
      */
     public List<CallNode> iterateClasses(List<Invocation> leafInvocations) {
         // iterate over all classes in model
+        System.out.println("Iterating over classes...");
+        // TODO: filter used classes and interfaces ?!?
         for (CtType<?> s : this.ctModel.getAllTypes()) {
             try {
                 for (CtMethod<?> m : s.getAllMethods()) {
