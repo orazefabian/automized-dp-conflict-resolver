@@ -1,8 +1,11 @@
+package dp.conflict.resolver.base;
+
 import org.apache.maven.pom._4_0.Dependency;
 import org.apache.maven.pom._4_0.Model;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
+
 import javax.xml.bind.*;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -64,6 +67,7 @@ public abstract class DPUpdaterBase implements DPUpdater {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
     }
 
 
@@ -154,20 +158,17 @@ public abstract class DPUpdaterBase implements DPUpdater {
      */
     @Override
     public void writePom(File file, Model model) throws JAXBException {
-        //LOG.info("Updating pom: "+file.getAbsolutePath());
         JAXBContext jaxbContext = JAXBContext.newInstance(Model.class);
         Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
 
-//        jaxbMarshaller.setProperty(Marshaller.JAXB_SCHEMA_LOCATION, "http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd");
         jaxbMarshaller.setProperty(Marshaller.JAXB_NO_NAMESPACE_SCHEMA_LOCATION, "http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd");
 
         // output pretty printed
         jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
 
-//        new QName()
         jaxbMarshaller.marshal(new JAXBElement<Model>(new QName("http://maven.apache.org/POM/4.0.0", "project", ""), Model.class, model), file);
-//        jaxbMarshaller.marshal(model, file);
-//        jaxbMarshaller.marshal(model, System.out);
+        // jaxbMarshaller.marshal(model, file);
+        // jaxbMarshaller.marshal(model, System.out);
     }
 
     /**
@@ -188,8 +189,13 @@ public abstract class DPUpdaterBase implements DPUpdater {
     public Model createPomModel(String repoPath) {
 //        LOG.info("Creating POM Model "+pomFile.getAbsolutePath());
         try {
+            File pomFile;
             JAXBContext jc = JAXBContext.newInstance(Model.class);
-            File pomFile = new File(repoPath + "pom.xml");
+            if (repoPath.endsWith(".jar")) {
+                pomFile = new File(repoPath.replace(".jar", ".pom"));
+            } else {
+                pomFile = new File(repoPath + "pom.xml");
+            }
             Unmarshaller unmarshaller = jc.createUnmarshaller();
             JAXBElement<Model> feed = unmarshaller.unmarshal(new StreamSource(new FileInputStream(pomFile)), Model.class);
 
@@ -314,6 +320,24 @@ public abstract class DPUpdaterBase implements DPUpdater {
         }
     }
 
+    public File createEffectivePom(File pom) throws IOException, InterruptedException {
+        System.out.println("Create Effective POM File: " + pom.getAbsolutePath());
+
+        File baseFolder = new File(pom.getAbsolutePath().substring(0, pom.getAbsolutePath().lastIndexOf(File.separator)));
+        System.out.println("BASEFOLDER: " + baseFolder.getAbsolutePath());
+        File outputFile = new File(baseFolder, "effectivePom.xml");
+        System.out.println("OutputFile: " + outputFile.getAbsolutePath());
+        String cmd = "mvn help:effective-pom -Doutput=" + outputFile.getAbsolutePath();
+
+        ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", "cd " + baseFolder.getAbsolutePath() + " ; " + cmd);
+        Process p = pb.start();
+
+        System.out.println("  Waiting for the build to end...");
+        p.waitFor();
+        System.out.println(" Build ended...");
+        return outputFile;
+    }
+
     /**
      * @return list each containing a nested list of strings of all versions of the current pom model
      * Structure of the returning list containing N dependencies and Ki versions for each:
@@ -329,5 +353,12 @@ public abstract class DPUpdaterBase implements DPUpdater {
      */
     public List<ArrayList<String>> getDpVersionList() {
         return dpVersionList;
+    }
+
+    /**
+     * @return the build output of the last process
+     */
+    public String getBuildOutput() {
+        return buildOutput;
     }
 }

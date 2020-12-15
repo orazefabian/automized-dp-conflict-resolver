@@ -1,4 +1,4 @@
-package api.github.json;
+package dp.conflict.api.github;
 
 /*********************************
  Created by Fabian Oraze on 29.10.20
@@ -6,7 +6,6 @@ package api.github.json;
 
 public class JSONLoader {
 
-    // TODO: !Optional! implement alternative way to get repos via GitHub Api
 
     /*
         String query = "https://api.github.com/repos/spotify/docker-maven-plugin/contents/pom.xml";
