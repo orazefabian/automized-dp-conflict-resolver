@@ -135,7 +135,7 @@ public class CallTree {
         for (String jarPath : this.jars.keySet()) {
             // remove non used jars
             checkIfJarExists(jarPath);
-            if (checkIfJarUsed(jarPath, prevCallNodes)) jarsToRemove.add(jarPath);
+            if (checkIfJarUsed(jarPath)) jarsToRemove.add(jarPath);
         }
         for (String key : jarsToRemove) {
             this.jars.remove(key);
@@ -196,7 +196,9 @@ public class CallTree {
      */
     private boolean jarsToTraverseLeft() {
         for (Boolean traversed : this.jars.values()) {
-            if (!traversed) return true;
+            if (!traversed) {
+                return true;
+            }
         }
         return false;
     }
@@ -220,16 +222,13 @@ public class CallTree {
      * function that checks if a given jar is used by any call of the current invocations
      *
      * @param jarPath       String representation of the complete path to the Jar to be checked for usage
-     * @param prevCallNodes a list of all callNodes that are already traversed
      * @return true if the given jar is not used
      */
-    private boolean checkIfJarUsed(String jarPath, List<CallNode> prevCallNodes) {
+    private boolean checkIfJarUsed(String jarPath) {
         String jarContent = null;
         try {
             jarContent = parseJar(jarPath);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
         boolean remove = true;

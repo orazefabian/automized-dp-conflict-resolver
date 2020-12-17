@@ -8,11 +8,13 @@ import spoon.Launcher;
 import spoon.MavenLauncher;
 import spoon.SpoonException;
 import spoon.reflect.CtModel;
+import spoon.reflect.code.CtConstructorCall;
 import spoon.reflect.code.CtInvocation;
 import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtType;
 import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.filter.TypeFilter;
+import spoon.support.reflect.code.CtLocalVariableImpl;
 
 import java.io.*;
 import java.net.URL;
@@ -226,7 +228,7 @@ public class SpoonModel {
             try {
                 for (CtMethod<?> m : s.getAllMethods()) {
                     if (checkMethodFromCallChain(m, leafInvocations)) {
-                        searchInvocation(m, s.getQualifiedName(), leafInvocations);
+                        searchInvocation(m, s, leafInvocations);
                     }
                 }
             } catch (SpoonException e) {
@@ -235,6 +237,7 @@ public class SpoonModel {
         }
         return this.callNodes;
     }
+
 
     /**
      * helper function that check if a method is part of current call chain
@@ -262,22 +265,45 @@ public class SpoonModel {
      * @param currClass       String signature of class which current method belongs to
      * @param leafInvocations List of current leaf Invocations
      */
-    private void searchInvocation(CtMethod method, String currClass, List<Invocation> leafInvocations) {
+    private void searchInvocation(CtMethod method, CtType currClass, List<Invocation> leafInvocations) {
         // get all method body elements
-        List<CtInvocation> elements = method.getElements(new TypeFilter<>(CtInvocation.class));
+        String currClassName = currClass.getQualifiedName();
+        List<CtInvocation> methodCalls = method.getElements(new TypeFilter<>(CtInvocation.class));
+        List<CtConstructorCall> constructorCalls = method.filterChildren(new TypeFilter<>(CtConstructorCall.class)).list();
         CallNode currNode = null;
-        if (elements.size() != 0) {
-            currNode = getNodeByName(currClass, this.currProjectPath);
+        // creates new Node from and if needed appends it to a leaf
+        if (methodCalls.size() != 0 || constructorCalls.size() != 0 || currClass.toString().contains("interface " + currClass.getSimpleName())) {
+            currNode = getNodeByName(currClassName, this.currProjectPath);
             if (leafInvocations != null) appendNodeToLeaf(currNode, leafInvocations);
         }
-        for (CtInvocation element : elements) {
-            CtTypeReference declaringType = element.getExecutable().getDeclaringType();
-            if (declaringType != null && checkJDKClasses(declaringType.getQualifiedName()) /*&& !this.classNames.contains(declaringType.getSimpleName())*/) {
+        // adds invocations called by current method to the current CallNode
+        for (CtInvocation element : methodCalls) {
+            CtTypeReference fromType;
+            if (element.getExecutable().getType() == null || element.getExecutable().getType().toString().equals("void")) {
+                fromType = element.getExecutable().getDeclaringType();
+            } else {
+                fromType = element.getExecutable().getType();
+            }
+            if (fromType != null && checkJDKClasses(fromType.getQualifiedName()) && !this.classNames.contains(fromType.getSimpleName())) {
                 String methodSignature = element.getExecutable().toString();
-                currNode.addInvocation(new Invocation(methodSignature, declaringType.toString(), currNode));
+                Invocation invocation = new Invocation(methodSignature, fromType.toString(), currNode);
+                currNode.addInvocation(invocation);
+                // checks if invocations may refer to an interface and changes it to the actual implementation object
+                checkIfInterfaceIsReferenced(invocation, constructorCalls);
             }
         }
     }
+
+    private void checkIfInterfaceIsReferenced(Invocation invocation, List<CtConstructorCall> constructorCalls) {
+        if (constructorCalls != null) {
+            for (CtConstructorCall call : constructorCalls) {
+                if (invocation.getDeclaringType().equals(call.getParent(CtLocalVariableImpl.class).getType().getSimpleName())) {
+                    invocation.setDeclaringType(call.getExecutable().getDeclaringType().toString());
+                }
+            }
+        }
+    }
+
 
     /**
      * helper function that gets a CallNode from local list of callNodes
@@ -303,7 +329,7 @@ public class SpoonModel {
      */
     private void appendNodeToLeaf(CallNode currNode, List<Invocation> leafInvocations) {
         for (Invocation invocation : leafInvocations) {
-            if (invocation.getDeclaringType().equals(currNode.getClassName())
+            if (invocation.getDeclaringType().equals(currNode.getClassName()) //TODO: maybe adapt checking!!
                     && invocation.getParentNode().getCurrPomJarDependencies().contains(currNode.getFromJar()) && invocation.getNextNode() == null) {
                 invocation.setNextNode(currNode);
                 currNode.setPrevious(invocation.getParentNode());
