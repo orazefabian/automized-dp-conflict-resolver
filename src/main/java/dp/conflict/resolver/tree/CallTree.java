@@ -2,6 +2,7 @@ package dp.conflict.resolver.tree;
 
 import spoon.compiler.ModelBuildingException;
 
+import javax.xml.bind.JAXBException;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -120,7 +121,7 @@ public class CallTree {
         }
         try {
             this.jars.putAll(this.model.computeJarPaths());
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException | JAXBException e) {
             e.printStackTrace();
         }
         this.startNodes.addAll(this.model.iterateClasses(null));

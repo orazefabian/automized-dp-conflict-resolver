@@ -16,6 +16,7 @@ import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.filter.TypeFilter;
 import spoon.support.reflect.code.CtLocalVariableImpl;
 
+import javax.xml.bind.JAXBException;
 import java.io.*;
 import java.net.URL;
 import java.util.*;
@@ -182,14 +183,20 @@ public class SpoonModel {
 
     /**
      * compute jar paths for all dependencies of the current spoon model
+     * further checks if effective poms are needed to compute the correct jar file
      *
      * @return HashMap with String pathsToJar as keys and a initial boolean value false
      */
-    public Map<String, Boolean> computeJarPaths() throws NullPointerException, IOException, InterruptedException {
+    public Map<String, Boolean> computeJarPaths() throws NullPointerException, IOException, InterruptedException, JAXBException {
         this.jarPaths.clear();
         for (Dependency dp : this.base.getPomModel().getDependencies().getDependency()) {
             if (dp.getVersion().contains("${")) {
-                File effectivePom = this.base.createEffectivePom(new File(this.currProjectPath));
+                File currPro = new File(this.currProjectPath);
+                String pathToJar = currPro.getAbsolutePath().substring(0, currPro.getAbsolutePath().lastIndexOf(File.separator));
+                // must write pom.xml file before creating effective pom, because it does not recognize .pom endings
+                this.base.writePom(new File(pathToJar + File.separator + "pom.xml"), this.base.getPomModel());
+                File effectivePom = this.base.createEffectivePom(currPro);
+
                 Model pomModel = this.base.createEffectivePomModel(effectivePom);
                 for (Dependency dpEff : pomModel.getDependencies().getDependency()) {
                     if (dpEff.getGroupId().equals(dp.getGroupId()) && dpEff.getArtifactId().equals(dp.getArtifactId())) {
@@ -279,7 +286,7 @@ public class SpoonModel {
         // adds invocations called by current method to the current CallNode
         for (CtInvocation element : methodCalls) {
             CtTypeReference fromType;
-            if (element.getExecutable().getType() == null || element.getExecutable().getType().toString().equals("void")) {
+            if (element.getExecutable().getType() == null || element.getExecutable().getType().toString().equals("void") || element.getExecutable().getType().isPrimitive()) {
                 fromType = element.getExecutable().getDeclaringType();
             } else {
                 fromType = element.getExecutable().getType();
@@ -295,12 +302,13 @@ public class SpoonModel {
     }
 
     private void checkIfInterfaceIsReferenced(Invocation invocation, List<CtConstructorCall> constructorCalls) {
-        if (constructorCalls != null) {
+        try {
             for (CtConstructorCall call : constructorCalls) {
                 if (invocation.getDeclaringType().equals(call.getParent(CtLocalVariableImpl.class).getType().getSimpleName())) {
                     invocation.setDeclaringType(call.getExecutable().getDeclaringType().toString());
                 }
             }
+        } catch (NullPointerException ignored) {
         }
     }
 
