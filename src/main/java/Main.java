@@ -1,10 +1,22 @@
 import dp.conflict.resolver.tree.CallTree;
+import dp.conflict.resolver.tree.ConflictType;
+import spoon.JarLauncher;
+import spoon.MavenLauncher;
+import spoon.reflect.CtModel;
+import spoon.reflect.code.CtInvocation;
+import spoon.reflect.declaration.CtElement;
+import spoon.reflect.declaration.CtInterface;
+import spoon.reflect.declaration.CtMethod;
+import spoon.reflect.declaration.CtType;
+import spoon.reflect.reference.CtReference;
+import spoon.reflect.visitor.filter.TypeFilter;
 
 public class Main {
 
     public static void main(String[] args) {
 
-        String target = "/Users/fabian/Projects/Sample/runtime_conflict_sample/Project_A/";
+        String test = "/Users/fabian/Projects/Sample/runtime_conflict_sample/Project_A/";
+        String target = "/Users/fabian/Projects/Sample/";
      /*
         String target = "/Users/fabian/Projects/automized-DP-conflict-resolver/automized-dp-conflict-resolver/";
         String target = "/Users/fabian/Projects/Sample/commons-collections/";
@@ -24,16 +36,41 @@ public class Main {
         cf.createPNG();
     */
 
+        /*JarLauncher jarLauncher = new JarLauncher(jar);
+        MavenLauncher launcher = new MavenLauncher("/Users/fabian/Projects/automized-DP-conflict-resolver/automized-dp-conflict-resolver/", MavenLauncher.SOURCE_TYPE.ALL_SOURCE);
+
+        CtModel ctModel = launcher.buildModel();
+
+        for (Object t : ctModel.filterChildren((CtType type) -> type.getQualifiedName().contains("UpdaterBase")).list()) {
+            CtType cl = (CtType) t;
+            for (Object m : cl.filterChildren(new TypeFilter<>(CtMethod.class)).list()) {
+                CtMethod method = (CtMethod) m;
+                for (Object i : method.filterChildren(new TypeFilter<>(CtInvocation.class)).list()) {
+                    CtInvocation reference = (CtInvocation) i;
+                    System.out.print(reference.getExecutable());
+                    try {
+                        if (reference.getExecutable().getType().toString().equals("void")) {
+                            System.out.println(" from not void --> " + reference.getExecutable().getDeclaringType());
+                        } else {
+                            System.out.println(" from --> " + reference.getExecutable().getType());
+                        }
+                    } catch (NullPointerException e) {
+                        System.err.println("no type");
+                    }
+                }
+            }
+        }
+        System.exit(0);*/
 
         long time = System.currentTimeMillis();
         CallTree tree = null;
         try {
-            tree = new CallTree(target);
+            tree = new CallTree(test);
         } catch (Exception e) {
             e.printStackTrace();
         }
         tree.computeCallTree();
-        tree.getConflicts();
+        tree.getConflicts(ConflictType.TYPE_2);
         long curr = (System.currentTimeMillis() - time) / 1000 / 60;
 
     }

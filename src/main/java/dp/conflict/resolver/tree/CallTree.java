@@ -2,6 +2,7 @@ package dp.conflict.resolver.tree;
 
 import spoon.compiler.ModelBuildingException;
 
+import javax.xml.bind.JAXBException;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -18,6 +19,7 @@ public class CallTree {
     private final Map<String, Boolean> jars;
     private final List<Invocation> currLeaves;
     private final List<CallNode> conflicts;
+    private final List<String> allUsedJars;
 
     /**
      * Tree data structure which contains all method call traces from a given root project
@@ -28,6 +30,7 @@ public class CallTree {
         this.targetProjectPath = targetProjectPath;
         this.startNodes = new ArrayList<>();
         this.jars = new HashMap<>();
+        this.allUsedJars = new ArrayList<>();
         this.conflicts = new ArrayList<>();
         initModel();
         this.currLeaves = new ArrayList<>();
@@ -59,16 +62,27 @@ public class CallTree {
     /**
      * helper function which computes the possible conflicts based on a
      * already computed call tree
+     *
+     * @param type {@link ConflictType} specifies which type of conflict should be computed
      */
-    private void computeConflicts() {
+    private void computeConflicts(ConflictType type) {
         Set<CallNode> trace = new HashSet<>();
         for (CallNode node : this.startNodes) {
             recursiveSearch(node, trace);
         }
         for (CallNode call : trace) {
             for (CallNode checkCall : trace) {
-                if (checkForConflict(call, checkCall)) {
-                    this.conflicts.add(call);
+                switch (type) {
+                    case TYPE_1:
+                        if (checkForConflictType1(call, checkCall)) {
+                            this.conflicts.add(call);
+                        }
+                        break;
+                    case TYPE_2:
+                        if (checkForConflictType2(call, checkCall)) {
+                            this.conflicts.add(call);
+                        }
+                        break;
                 }
             }
         }
@@ -81,20 +95,45 @@ public class CallTree {
      * @param second {@link CallNode}
      * @return true if two calleNodes cause a possible thread
      */
-    private boolean checkForConflict(CallNode first, CallNode second) {
+    private boolean checkForConflictType1(CallNode first, CallNode second) {
         return !first.equals(second) && first.getClassName().equals(second.getClassName()) && !first.getFromJar().equals(second.getFromJar());
+    }
+
+    /**
+     * helper function which checks if two different CallNodes cause a definitive conflict (Objects that use methods in different jars with different method signatures)
+     *
+     * @param first  {@link CallNode}
+     * @param second {@link CallNode}
+     * @return true if they definitely cause an error
+     */
+    private boolean checkForConflictType2(CallNode first, CallNode second) {
+        boolean isOfTypeOne = !first.equals(second) && first.getClassName().equals(second.getClassName()) && !first.getFromJar().equals(second.getFromJar());
+        if (!isOfTypeOne) return false;
+        for (Invocation invFirst : first.getPrevious().getInvocations()) {
+            for (Invocation invSec : second.getPrevious().getInvocations()) {
+                // get method names without parameters
+                String method1 = invFirst.getMethodSignature().split("\\(")[0];
+                String method2 = invSec.getMethodSignature().split("\\(")[0];
+                // check if method signatures differ
+                if (method1.equals(method2)
+                        && invFirst.getDeclaringType().equals(invSec.getDeclaringType())
+                        && !invFirst.getMethodSignature().equals(invSec.getMethodSignature())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
      * computes the conflicts if called the first time
      *
+     * @param type {@link ConflictType} enumeration of the type of conflict that should be determined
      * @return {@link List<CallNode>} which cause an issue
      */
-    public List<CallNode> getConflicts() {
-        if (this.conflicts.size() == 0) {
-            computeConflicts();
-        }
-        return conflicts;
+    public List<CallNode> getConflicts(ConflictType type) {
+        computeConflicts(type);
+        return this.conflicts;
     }
 
     private void recursiveSearch(CallNode callNode, Set<CallNode> trace) {
@@ -120,7 +159,7 @@ public class CallTree {
         }
         try {
             this.jars.putAll(this.model.computeJarPaths());
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException | JAXBException e) {
             e.printStackTrace();
         }
         this.startNodes.addAll(this.model.iterateClasses(null));
@@ -135,12 +174,14 @@ public class CallTree {
         for (String jarPath : this.jars.keySet()) {
             // remove non used jars
             checkIfJarExists(jarPath);
-            if (checkIfJarUsed(jarPath, prevCallNodes)) jarsToRemove.add(jarPath);
+            if (checkIfJarUsed(jarPath)) jarsToRemove.add(jarPath);
         }
         for (String key : jarsToRemove) {
             this.jars.remove(key);
         }
         String nextJar = getNonTraversedJar();
+        // save already traversed jars for later conflict search
+        this.allUsedJars.add(nextJar);
         try {
             this.model = new SpoonModel(nextJar, true);
             this.model.setCallNodes(prevCallNodes);
@@ -196,7 +237,9 @@ public class CallTree {
      */
     private boolean jarsToTraverseLeft() {
         for (Boolean traversed : this.jars.values()) {
-            if (!traversed) return true;
+            if (!traversed) {
+                return true;
+            }
         }
         return false;
     }
@@ -219,17 +262,14 @@ public class CallTree {
     /**
      * function that checks if a given jar is used by any call of the current invocations
      *
-     * @param jarPath       String representation of the complete path to the Jar to be checked for usage
-     * @param prevCallNodes a list of all callNodes that are already traversed
+     * @param jarPath String representation of the complete path to the Jar to be checked for usage
      * @return true if the given jar is not used
      */
-    private boolean checkIfJarUsed(String jarPath, List<CallNode> prevCallNodes) {
+    private boolean checkIfJarUsed(String jarPath) {
         String jarContent = null;
         try {
             jarContent = parseJar(jarPath);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
         boolean remove = true;
