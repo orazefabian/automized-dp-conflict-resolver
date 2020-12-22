@@ -323,15 +323,20 @@ public abstract class DPUpdaterBase implements DPUpdater {
     /**
      * creates effective pom.xml file and writes it to the directory
      *
-     * @param pom path to the Directory where it should be placed
+     * @param pom       path to the Directory where it should be placed
+     * @param fromMaven true if effectivePom is created from existing Maven project, false if from jar
      * @return the effective pom file that was just created
      * @throws IOException          if reading or writing file is not possible
      * @throws InterruptedException if process gets interrupted
      */
-    public File createEffectivePom(File pom) throws IOException, InterruptedException {
+    public File createEffectivePom(File pom, boolean fromMaven) throws IOException, InterruptedException {
         System.out.println("Create Effective POM File: " + pom.getAbsolutePath());
-
-        File baseFolder = new File(pom.getAbsolutePath().substring(0, pom.getAbsolutePath().lastIndexOf(File.separator)));
+        File baseFolder;
+        if (fromMaven) {
+            baseFolder = pom;
+        } else {
+            baseFolder = new File(pom.getAbsolutePath().substring(0, pom.getAbsolutePath().lastIndexOf(File.separator)));
+        }
         System.out.println("BASEFOLDER: " + baseFolder.getAbsolutePath());
         File outputFile = new File(baseFolder, "effectivePom.xml");
         System.out.println("OutputFile: " + outputFile.getAbsolutePath());

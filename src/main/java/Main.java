@@ -1,4 +1,5 @@
 import dp.conflict.resolver.tree.CallTree;
+import dp.conflict.resolver.tree.ConflictType;
 import spoon.JarLauncher;
 import spoon.MavenLauncher;
 import spoon.reflect.CtModel;
@@ -14,10 +15,10 @@ public class Main {
 
     public static void main(String[] args) {
 
-        String jar = "/Users/fabian/.m2/repository/javax/xml/bind/jaxb-api/2.2.11/jaxb-api-2.2.11.jar";
-        String target = "/Users/fabian/Projects/automized-DP-conflict-resolver/automized-dp-conflict-resolver/";
+        String test = "/Users/fabian/Projects/Sample/runtime_conflict_sample/Project_A/";
+        String target = "/Users/fabian/Projects/Sample/";
      /*
-        String target = "/Users/fabian/Projects/Sample/runtime_conflict_sample/Project_A/";
+        String target = "/Users/fabian/Projects/automized-DP-conflict-resolver/automized-dp-conflict-resolver/";
         String target = "/Users/fabian/Projects/Sample/commons-collections/";
         String target = "/Users/fabian/Projects/Sample/sample_project/";
         String target = "/Users/fabian/Projects/Sample/conflict_sample/";
@@ -64,12 +65,12 @@ public class Main {
         long time = System.currentTimeMillis();
         CallTree tree = null;
         try {
-            tree = new CallTree(target);
+            tree = new CallTree(test);
         } catch (Exception e) {
             e.printStackTrace();
         }
         tree.computeCallTree();
-        tree.getConflicts();
+        tree.getConflicts(ConflictType.TYPE_2);
         long curr = (System.currentTimeMillis() - time) / 1000 / 60;
 
     }

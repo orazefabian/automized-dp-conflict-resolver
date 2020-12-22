@@ -192,10 +192,18 @@ public class SpoonModel {
         for (Dependency dp : this.base.getPomModel().getDependencies().getDependency()) {
             if (dp.getVersion().contains("${")) {
                 File currPro = new File(this.currProjectPath);
-                String pathToJar = currPro.getAbsolutePath().substring(0, currPro.getAbsolutePath().lastIndexOf(File.separator));
+                String pathToJar;
+                boolean fromMaven;
+                if (this.launcher instanceof MavenLauncher) {
+                    pathToJar = currPro.getAbsolutePath();
+                    fromMaven = true;
+                } else {
+                    pathToJar = currPro.getAbsolutePath().substring(0, currPro.getAbsolutePath().lastIndexOf(File.separator));
+                    fromMaven = false;
+                }
                 // must write pom.xml file before creating effective pom, because it does not recognize .pom endings
                 this.base.writePom(new File(pathToJar + File.separator + "pom.xml"), this.base.getPomModel());
-                File effectivePom = this.base.createEffectivePom(currPro);
+                File effectivePom = this.base.createEffectivePom(currPro, fromMaven);
 
                 Model pomModel = this.base.createEffectivePomModel(effectivePom);
                 for (Dependency dpEff : pomModel.getDependencies().getDependency()) {
