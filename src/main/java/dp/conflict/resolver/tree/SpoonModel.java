@@ -301,7 +301,7 @@ public class SpoonModel {
             }
             if (fromType != null && checkJDKClasses(fromType.getQualifiedName()) && !this.classNames.contains(fromType.getSimpleName())) {
                 String methodSignature = element.getExecutable().toString();
-                Invocation invocation = new Invocation(methodSignature, fromType.toString(), currNode);
+                Invocation invocation = new Invocation(methodSignature, fromType.getQualifiedName(), currNode);
                 currNode.addInvocation(invocation);
                 // checks if invocations may refer to an interface and changes it to the actual implementation object
                 checkIfInterfaceIsReferenced(invocation, constructorCalls);
@@ -345,7 +345,7 @@ public class SpoonModel {
      */
     private void appendNodeToLeaf(CallNode currNode, List<Invocation> leafInvocations) {
         for (Invocation invocation : leafInvocations) {
-            if (invocation.getDeclaringType().equals(currNode.getClassName()) //TODO: maybe adapt checking!!
+            if (currNode.getClassName().contains(invocation.getDeclaringType()) //TODO: maybe adapt checking!!
                     && invocation.getParentNode().getCurrPomJarDependencies().contains(currNode.getFromJar()) && invocation.getNextNode() == null) {
                 invocation.setNextNode(currNode);
                 currNode.setPrevious(invocation.getParentNode());
