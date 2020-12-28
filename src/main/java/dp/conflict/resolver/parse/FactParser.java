@@ -64,13 +64,12 @@ public class FactParser {
      * @param node {@link CallNode}
      */
     private void parsePreviousNodes(CallNode node) {
-        if (node != null) {
+        if (node.getPrevious() != null) {
             // check if root node of tree is reached
-            if (node.getPrevious() == null) {
+            /*if (node.getPrevious() == null) {
                 parseRootJarFact(node.getFromJar());
-            } else {
-                parseJarFact(node.getFromJar());
-            }
+            }*/
+            parseJarFact(node.getFromJar());
             parseHasClassFact(node.getFromJar());
             parseHasMethodFact(node.getFromJar(), node.getClassName().replace(".", File.separator));
             parsePreviousNodes(node.getPrevious());
@@ -94,21 +93,6 @@ public class FactParser {
             int nextJarID = this.idMap.get(jarPath);
             // this line creates the fact in asp language syntax
             this.factsBuilder.append("\njar(").append(nextJarID).append(",\"").append(groupID).append("\",\"").append(artifactID).append("\",\"").append(version).append("\").\n");
-        }
-    }
-
-    /**
-     * parse root node to a jar fact once its reached
-     *
-     * @param jarPath the full path to the jar/project
-     */
-    private void parseRootJarFact(String jarPath) {
-        if (!this.idMap.keySet().contains(jarPath)) {
-            this.idMap.put(jarPath, this.currJarID++);
-            int nextJarID = this.idMap.get(jarPath);
-            String[] construct = jarPath.split(File.separator);
-            String rootArtifact = construct[construct.length - 1];
-            this.factsBuilder.append("\njar(").append(nextJarID).append(",\"rootProject\"").append(",\"").append(rootArtifact).append("\", \"1.0\").\n");
         }
     }
 
@@ -158,10 +142,11 @@ public class FactParser {
         }).toArray();
         for (Object mth : methods) {
             String[] methodModifiers = mth.toString().substring(0, mth.toString().indexOf("(")).split(" ");
-            String methodSignature = methodModifiers[methodModifiers.length - 1] + mth.toString().substring(mth.toString().indexOf("("), mth.toString().indexOf(";"));
+            String methodName = methodModifiers[methodModifiers.length - 1];
+            String methodSignature = mth.toString().substring(mth.toString().indexOf("("), mth.toString().indexOf(";"));
             // create fact which maps method to a class and jar
             this.factsBuilder.append("method(").append(this.idMap.get(jarPath)).append(",\"")
-                    .append(className.replace(File.separator, ".")).append("\",\"").append(methodSignature).append("\").\n");
+                    .append(className.replace(File.separator, ".")).append("\",\"").append(methodName).append("\",\"").append(methodSignature).append("\").\n");
         }
     }
 
@@ -173,7 +158,8 @@ public class FactParser {
     private void parseJarConnections(CallNode node) {
         String currJar = node.getFromJar();
         String prevJar = node.getPrevious().getFromJar();
-        int fromID = this.idMap.get(prevJar);
+        int fromID = 0;
+        if (this.idMap.keySet().contains(prevJar)) fromID = this.idMap.get(prevJar);
         int toID = this.idMap.get(currJar);
         this.factsBuilder.append("jarEdge(").append(fromID).append(",").append(toID).append(").\n");
     }
