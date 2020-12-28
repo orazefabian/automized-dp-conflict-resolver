@@ -1,3 +1,4 @@
+import dp.conflict.resolver.parse.FactParser;
 import dp.conflict.resolver.parse.JarParser;
 import dp.conflict.resolver.tree.CallTree;
 import dp.conflict.resolver.tree.ConflictType;
@@ -58,9 +59,13 @@ public class Main {
             e.printStackTrace();
         }
         tree.computeCallTree();
-        tree.getConflicts(ConflictType.TYPE_2);
         long currTime = (System.currentTimeMillis() - time) / 1000 / 60;
-
+        try {
+            FactParser parser = new FactParser(tree.getConflicts(ConflictType.TYPE_2));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println();
     }
 
 

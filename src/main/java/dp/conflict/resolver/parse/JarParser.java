@@ -73,7 +73,7 @@ public class JarParser {
      * @throws IOException          if reading file is not possible
      * @throws InterruptedException if the process gets interrupted
      */
-    public static String parseJar(String jarPath) throws IOException, InterruptedException {
+    public static String parseJarClasses(String jarPath) throws IOException, InterruptedException {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream buildOutputStream = new PrintStream(outputStream);

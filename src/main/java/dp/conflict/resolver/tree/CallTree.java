@@ -5,7 +5,6 @@ import spoon.compiler.ModelBuildingException;
 
 import javax.xml.bind.JAXBException;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /*********************************
@@ -269,7 +268,7 @@ public class CallTree {
     private boolean checkIfJarUsed(String jarPath) {
         String jarContent = null;
         try {
-            jarContent = JarParser.parseJar(jarPath);
+            jarContent = JarParser.parseJarClasses(jarPath);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
