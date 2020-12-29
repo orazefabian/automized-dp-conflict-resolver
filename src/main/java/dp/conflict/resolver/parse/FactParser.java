@@ -1,6 +1,7 @@
 package dp.conflict.resolver.parse;
 
 import dp.conflict.resolver.tree.CallNode;
+import dp.conflict.resolver.tree.Invocation;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -53,7 +54,6 @@ public class FactParser {
             parseHasMethodFact(node.getFromJar(), node.getClassName().replace(".", File.separator));
             if (node.getPrevious() != null) {
                 parsePreviousNodes(node.getPrevious());
-                parseJarConnections(node);
             }
         }
     }
@@ -73,7 +73,26 @@ public class FactParser {
             parseHasClassFact(node.getFromJar());
             parseHasMethodFact(node.getFromJar(), node.getClassName().replace(".", File.separator));
             parsePreviousNodes(node.getPrevious());
-            if (node.getPrevious() != null) parseJarConnections(node);
+            parseInvocationFact(node.getInvocations());
+        }
+    }
+
+    /**
+     * parser function that constructs invocation facts for a given list of invocations from a node:
+     * invocation(FromJarID, ToJarID, Object, MethodName, paramCount).
+     *
+     * @param invocations a list of invocation objects given by a CallNode
+     */
+    private void parseInvocationFact(List<Invocation> invocations) {
+        for (Invocation invocation : invocations) {
+            int fromID = this.idMap.get(invocation.getParentNode().getFromJar());
+            int toID = this.idMap.get(invocation.getNextNode().getFromJar());
+            String fromClass = invocation.getDeclaringType();
+            String name = invocation.getMethodSignature().substring(0, invocation.getMethodSignature().indexOf("("));
+            String signature = invocation.getMethodSignature().split(name)[1];
+            int paramCount = computeParamCount(signature);
+            this.factsBuilder.append("invocation(").append(fromID).append(",").append(toID).append(",\"").append(fromClass).append("\",\"")
+                    .append(name).append("\",").append(paramCount).append(").\n");
         }
     }
 
@@ -117,14 +136,11 @@ public class FactParser {
             // this line creates the fact for the jarClass
             this.factsBuilder.append("class(").append(this.currJarID - 1).append(",\"")
                     .append(cl.toString().replace(".class", "").replace(File.separator, ".")).append("\").\n");
-
-            // generate also method facts for curr class
-            // parseHasMethodFact(jarPath, cl.toString().replace(".class", ""));
         }
     }
 
     /**
-     * parser function that generates method facts following the signature: hasMethod(JarID, FullQualifiedClass, MethodSignature).
+     * parser function that generates method facts following the signature: hasMethod(JarID, FullQualifiedClass, ParamCount).
      *
      * @param jarPath   the full path to the jar
      * @param className the fully qualified Class name, separated by file separators
@@ -144,10 +160,24 @@ public class FactParser {
             String[] methodModifiers = mth.toString().substring(0, mth.toString().indexOf("(")).split(" ");
             String methodName = methodModifiers[methodModifiers.length - 1];
             String methodSignature = mth.toString().substring(mth.toString().indexOf("("), mth.toString().indexOf(";"));
+            int paramCount = computeParamCount(methodSignature);
             // create fact which maps method to a class and jar
             this.factsBuilder.append("method(").append(this.idMap.get(jarPath)).append(",\"")
-                    .append(className.replace(File.separator, ".")).append("\",\"").append(methodName).append("\",\"").append(methodSignature).append("\").\n");
+                    .append(className.replace(File.separator, ".")).append("\",\"").append(methodName)
+                    .append("\",").append(paramCount).append(").\n");
         }
+    }
+
+    /**
+     * helper function to get the count of parameters of a method
+     *
+     * @param methodSignature the signature of the method e.g. "(X,Y)"
+     * @return the amount of parameters
+     */
+    private int computeParamCount(String methodSignature) {
+        if (methodSignature.equals("()")) return 0;
+        String[] params = methodSignature.split(",");
+        return params.length;
     }
 
     /**
