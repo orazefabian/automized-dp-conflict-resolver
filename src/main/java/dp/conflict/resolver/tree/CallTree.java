@@ -1,5 +1,6 @@
 package dp.conflict.resolver.tree;
 
+import dp.conflict.resolver.loader.CentralMavenAPI;
 import dp.conflict.resolver.parse.JarParser;
 import spoon.compiler.ModelBuildingException;
 
@@ -209,7 +210,7 @@ public class CallTree {
         File pom = new File(nextJar.replace(".jar", ".pom"));
         if (!jar.exists() || !pom.exists()) {
             System.out.println("Jar and/or pom not found... proceeding with download");
-            this.model.downloadMissingFiles(nextJar);
+            CentralMavenAPI.downloadMissingFiles(nextJar);
         }
     }
 
@@ -283,8 +284,6 @@ public class CallTree {
         //}
         return remove;
     }
-
-
 
 
 }

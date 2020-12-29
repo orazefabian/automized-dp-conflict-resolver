@@ -39,19 +39,25 @@ public class FactParser {
         writer.close();
     }
 
+
     public String getFacts() {
         return this.factsBuilder.toString();
+    }
+
+    private void generateOptionalJarFacts(CallNode node) {
+
     }
 
     /**
      * computes logical facts for given conflict Nodes {@link CallNode} from a {@link dp.conflict.resolver.tree.CallTree}
      */
     private void generateFacts() {
-        //TODO: parse conflicts to facts
+        // compute facts for call tree
         for (CallNode node : this.conflictNodes) {
             parseJarFact(node.getFromJar());
             parseHasClassFact(node.getFromJar());
             parseHasMethodFact(node.getFromJar(), node.getClassName().replace(".", File.separator));
+            generateOptionalJarFacts(node);
             if (node.getPrevious() != null) {
                 parsePreviousNodes(node.getPrevious());
             }
@@ -195,10 +201,6 @@ public class FactParser {
     }
 
     //TODO: create facts for all optional jars, all different version (locally or otherwise, from central maven repo)
-
-    private void parseClashFact(int jarID, String className, String methodName) {
-
-    }
 
 
 }
