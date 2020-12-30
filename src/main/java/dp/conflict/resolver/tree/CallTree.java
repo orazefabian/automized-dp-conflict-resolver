@@ -269,7 +269,8 @@ public class CallTree {
     private boolean checkIfJarUsed(String jarPath) {
         String jarContent = null;
         try {
-            jarContent = JarParser.parseJarClasses(jarPath);
+            jarContent = JarParser.
+                    parseJarClasses(jarPath);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }

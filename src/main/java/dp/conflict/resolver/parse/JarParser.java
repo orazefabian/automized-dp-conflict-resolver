@@ -1,8 +1,11 @@
 package dp.conflict.resolver.parse;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /*********************************
@@ -115,6 +118,49 @@ public class JarParser {
         outputStream.flush();
         buildOutputStream.flush();
         return content;
+    }
+
+    /**
+     * retrieves the class names as an array from the JarParserClass
+     *
+     * @param jarPath the full path to the jar with .jar ending
+     * @return array with objects for each class from given jar
+     */
+    @NotNull
+    public static Object[] getClassNames(String jarPath) {
+        String content = null;
+        try {
+            content = JarParser.parseJarClasses(jarPath);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        // filter the content for valid classes
+        return Arrays.stream(content.split("\n")).filter(s -> {
+            if (s.endsWith(".class")) return true;
+            return false;
+        }).toArray();
+    }
+
+    /**
+     * retrieves the class methods as an array from the JarParserClass
+     *
+     * @param jarPath   the full path to the jar with .jar ending
+     * @param className the fullyQualified class name
+     * @return array with objects for each method from given jar inside given class
+     */
+    @NotNull
+    public static Object[] getMethodNames(String jarPath, String className) {
+        String content = null;
+        try {
+            content = JarParser.parseJarContent(jarPath, className);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        Object[] methods = Arrays.stream(content.split("\n")).filter(s -> {
+            if (s.endsWith(";")) return true;
+            return false;
+        }).toArray();
+        return methods;
     }
 
 }

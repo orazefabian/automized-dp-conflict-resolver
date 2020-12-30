@@ -1,7 +1,10 @@
+import com.strobel.decompiler.ast.Node;
 import dp.conflict.resolver.parse.FactParser;
 import dp.conflict.resolver.parse.JarParser;
 import dp.conflict.resolver.tree.CallTree;
 import dp.conflict.resolver.tree.ConflictType;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 import spoon.JarLauncher;
 import spoon.MavenLauncher;
 import spoon.reflect.CtModel;
@@ -14,8 +17,11 @@ import spoon.reflect.reference.CtReference;
 import spoon.reflect.visitor.filter.FieldAccessFilter;
 import spoon.reflect.visitor.filter.TypeFilter;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 
 public class Main {
 
@@ -49,7 +55,8 @@ public class Main {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.exit(0);*/
+        System.exit(0);
+        */
 
         long time = System.currentTimeMillis();
         CallTree tree = null;
