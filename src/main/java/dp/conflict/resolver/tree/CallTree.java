@@ -1,10 +1,11 @@
 package dp.conflict.resolver.tree;
 
+import dp.conflict.resolver.loader.CentralMavenAPI;
+import dp.conflict.resolver.parse.JarParser;
 import spoon.compiler.ModelBuildingException;
 
 import javax.xml.bind.JAXBException;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /*********************************
@@ -209,7 +210,7 @@ public class CallTree {
         File pom = new File(nextJar.replace(".jar", ".pom"));
         if (!jar.exists() || !pom.exists()) {
             System.out.println("Jar and/or pom not found... proceeding with download");
-            this.model.downloadMissingFiles(nextJar);
+            CentralMavenAPI.downloadMissingFiles(nextJar);
         }
     }
 
@@ -268,7 +269,8 @@ public class CallTree {
     private boolean checkIfJarUsed(String jarPath) {
         String jarContent = null;
         try {
-            jarContent = parseJar(jarPath);
+            jarContent = JarParser.
+                    parseJarClasses(jarPath);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
@@ -282,59 +284,6 @@ public class CallTree {
         }
         //}
         return remove;
-    }
-
-    /**
-     * helper function which parses the contents from a .jar file to a string
-     *
-     * @param jarPath the complete path to the jar file
-     * @return a String containing all declared files (classes) in a jar
-     * @throws IOException          if reading file is not possible
-     * @throws InterruptedException if the process gets interrupted
-     */
-    private String parseJar(String jarPath) throws IOException, InterruptedException {
-
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PrintStream buildOutputStream = new PrintStream(outputStream);
-
-        // maybe adapt for windows?
-        String[] structure = jarPath.split("/");
-        StringBuilder folder = new StringBuilder();
-        String jar = structure[structure.length - 1];
-        for (int i = 0; i < structure.length - 1; i++) {
-            folder.append(structure[i]).append("/");
-        }
-        ProcessBuilder pb;
-
-        if (System.getProperty("os.name").startsWith("Windows")) {
-            pb = new ProcessBuilder("cmd.exe", "/c", "cd " + folder.toString() + " && jar tf " + jar);
-        } else {
-            pb = new ProcessBuilder("/bin/bash", "-c", "cd " + folder.toString() + " ; jar tf " + jar);
-        }
-
-        Process p = pb.start();
-        BufferedReader reader =
-                new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-        //String content = "";
-        List<String> lines = new ArrayList<>();
-        String line = "";
-        System.out.println("Preprocessing jar: " + jarPath + "...");
-        while ((line = reader.readLine()) != null) {
-            lines.add(line);
-            //content = content + line + System.getProperty("line.separator");
-            if (buildOutputStream != null) {
-                buildOutputStream.println(line);
-                //listener //Refactor that only listeners get called here (and make a listener for the print stream
-                String finalLine = line;
-                // this.repairListeners.forEach(x->x.newBuildLine(finalLine));
-            }
-        }
-        p.waitFor();
-        String content = outputStream.toString(StandardCharsets.UTF_8);
-        outputStream.flush();
-        buildOutputStream.flush();
-        return content;
     }
 
 

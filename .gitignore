@@ -31,3 +31,7 @@ hs_err_pid*
 
 # spoon
 *.tmp
+
+# clingo
+*.lp
+*.asp
