@@ -23,7 +23,7 @@ public class FactParser {
     private final List<CallNode> conflictNodes;
     private final StringBuilder factsBuilder;
     private final FileWriter writer;
-    private final String ROOT_DIR = System.getProperty("user.dir");
+    private final static String ROOT_DIR = System.getProperty("user.dir");
     private final File factsFile;
     private final Map<String, Integer> idMap;
     private final Set<String> alreadyLoadedJars;
@@ -120,7 +120,7 @@ public class FactParser {
             String name = invocation.getMethodSignature().substring(0, invocation.getMethodSignature().indexOf("("));
             String signature = invocation.getMethodSignature().split(name)[1];
             int paramCount = computeParamCount(signature);
-            this.factsBuilder.append("invocation(").append(fromID).append(",").append(toID).append(",\"").append(fromClass).append("\",\"")
+            this.factsBuilder.append("\ninvocation(").append(fromID).append(",").append(toID).append(",\"").append(fromClass).append("\",\"")
                     .append(name).append("\",").append(paramCount).append(").\n");
         }
     }
@@ -138,7 +138,7 @@ public class FactParser {
         String version = construct[construct.length - 2];
         String artifactID = construct[construct.length - 3];
         String groupID = jarPath.substring(jarPath.indexOf(repoSeparator) + repoSeparator.length(), jarPath.indexOf(artifactID) - 1).replace(File.separator, ".");
-        if (!this.idMap.keySet().contains(jarPath)) {
+        if (!this.idMap.containsKey(jarPath)) {
             this.idMap.put(jarPath, this.currJarID++);
             int nextJarID = this.idMap.get(jarPath);
             // this line creates the fact in asp language syntax
@@ -206,7 +206,7 @@ public class FactParser {
         String currJar = node.getFromJar();
         String prevJar = node.getPrevious().getFromJar();
         int fromID = 0;
-        if (this.idMap.keySet().contains(prevJar)) fromID = this.idMap.get(prevJar);
+        if (this.idMap.containsKey(prevJar)) fromID = this.idMap.get(prevJar);
         int toID = this.idMap.get(currJar);
         this.factsBuilder.append("jarEdge(").append(fromID).append(",").append(toID).append(").\n");
     }
