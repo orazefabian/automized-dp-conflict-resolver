@@ -1,8 +1,11 @@
 package dp.conflict.resolver.parse;
 
+import dp.conflict.resolver.base.ImplSpoon;
 import dp.conflict.resolver.loader.CentralMavenAPI;
 import dp.conflict.resolver.tree.CallNode;
 import dp.conflict.resolver.tree.Invocation;
+import org.apache.maven.pom._4_0.Dependency;
+import org.apache.maven.pom._4_0.Model;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -74,6 +77,31 @@ public class FactParser {
             generateOptionalJarFacts(node);
             parsePreviousNodes(node.getPrevious());
             parseInvocationFact(node.getInvocations());
+            parseDPConnection(node);
+        } else {
+            try {
+                parseRoot(node);
+            } catch (NullPointerException e) {
+                System.out.println("Not yet finished with tree traversal");
+            }
+        }
+    }
+
+    /**
+     * parses all root invocations as facts: invocation(0["indicates root project"], toJarID, QualifiedName, MethodName, ParameterCount).
+     *
+     * @param node the root node of the conflict tree
+     */
+    private void parseRoot(CallNode node) throws NullPointerException {
+        for (Invocation inv : node.getInvocations()) {
+            int fromID = 0;
+            int toID = this.idMap.get(inv.getNextNode().getFromJar());
+            String fromClass = inv.getDeclaringType();
+            String name = inv.getMethodSignature().substring(0, inv.getMethodSignature().indexOf("("));
+            String signature = inv.getMethodSignature().split(name)[1];
+            int paramCount = computeParamCount(signature);
+            this.factsBuilder.append("\ninvocation(").append(fromID).append(",").append(toID).append(",\"").append(fromClass).append("\",\"")
+                    .append(name).append("\",").append(paramCount).append(").\n");
         }
     }
 
@@ -101,6 +129,7 @@ public class FactParser {
                 if (dir.isDirectory()) {
                     String optionJarVersionPath = pathToVersionsDir + dir.getName() + File.separator + artifactID + "-" + dir.getName() + ".jar";
                     parseOptionalJarFacts(optionJarVersionPath);
+                    parseDPConnection(optionJarVersionPath);
                 }
             }
         }
@@ -198,17 +227,52 @@ public class FactParser {
     }
 
     /**
-     * parser function that computes facts for modeling edges between jars: jarEdge(FromJarID, ToJarID).
+     * parser function that computes facts for modeling edges between jars: connection(FromJarID, ToJarID).
+     * should be called after previous nodes have already been processed
      *
-     * @param node the current node that should correspond to the ToJarID
+     * @param node the current node that should correspond to the FromJarID
      */
-    private void parseJarConnections(CallNode node) {
+    private void parseDPConnection(CallNode node) {
         String currJar = node.getFromJar();
-        String prevJar = node.getPrevious().getFromJar();
-        int fromID = 0;
-        if (this.idMap.containsKey(prevJar)) fromID = this.idMap.get(prevJar);
-        int toID = this.idMap.get(currJar);
-        this.factsBuilder.append("jarEdge(").append(fromID).append(",").append(toID).append(").\n");
+        if (this.idMap.containsKey(currJar)) {
+            int fromID = this.idMap.get(currJar);
+            for (String dp : node.getCurrPomJarDependencies()) {
+                int toID = 0;
+                if (this.idMap.containsKey(dp)) {
+                    toID = this.idMap.get(dp);
+                    this.factsBuilder.append("connection(").append(fromID).append(",").append(toID).append(").\n");
+                }
+            }
+        }
+    }
+
+    /**
+     * overloaded parser function for computing edges between jars, for parsing optional jar dps
+     *
+     * @param jarPath the full path with .jar ending to a local jar file
+     */
+    private void parseDPConnection(String jarPath) {
+        if (this.idMap.containsKey(jarPath)) {
+            int fromID = this.idMap.get(jarPath);
+            ImplSpoon impl = new ImplSpoon(jarPath, null);
+            Model model = impl.getPomModel();
+            try {
+                for (Dependency dp : model.getDependencies().getDependency()) {
+                    String construct = jarPath.substring(0, jarPath.indexOf("repository/")) + "repository/";
+                    String jarDp = construct + dp.getGroupId().replace(".", File.separator)
+                            + File.separator + dp.getArtifactId() + File.separator +
+                            dp.getVersion() + File.separator + dp.getArtifactId() + "-" + dp.getVersion() + ".jar";
+                    // parse connection if from id and to id are present in idMap
+                    if (this.idMap.containsKey(jarDp)) {
+                        int toID = this.idMap.get(jarDp);
+                        this.factsBuilder.append("connection(").append(fromID).append(",").append(toID).append(").\n");
+                    }
+                }
+            } catch (NullPointerException e) {
+                System.err.println("No dependencies for: " + jarPath);
+            }
+
+        }
     }
 
     /**
