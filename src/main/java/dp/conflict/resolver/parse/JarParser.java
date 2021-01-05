@@ -47,16 +47,16 @@ public class JarParser {
         BufferedReader reader =
                 new BufferedReader(new InputStreamReader(p.getInputStream()));
 
-        //String content = "";
+        // String content = "";
         List<String> lines = new ArrayList<>();
         String line = "";
         System.out.println("Processing jar: " + jarPath + "  --> class: " + fullyQualifiedClass + "...");
         while ((line = reader.readLine()) != null) {
             lines.add(line);
-            //content = content + line + System.getProperty("line.separator");
+            // content = content + line + System.getProperty("line.separator");
             if (buildOutputStream != null) {
                 buildOutputStream.println(line);
-                //listener //Refactor that only listeners get called here (and make a listener for the print stream
+                // listener // Refactor that only listeners get called here (and make a listener for the print stream
                 String finalLine = line;
                 // this.repairListeners.forEach(x->x.newBuildLine(finalLine));
             }

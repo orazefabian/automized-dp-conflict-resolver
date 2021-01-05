@@ -306,7 +306,7 @@ public class FactParser {
                     int paramCount = computeParamCount(methodSignature);
                     // create fact which maps method to a class and jar
                     this.factsBuilder.append("method(").append(this.idMap.get(jarPath)).append(",\"")
-                            .append(cl.toString().replace(File.separator, ".")).append("\",\"").append(methodName)
+                            .append((clName).replace(File.separator, ".")).append("\",\"").append(methodName)
                             .append("\",").append(paramCount).append(").\n");
                 }
             }
