@@ -26,7 +26,7 @@ public class FactParser {
     private final List<CallNode> conflictNodes;
     private final StringBuilder factsBuilder;
     private final FileWriter writer;
-    private final static String ROOT_DIR = System.getProperty("user.dir");
+    private final static String ROOT_DIR = System.getProperty("user.dir") +"/src/main/java/dp/conflict/resolver/asp";
     private final File factsFile;
     private final Map<String, Integer> idMap;
     private final Set<String> alreadyLoadedJars;
