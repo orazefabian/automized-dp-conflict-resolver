@@ -33,5 +33,5 @@ hs_err_pid*
 *.tmp
 
 # clingo
-*.lp
-*.asp
+# *.lp
+# *.asp
