@@ -11,15 +11,18 @@ import spoon.SpoonException;
 import spoon.reflect.CtModel;
 import spoon.reflect.code.CtConstructorCall;
 import spoon.reflect.code.CtInvocation;
+import spoon.reflect.code.CtStatement;
 import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtType;
 import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.filter.TypeFilter;
+import spoon.support.reflect.code.CtConstructorCallImpl;
+import spoon.support.reflect.code.CtInvocationImpl;
 import spoon.support.reflect.code.CtLocalVariableImpl;
+import spoon.support.reflect.reference.CtTypeReferenceImpl;
 
 import javax.xml.bind.JAXBException;
 import java.io.*;
-import java.net.URL;
 import java.util.*;
 
 /*********************************
@@ -223,6 +226,44 @@ public class SpoonModel {
     private void searchInvocation(CtMethod method, CtType currClass, List<Invocation> leafInvocations) {
         // get all method body elements
         String currClassName = currClass.getQualifiedName();
+        /*if (method.getBody().getStatements() != null){
+        List<CtStatement> statements = method.getBody().getStatements();
+        Map<CtInvocationImpl, String> methodCalls = new HashMap(); // for mapping the target of a methodCall to its executable
+        Map<String, CtTypeReferenceImpl> references = new HashMap<>(); // for mapping object names to the their correct declaring type
+
+        // iterate statements and check how objects are declared in constructors
+        // if a statement is an invocation it is added with its target to the methodCalls map
+        for (CtStatement st : statements) {
+            CtConstructorCallImpl constructorCall;
+            if (st instanceof CtLocalVariableImpl) {
+                CtLocalVariableImpl var = (CtLocalVariableImpl) st;
+                if (var.getDefaultExpression() instanceof CtConstructorCallImpl) {
+                    constructorCall = (CtConstructorCallImpl) var.getDefaultExpression();
+                    references.put(var.getSimpleName(), (CtTypeReferenceImpl) constructorCall.getExecutable().getDeclaringType());
+                }
+            } else if (st instanceof CtInvocationImpl) {
+                CtInvocationImpl var = (CtInvocationImpl) st;
+                methodCalls.put(var, var.getTarget().toString());
+            }
+        }
+        CallNode currNode = null;
+        if (!methodCalls.isEmpty()) {
+            currNode = getNodeByName(currClassName, this.currProjectPath);
+            if (leafInvocations != null) appendNodeToLeaf(currNode, leafInvocations);
+        }
+        for (CtInvocationImpl methodSignature : methodCalls.keySet()) {
+            try {
+                String targetObject = methodCalls.get(methodSignature);
+                CtTypeReferenceImpl fromType = references.get(targetObject);
+                if (checkJDKClasses(references.get(targetObject).getQualifiedName())) {
+                    Invocation invocation = new Invocation(methodSignature.getExecutable().toString(), fromType.getQualifiedName(), currNode);
+                    currNode.addInvocation(invocation);
+                }
+            } catch (Exception e) {
+                System.err.println("Error iterating method calls in class: " + currClassName);
+            }
+        }}*/
+
         List<CtInvocation> methodCalls = method.getElements(new TypeFilter<>(CtInvocation.class));
         List<CtConstructorCall> constructorCalls = method.filterChildren(new TypeFilter<>(CtConstructorCall.class)).list();
         CallNode currNode = null;
@@ -252,7 +293,7 @@ public class SpoonModel {
     private void checkIfInterfaceIsReferenced(Invocation invocation, List<CtConstructorCall> constructorCalls) {
         try {
             for (CtConstructorCall call : constructorCalls) {
-                if (invocation.getDeclaringType().equals(call.getParent(CtLocalVariableImpl.class).getType().getSimpleName())) {
+                if (invocation.getDeclaringType().equals(call.getParent(CtLocalVariableImpl.class).getType().toString())) {
                     invocation.setDeclaringType(call.getExecutable().getDeclaringType().toString());
                 }
             }
