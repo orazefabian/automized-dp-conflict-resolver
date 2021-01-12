@@ -11,15 +11,11 @@ import spoon.SpoonException;
 import spoon.reflect.CtModel;
 import spoon.reflect.code.CtConstructorCall;
 import spoon.reflect.code.CtInvocation;
-import spoon.reflect.code.CtStatement;
 import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtType;
 import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.filter.TypeFilter;
-import spoon.support.reflect.code.CtConstructorCallImpl;
-import spoon.support.reflect.code.CtInvocationImpl;
 import spoon.support.reflect.code.CtLocalVariableImpl;
-import spoon.support.reflect.reference.CtTypeReferenceImpl;
 
 import javax.xml.bind.JAXBException;
 import java.io.*;
@@ -31,7 +27,7 @@ import java.util.*;
 
 public class SpoonModel {
 
-    private final ImplSpoon base;
+    private List<ImplSpoon> pomModels;
     private Launcher launcher;
     private final CtModel ctModel;
     private String pathM2;
@@ -51,11 +47,11 @@ public class SpoonModel {
     public SpoonModel(String pathToProject, boolean analyzeFromJar) throws Exception {
         this.currProjectPath = pathToProject;
         setPathM2();
-        initLauncher(analyzeFromJar);
         this.classNames = new ArrayList<>();
         this.jarPaths = new HashMap<>();
-        this.base = new ImplSpoon(pathToProject, this.pathM2);
+        this.pomModels = new ArrayList<>();
         System.out.println("Starting to build spoon model from " + pathToProject + "...");
+        initLauncherAndCreatePomModels(analyzeFromJar);
         this.ctModel = this.launcher.buildModel();
         System.out.println("Building spoon model finished");
         callNodes = new ArrayList<>();
@@ -64,6 +60,26 @@ public class SpoonModel {
             computeJarPaths();
         } catch (NullPointerException e) {
             System.err.println("No dependencies for project: " + pathToProject);
+        }
+    }
+
+    /**
+     * should get all pom files from spoon model, also from sub modules, important for a maven launcher
+     *
+     * @param file the file which should be checked for pom occurrences
+     */
+    private void searchModulesForPom(File file) {
+        //TODO : add all poms
+        if (file.isDirectory()) {
+            for (File f : file.listFiles()) {
+                if (f.isDirectory()) {
+                    // recursive call of next directory search
+                    searchModulesForPom(f);
+                } else if (f.getName().toLowerCase().equals("pom.xml")) {
+                    this.pomModels.add(new ImplSpoon(f.getParentFile().getAbsolutePath() + File.separator, this.pathM2));
+                }
+
+            }
         }
     }
 
@@ -84,13 +100,15 @@ public class SpoonModel {
     }
 
     /**
-     * function which initializes a new spoon launcher
+     * function which initializes a new spoon launcher and fills pomModel list with all poms located in Maven-project/jar
      *
      * @param analyzeFromJar whether the launcher will be a JarLauncher of MavenLauncher
      */
-    private void initLauncher(boolean analyzeFromJar) {
+    private void initLauncherAndCreatePomModels(boolean analyzeFromJar) {
         if (!analyzeFromJar) {
             this.launcher = new MavenLauncher(this.currProjectPath, MavenLauncher.SOURCE_TYPE.ALL_SOURCE);
+            searchModulesForPom(new File(currProjectPath));
+
         } else {
             File jar = new File(this.currProjectPath);
             File pom = new File(this.currProjectPath.replace(".jar", ".pom"));
@@ -99,6 +117,9 @@ public class SpoonModel {
                 CentralMavenAPI.downloadMissingFiles(this.currProjectPath);
             }
             this.launcher = new JarLauncher(this.currProjectPath);
+            // add new pom model
+            this.pomModels.add(new ImplSpoon(this.currProjectPath, this.pathM2));
+
         }
     }
 
@@ -132,39 +153,42 @@ public class SpoonModel {
      */
     public Map<String, Boolean> computeJarPaths() throws NullPointerException, IOException, InterruptedException, JAXBException {
         this.jarPaths.clear();
-        for (Dependency dp : this.base.getPomModel().getDependencies().getDependency()) {
-            if (dp.getVersion().contains("${")) {
-                File currPro = new File(this.currProjectPath);
-                String pathToJar;
-                boolean fromMaven;
-                if (this.launcher instanceof MavenLauncher) {
-                    pathToJar = currPro.getAbsolutePath();
-                    fromMaven = true;
-                } else {
-                    pathToJar = currPro.getAbsolutePath().substring(0, currPro.getAbsolutePath().lastIndexOf(File.separator));
-                    fromMaven = false;
-                }
-                // must write pom.xml file before creating effective pom, because it does not recognize .pom endings
-                this.base.writePom(new File(pathToJar + File.separator + "pom.xml"), this.base.getPomModel());
-                File effectivePom = this.base.createEffectivePom(currPro, fromMaven);
+        //TODO get all possible poms
+        for (ImplSpoon model : this.pomModels) {
+            for (Dependency dp : model.getPomModel().getDependencies().getDependency()) {
+                if (dp.getVersion().contains("${")) {
+                    File currPro = new File(this.currProjectPath);
+                    String pathToJar;
+                    boolean fromMaven;
+                    if (this.launcher instanceof MavenLauncher) {
+                        pathToJar = currPro.getAbsolutePath();
+                        fromMaven = true;
+                    } else {
+                        pathToJar = currPro.getAbsolutePath().substring(0, currPro.getAbsolutePath().lastIndexOf(File.separator));
+                        fromMaven = false;
+                    }
+                    // must write pom.xml file before creating effective pom, because it does not recognize .pom endings
+                    model.writePom(new File(pathToJar + File.separator + "pom.xml"), model.getPomModel());
+                    File effectivePom = model.createEffectivePom(currPro, fromMaven);
 
-                Model pomModel = this.base.createEffectivePomModel(effectivePom);
-                for (Dependency dpEff : pomModel.getDependencies().getDependency()) {
-                    if (dpEff.getGroupId().equals(dp.getGroupId()) && dpEff.getArtifactId().equals(dp.getArtifactId())) {
-                        // set the correct version to the current base pom model
-                        dp.setVersion(dpEff.getVersion());
+                    Model pomModel = model.createEffectivePomModel(effectivePom);
+                    for (Dependency dpEff : pomModel.getDependencies().getDependency()) {
+                        if (dpEff.getGroupId().equals(dp.getGroupId()) && dpEff.getArtifactId().equals(dp.getArtifactId())) {
+                            // set the correct version to the current base pom model
+                            dp.setVersion(dpEff.getVersion());
+                        }
                     }
                 }
-            }
-            String postFixJar = dp.getArtifactId() + "-" + dp.getVersion() + ".jar";
-            String currPath;
-            if (System.getProperty("os.name").startsWith("Windows")) {
-                currPath = this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '\\') + "\\" + dp.getVersion() + "\\" + postFixJar;
-            } else {
-                currPath = this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '/') + "/" + dp.getVersion() + "/" + postFixJar;
-            }
+                String postFixJar = dp.getArtifactId() + "-" + dp.getVersion() + ".jar";
+                String currPath;
+                if (System.getProperty("os.name").startsWith("Windows")) {
+                    currPath = this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '\\') + "\\" + dp.getVersion() + "\\" + postFixJar;
+                } else {
+                    currPath = this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '/') + "/" + dp.getVersion() + "/" + postFixJar;
+                }
 
-            jarPaths.put(currPath, false);
+                jarPaths.put(currPath, false);
+            }
         }
         return this.jarPaths;
 
@@ -226,43 +250,6 @@ public class SpoonModel {
     private void searchInvocation(CtMethod method, CtType currClass, List<Invocation> leafInvocations) {
         // get all method body elements
         String currClassName = currClass.getQualifiedName();
-        /*if (method.getBody().getStatements() != null){
-        List<CtStatement> statements = method.getBody().getStatements();
-        Map<CtInvocationImpl, String> methodCalls = new HashMap(); // for mapping the target of a methodCall to its executable
-        Map<String, CtTypeReferenceImpl> references = new HashMap<>(); // for mapping object names to the their correct declaring type
-
-        // iterate statements and check how objects are declared in constructors
-        // if a statement is an invocation it is added with its target to the methodCalls map
-        for (CtStatement st : statements) {
-            CtConstructorCallImpl constructorCall;
-            if (st instanceof CtLocalVariableImpl) {
-                CtLocalVariableImpl var = (CtLocalVariableImpl) st;
-                if (var.getDefaultExpression() instanceof CtConstructorCallImpl) {
-                    constructorCall = (CtConstructorCallImpl) var.getDefaultExpression();
-                    references.put(var.getSimpleName(), (CtTypeReferenceImpl) constructorCall.getExecutable().getDeclaringType());
-                }
-            } else if (st instanceof CtInvocationImpl) {
-                CtInvocationImpl var = (CtInvocationImpl) st;
-                methodCalls.put(var, var.getTarget().toString());
-            }
-        }
-        CallNode currNode = null;
-        if (!methodCalls.isEmpty()) {
-            currNode = getNodeByName(currClassName, this.currProjectPath);
-            if (leafInvocations != null) appendNodeToLeaf(currNode, leafInvocations);
-        }
-        for (CtInvocationImpl methodSignature : methodCalls.keySet()) {
-            try {
-                String targetObject = methodCalls.get(methodSignature);
-                CtTypeReferenceImpl fromType = references.get(targetObject);
-                if (checkJDKClasses(references.get(targetObject).getQualifiedName())) {
-                    Invocation invocation = new Invocation(methodSignature.getExecutable().toString(), fromType.getQualifiedName(), currNode);
-                    currNode.addInvocation(invocation);
-                }
-            } catch (Exception e) {
-                System.err.println("Error iterating method calls in class: " + currClassName);
-            }
-        }}*/
 
         List<CtInvocation> methodCalls = method.getElements(new TypeFilter<>(CtInvocation.class));
         List<CtConstructorCall> constructorCalls = method.filterChildren(new TypeFilter<>(CtConstructorCall.class)).list();
@@ -290,6 +277,12 @@ public class SpoonModel {
         }
     }
 
+    /**
+     * check if the declaring type of a invocations refers to a interface and if so, it is switched with the correct object from a constructor call
+     *
+     * @param invocation       the newly created invocations
+     * @param constructorCalls a list of {@link CtConstructorCall}
+     */
     private void checkIfInterfaceIsReferenced(Invocation invocation, List<CtConstructorCall> constructorCalls) {
         try {
             for (CtConstructorCall call : constructorCalls) {

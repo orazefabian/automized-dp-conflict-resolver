@@ -18,8 +18,9 @@ clash(X,X2,C,N) :- includeJar(X), includeJar(X2), jar(X,Y,Z,V), jar(X2,Y,Z,V2), 
 clash(D,D2,C,N) :- includeJar(X), includeJar(X2), connection(X,D), connection(X2,D2), jar(D,Y,Z,V), jar(D2,Y,Z,V2), method(D,C,N,S), method(D2,C,N,S2), D != D2, S != S2.
 
 % CONSTRAINTS
+
 % if a minimum amount of included jars are satisfying the problem, do not add other jars
-% TODO
+:~ includeJar(X).[1,X]
 
 % the amount of clashes must be 0
 :- #count{X,X2,C,N : clash(X,X2,C,N)} != 0.
@@ -32,3 +33,5 @@ clash(D,D2,C,N) :- includeJar(X), includeJar(X2), connection(X,D), connection(X2
 #show missingMethod/3.
 #show clash/4.
 
+%options
+%--opt-mode=optN --quiet=1,2

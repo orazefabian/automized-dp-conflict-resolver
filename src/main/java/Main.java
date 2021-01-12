@@ -1,4 +1,5 @@
 import com.strobel.decompiler.ast.Node;
+import dp.conflict.resolver.asp.ClingoSolver;
 import dp.conflict.resolver.parse.FactParser;
 import dp.conflict.resolver.parse.JarParser;
 import dp.conflict.resolver.tree.CallTree;
@@ -28,7 +29,7 @@ public class Main {
     public static void main(String[] args) {
 
         String test = "/Users/fabian/Projects/Sample/runtime_conflict_sample/Project_A/";
-        String target = "/Users/fabian/Projects/Sample/";
+        String target = "/Users/fabian/Projects/Sample/accumulo/";
         String curr = "/Users/fabian/Projects/automized-DP-conflict-resolver/automized-dp-conflict-resolver/";
      /*
         String target = "/Users/fabian/Projects/Sample/commons-collections/";
@@ -72,6 +73,7 @@ public class Main {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         System.out.println();
     }
 
