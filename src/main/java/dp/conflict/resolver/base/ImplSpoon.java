@@ -16,14 +16,12 @@ import java.util.List;
 
 public class ImplSpoon extends DPUpdaterBase {
 
-    private final String repoPath;
 
     /**
      * @param pathToRepo String pointing to the root repo directory
      */
-    public ImplSpoon(String pathToRepo, String localRepoPath) {
+    public ImplSpoon(String pathToRepo) {
         super(pathToRepo);
-        this.repoPath = localRepoPath;
         try {
             updateDependencies();
         } catch (Exception e) {
@@ -49,6 +47,10 @@ public class ImplSpoon extends DPUpdaterBase {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public String getPath() {
+        return this.path;
     }
 
     @Override

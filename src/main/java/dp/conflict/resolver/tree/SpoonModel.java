@@ -16,6 +16,7 @@ import spoon.reflect.declaration.CtType;
 import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.filter.TypeFilter;
 import spoon.support.reflect.code.CtLocalVariableImpl;
+import spoon.support.reflect.declaration.CtMethodImpl;
 
 import javax.xml.bind.JAXBException;
 import java.io.*;
@@ -27,7 +28,8 @@ import java.util.*;
 
 public class SpoonModel {
 
-    private List<ImplSpoon> pomModels;
+    private List<ImplSpoon> pomModels; // holds all possible pom models of sub modules
+    private ImplSpoon baseModel; // the base pom model from the root project
     private Launcher launcher;
     private final CtModel ctModel;
     private String pathM2;
@@ -69,14 +71,13 @@ public class SpoonModel {
      * @param file the file which should be checked for pom occurrences
      */
     private void searchModulesForPom(File file) {
-        //TODO : add all poms
         if (file.isDirectory()) {
             for (File f : file.listFiles()) {
                 if (f.isDirectory()) {
                     // recursive call of next directory search
                     searchModulesForPom(f);
-                } else if (f.getName().toLowerCase().equals("pom.xml")) {
-                    this.pomModels.add(new ImplSpoon(f.getParentFile().getAbsolutePath() + File.separator, this.pathM2));
+                } else if (f.getName().toLowerCase().equals("pom.xml") && !f.getAbsolutePath().equals(this.currProjectPath)) {
+                    this.pomModels.add(new ImplSpoon(f.getParentFile().getAbsolutePath() + File.separator));
                 }
 
             }
@@ -107,6 +108,7 @@ public class SpoonModel {
     private void initLauncherAndCreatePomModels(boolean analyzeFromJar) {
         if (!analyzeFromJar) {
             this.launcher = new MavenLauncher(this.currProjectPath, MavenLauncher.SOURCE_TYPE.ALL_SOURCE);
+            this.baseModel = new ImplSpoon(this.currProjectPath);
             searchModulesForPom(new File(currProjectPath));
 
         } else {
@@ -118,8 +120,7 @@ public class SpoonModel {
             }
             this.launcher = new JarLauncher(this.currProjectPath);
             // add new pom model
-            this.pomModels.add(new ImplSpoon(this.currProjectPath, this.pathM2));
-
+            this.baseModel = new ImplSpoon(this.currProjectPath);
         }
     }
 
@@ -128,7 +129,10 @@ public class SpoonModel {
      */
     private void initClassNames() {
         this.classNames.clear();
-        for (CtType<?> c : this.ctModel.getAllTypes()) this.classNames.add(c.getSimpleName());
+        for (Object type : this.ctModel.filterChildren(new TypeFilter<>(CtType.class)).list()) {
+            CtType c = (CtType) type;
+            this.classNames.add(c.getSimpleName());
+        }
     }
 
     /**
@@ -153,45 +157,78 @@ public class SpoonModel {
      */
     public Map<String, Boolean> computeJarPaths() throws NullPointerException, IOException, InterruptedException, JAXBException {
         this.jarPaths.clear();
-        //TODO get all possible poms
+        checkModelForDPs(this.baseModel);
         for (ImplSpoon model : this.pomModels) {
-            for (Dependency dp : model.getPomModel().getDependencies().getDependency()) {
-                if (dp.getVersion().contains("${")) {
-                    File currPro = new File(this.currProjectPath);
-                    String pathToJar;
-                    boolean fromMaven;
-                    if (this.launcher instanceof MavenLauncher) {
-                        pathToJar = currPro.getAbsolutePath();
-                        fromMaven = true;
-                    } else {
-                        pathToJar = currPro.getAbsolutePath().substring(0, currPro.getAbsolutePath().lastIndexOf(File.separator));
-                        fromMaven = false;
-                    }
-                    // must write pom.xml file before creating effective pom, because it does not recognize .pom endings
-                    model.writePom(new File(pathToJar + File.separator + "pom.xml"), model.getPomModel());
-                    File effectivePom = model.createEffectivePom(currPro, fromMaven);
-
-                    Model pomModel = model.createEffectivePomModel(effectivePom);
-                    for (Dependency dpEff : pomModel.getDependencies().getDependency()) {
-                        if (dpEff.getGroupId().equals(dp.getGroupId()) && dpEff.getArtifactId().equals(dp.getArtifactId())) {
-                            // set the correct version to the current base pom model
-                            dp.setVersion(dpEff.getVersion());
-                        }
-                    }
-                }
-                String postFixJar = dp.getArtifactId() + "-" + dp.getVersion() + ".jar";
-                String currPath;
-                if (System.getProperty("os.name").startsWith("Windows")) {
-                    currPath = this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '\\') + "\\" + dp.getVersion() + "\\" + postFixJar;
-                } else {
-                    currPath = this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '/') + "/" + dp.getVersion() + "/" + postFixJar;
-                }
-
-                jarPaths.put(currPath, false);
-            }
+            checkModelForDPs(model);
         }
         return this.jarPaths;
 
+    }
+
+    /**
+     * analyzes an model for its dependencies and adds them to local jarPaths list
+     *
+     * @param model {@link ImplSpoon}
+     * @throws JAXBException        if marshalling fails
+     * @throws IOException          if reading or writing pom fails
+     * @throws InterruptedException if process gets interrupted
+     */
+    private void checkModelForDPs(ImplSpoon model) throws JAXBException, IOException, InterruptedException {
+        Model effPom = getEffectivePomModel(model);
+        try {
+            for (Dependency dp : model.getPomModel().getDependencies().getDependency()) {
+                String version = null;
+                for (Dependency dpEff : effPom.getDependencies().getDependency()) {
+                    if (dpEff.getGroupId().equals(dp.getGroupId()) && dpEff.getArtifactId().equals(dp.getArtifactId())) {
+                        // set the correct version
+                        version = dpEff.getVersion();
+                    }
+                }
+                String postFixJar = dp.getArtifactId() + "-" + version + ".jar";
+                String currPath;
+                if (System.getProperty("os.name").startsWith("Windows")) {
+                    currPath = this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '\\') + "\\" + version + "\\" + postFixJar;
+                } else {
+                    currPath = this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '/') + "/" + version + "/" + postFixJar;
+                }
+
+                this.jarPaths.put(currPath, false);
+            }
+        } catch (NullPointerException e) {
+            System.err.println("No dependencies, skipping pom...");
+        }
+    }
+
+    /**
+     * creates effective pom via the ImplSpoon object and retrieves the version from it
+     *
+     * @param model the ImplSpoon model which refers to a certain pom.xml
+     * @return the version from the effective pom
+     * @throws JAXBException        if marshalling fails
+     * @throws IOException          if reading or writing file fails
+     * @throws InterruptedException if process gets interrupted
+     */
+    private Model getEffectivePomModel(ImplSpoon model) throws JAXBException, IOException, InterruptedException {
+        File currPro = new File(model.getPath());
+        String currPath;
+        boolean fromMaven;
+        if (this.launcher instanceof MavenLauncher) {
+            currPath = currPro.getAbsolutePath();
+            fromMaven = true;
+        } else {
+            currPath = currPro.getAbsolutePath().substring(0, currPro.getAbsolutePath().lastIndexOf(File.separator));
+            fromMaven = false;
+        }
+        File pom = new File(currPath + File.separator + "pom.xml");
+        if (!pom.exists()) {
+            // must write pom.xml file before creating effective pom, because it does not recognize .pom endings
+            model.writePom(new File(currPath + File.separator + "pom.xml"), model.getPomModel());
+        }
+        //TODO: get effectivePom to be created
+        File effectivePom = model.createEffectivePom(currPro, fromMaven);
+        Model pomModel = model.createEffectivePomModel(effectivePom);
+
+        return pomModel;
     }
 
 
@@ -205,11 +242,14 @@ public class SpoonModel {
     public List<CallNode> iterateClasses(List<Invocation> leafInvocations) {
         // iterate over all classes in model
         System.out.println("Iterating over classes...");
-        // TODO: filter used classes and interfaces ?!?
-        for (CtType<?> s : this.ctModel.getAllTypes()) {
+        for (Object type : this.ctModel.filterChildren(new TypeFilter<>(CtType.class)).list()) {
+            CtType s = (CtType) type;
             try {
-                for (CtMethod<?> m : s.getAllMethods()) {
+                System.out.println("Searching class: " + s.getSimpleName());
+                for (Object obj : s.filterChildren(new TypeFilter<CtMethod>(CtMethod.class)).list()) {
+                    CtMethodImpl m = (CtMethodImpl) obj;
                     if (checkMethodFromCallChain(m, leafInvocations)) {
+                        System.out.println("    Checking body of method: " + m.getSimpleName());
                         searchInvocation(m, s, leafInvocations);
                     }
                 }

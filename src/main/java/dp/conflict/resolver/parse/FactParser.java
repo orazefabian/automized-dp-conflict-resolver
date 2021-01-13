@@ -254,7 +254,7 @@ public class FactParser {
     private void parseDPConnection(String jarPath) {
         if (this.idMap.containsKey(jarPath)) {
             int fromID = this.idMap.get(jarPath);
-            ImplSpoon impl = new ImplSpoon(jarPath, null);
+            ImplSpoon impl = new ImplSpoon(jarPath);
             Model model = impl.getPomModel();
             try {
                 for (Dependency dp : model.getDependencies().getDependency()) {

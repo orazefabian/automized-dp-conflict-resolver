@@ -33,5 +33,5 @@ clash(D,D2,C,N) :- includeJar(X), includeJar(X2), connection(X,D), connection(X2
 #show missingMethod/3.
 #show clash/4.
 
-%options
-%--opt-mode=optN --quiet=1,2
+% COMMAND
+% clingo rules.lp facts.lp --opt-mode=optN --quiet=1,2
