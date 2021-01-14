@@ -330,16 +330,16 @@ public abstract class DPUpdaterBase implements DPUpdater {
      * @throws InterruptedException if process gets interrupted
      */
     public File createEffectivePom(File pom, boolean fromMaven) throws IOException, InterruptedException {
-        System.out.println("Create Effective POM File: " + pom.getAbsolutePath());
         File baseFolder;
         if (fromMaven) {
             baseFolder = pom;
         } else {
             baseFolder = new File(pom.getAbsolutePath().substring(0, pom.getAbsolutePath().lastIndexOf(File.separator)));
         }
-        System.out.println("BASEFOLDER: " + baseFolder.getAbsolutePath());
         File outputFile = new File(baseFolder, "effectivePom.xml");
         if (!outputFile.exists()) {
+            System.out.println("Create Effective POM File: " + pom.getAbsolutePath());
+            System.out.println("BASEFOLDER: " + baseFolder.getAbsolutePath());
             System.out.println("OutputFile: " + outputFile.getAbsolutePath());
             String cmd = "mvn help:effective-pom -Doutput=" + outputFile.getAbsolutePath();
 

@@ -248,10 +248,10 @@ public class SpoonModel {
                 System.out.println("Searching class: " + s.getSimpleName());
                 for (Object obj : s.filterChildren(new TypeFilter<CtMethod>(CtMethod.class)).list()) {
                     CtMethodImpl m = (CtMethodImpl) obj;
-                    if (checkMethodFromCallChain(m, leafInvocations)) {
+                    //if (checkMethodFromCallChain(m, leafInvocations)) {
                         System.out.println("    Checking body of method: " + m.getSimpleName());
                         searchInvocation(m, s, leafInvocations);
-                    }
+                    //}
                 }
             } catch (SpoonException e) {
                 System.err.println("could not iterate over methods in class: " + s.getSimpleName());
