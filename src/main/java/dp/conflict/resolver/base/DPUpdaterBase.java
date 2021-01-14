@@ -339,15 +339,17 @@ public abstract class DPUpdaterBase implements DPUpdater {
         }
         System.out.println("BASEFOLDER: " + baseFolder.getAbsolutePath());
         File outputFile = new File(baseFolder, "effectivePom.xml");
-        System.out.println("OutputFile: " + outputFile.getAbsolutePath());
-        String cmd = "mvn help:effective-pom -Doutput=" + outputFile.getAbsolutePath();
+        if (!outputFile.exists()) {
+            System.out.println("OutputFile: " + outputFile.getAbsolutePath());
+            String cmd = "mvn help:effective-pom -Doutput=" + outputFile.getAbsolutePath();
 
-        ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", "cd " + baseFolder.getAbsolutePath() + " ; " + cmd);
-        Process p = pb.start();
+            ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", "cd " + baseFolder.getAbsolutePath() + " ; " + cmd);
+            Process p = pb.start();
 
-        System.out.println("  Waiting for the build to end...");
-        p.waitFor();
-        System.out.println(" Build ended...");
+            System.out.println("  Waiting for the build to end...");
+            p.waitFor();
+            System.out.println(" Build ended...");
+        }
         return outputFile;
     }
 
