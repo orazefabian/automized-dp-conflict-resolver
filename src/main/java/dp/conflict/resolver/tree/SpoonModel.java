@@ -224,7 +224,6 @@ public class SpoonModel {
             // must write pom.xml file before creating effective pom, because it does not recognize .pom endings
             model.writePom(new File(currPath + File.separator + "pom.xml"), model.getPomModel());
         }
-        //TODO: get effectivePom to be created
         File effectivePom = model.createEffectivePom(currPro, fromMaven);
         Model pomModel = model.createEffectivePomModel(effectivePom);
 
@@ -249,8 +248,8 @@ public class SpoonModel {
                 for (Object obj : s.filterChildren(new TypeFilter<CtMethod>(CtMethod.class)).list()) {
                     CtMethodImpl m = (CtMethodImpl) obj;
                     //if (checkMethodFromCallChain(m, leafInvocations)) {
-                        System.out.println("    Checking body of method: " + m.getSimpleName());
-                        searchInvocation(m, s, leafInvocations);
+                    System.out.println("    Checking body of method: " + m.getSimpleName());
+                    searchInvocation(m, s, leafInvocations);
                     //}
                 }
             } catch (SpoonException e) {
@@ -315,6 +314,8 @@ public class SpoonModel {
                 checkIfInterfaceIsReferenced(invocation, constructorCalls);
             }
         }
+        // delete node if it has no outgoing invocations
+        if (currNode != null && currNode.getInvocations().size() == 0) currNode = null;
     }
 
     /**
