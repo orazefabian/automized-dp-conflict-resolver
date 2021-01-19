@@ -306,7 +306,9 @@ public class SpoonModel {
             } else {
                 fromType = element.getExecutable().getType();
             }
-            if (fromType != null && checkJDKClasses(fromType.getQualifiedName()) && !this.classNames.contains(fromType.getSimpleName())) {
+            if (fromType != null && checkJDKClasses(fromType.getQualifiedName())) {
+                // if maven project is analyzed and the referred Object from the curr method is contained in the project
+                if (this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName()))break;
                 String methodSignature = element.getExecutable().toString();
                 Invocation invocation = new Invocation(methodSignature, fromType.getQualifiedName(), currNode);
                 currNode.addInvocation(invocation);

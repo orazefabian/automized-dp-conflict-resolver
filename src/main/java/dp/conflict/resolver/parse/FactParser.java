@@ -23,16 +23,29 @@ import static dp.conflict.resolver.parse.JarParser.getMethodNames;
 
 public class FactParser {
 
-    private final List<CallNode> conflictNodes;
-    private final StringBuilder factsBuilder;
-    private final FileWriter writer;
+    private List<CallNode> conflictNodes;
+    private StringBuilder factsBuilder;
+    private FileWriter writer;
     private final static String ROOT_DIR = System.getProperty("user.dir") +"/src/main/java/dp/conflict/resolver/asp";
-    private final File factsFile;
-    private final Map<String, Integer> idMap;
-    private final Set<String> alreadyLoadedJars;
+    private File factsFile;
+    private Map<String, Integer> idMap;
+    private Set<String> alreadyLoadedJars;
     private int currJarID;
 
     public FactParser(List<CallNode> conflictNodes) throws IOException {
+        // check weather conflicts are empty
+        if (conflictNodes.size() == 0){
+            System.out.println("No conflicts detected");
+        }else {
+            init(conflictNodes);
+        }
+    }
+
+    /**
+     * setup method
+     * @param conflictNodes list of Nodes representing the conflict nodes
+     */
+    private void init(List<CallNode> conflictNodes) throws IOException{
         this.idMap = new HashMap<>();
         this.alreadyLoadedJars = new HashSet<>();
         this.conflictNodes = conflictNodes;

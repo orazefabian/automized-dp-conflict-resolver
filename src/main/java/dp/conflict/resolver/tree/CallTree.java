@@ -167,7 +167,8 @@ public class CallTree {
     }
 
     /**
-     * helper function to create new {@link SpoonModel} for next jar
+     * helper function to create new {@link SpoonModel} for next jar, after analyzing previous one
+     * also removes unused/bloated jars
      */
     private void createNewModel() {
         List<CallNode> prevCallNodes = this.model.getCallNodes();

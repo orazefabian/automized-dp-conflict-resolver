@@ -32,6 +32,9 @@ hs_err_pid*
 # spoon
 *.tmp
 
+# effective pom
+effectivePom.xml
+
 # clingo
 # *.lp
 # *.asp
