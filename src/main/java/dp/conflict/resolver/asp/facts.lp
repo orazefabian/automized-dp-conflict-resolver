@@ -43,6 +43,8 @@ invocation(0,4,"runtime.Object_B","foo",1).
 invocation(4,1,"conflict.Object_D","bar",2).
 
 invocation(4,1,"conflict.Object_D","kek",1).
+
+invocation(4,1,"conflict.Object_D","kek",1).
 connection(4,1).
 
 jar(6,"org.runtime.conflict","Project_C","1.0").

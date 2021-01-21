@@ -255,9 +255,6 @@ public abstract class DPUpdaterBase implements DPUpdater {
             content = content + line + System.getProperty("line.separator");
             if (buildOutputStream != null) {
                 buildOutputStream.println(line);
-                //listener //Refactor that only listeners get called here (and make a listener for the print stream
-                String finalLine = line;
-                // this.repairListeners.forEach(x->x.newBuildLine(finalLine));
             }
         }
         p.waitFor();
@@ -266,13 +263,6 @@ public abstract class DPUpdaterBase implements DPUpdater {
         buildOutputStream.flush();
         System.out.println("  Build ended...");
 
-        //LOG.info("Finished waiting...");
-        //MavenLogAnalyzer mla = new MavenLogAnalyzer();
-        //FixSummary.put("buildEnd",LocalDateTime.now());
-        //FixSummary.put("mlaStart",LocalDateTime.now());
-        //BuildLog buildLog = mla.analyzeMavenLog(content, lines);
-        //FixSummary.put("mlaEnd",LocalDateTime.now());
-        //return buildLog;
     }
 
     /**

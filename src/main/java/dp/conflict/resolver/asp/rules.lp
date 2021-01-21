@@ -14,7 +14,7 @@ missingMethod(C,N,S) :- method(_,C,N,S), mustIncludeMethod(C,N,S), not includeMe
 
 % generate clash facts based on the usage of methods with same names and different signatures
 clash(X,X2,C,N) :- includeJar(X), includeJar(X2), jar(X,Y,Z,V), jar(X2,Y,Z,V2), method(X,C,N,S), method(X2,C,N,S2), X != X2, S != S2.
-% generate clash facts if two jars are included whose connections (dependencies) each conatin methods with potential clash
+% generate clash facts if two jars are included whose connections (dependencies) each contain methods with potential clash
 clash(D,D2,C,N) :- includeJar(X), includeJar(X2), connection(X,D), connection(X2,D2), jar(D,Y,Z,V), jar(D2,Y,Z,V2), method(D,C,N,S), method(D2,C,N,S2), D != D2, S != S2.
 
 % CONSTRAINTS

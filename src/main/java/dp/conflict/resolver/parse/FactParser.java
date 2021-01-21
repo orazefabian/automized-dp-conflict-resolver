@@ -31,6 +31,7 @@ public class FactParser {
     private Map<String, Integer> idMap;
     private Set<String> alreadyLoadedJars;
     private int currJarID;
+    private AnswerObject answerObject;
 
     public FactParser(List<CallNode> conflictNodes) throws IOException {
         // check weather conflicts are empty
@@ -52,6 +53,7 @@ public class FactParser {
         this.factsBuilder = new StringBuilder();
         this.factsFile = new File(ROOT_DIR + File.separator + "facts.lp");
         System.out.println(this.factsFile.getAbsolutePath());
+        this.answerObject = new AnswerObject();
         this.factsFile.createNewFile();
         this.writer = new FileWriter(this.factsFile);
         this.currJarID = 1;
@@ -60,6 +62,12 @@ public class FactParser {
         writer.close();
     }
 
+    public AnswerObject getAnswerSet() throws IOException, InterruptedException {
+        this.answerObject.setIDMap(this.idMap);
+        this.answerObject.solve();
+        return this.answerObject;
+
+    }
 
     public String getFacts() {
         return this.factsBuilder.toString();
