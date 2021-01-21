@@ -44,12 +44,12 @@ public class FactParser {
 
     /**
      * setup method
-     * @param conflictNodes list of Nodes representing the conflict nodes
+     * @param nodeList list of Nodes representing the leaf nodes
      */
-    private void init(List<CallNode> conflictNodes) throws IOException{
+    private void init(List<CallNode> nodeList) throws IOException{
         this.idMap = new HashMap<>();
         this.alreadyLoadedJars = new HashSet<>();
-        this.conflictNodes = conflictNodes;
+        this.conflictNodes = nodeList;
         this.factsBuilder = new StringBuilder();
         this.factsFile = new File(ROOT_DIR + File.separator + "facts.lp");
         System.out.println(this.factsFile.getAbsolutePath());
@@ -61,6 +61,7 @@ public class FactParser {
         writer.write(this.factsBuilder.toString());
         writer.close();
     }
+
 
     public AnswerObject getAnswerSet() throws IOException, InterruptedException {
         this.answerObject.setIDMap(this.idMap);
@@ -86,6 +87,7 @@ public class FactParser {
             }
         }
     }
+
 
     /**
      * recursive function that traverses the call tree bottom-up and computes the facts

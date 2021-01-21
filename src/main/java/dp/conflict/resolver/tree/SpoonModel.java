@@ -107,7 +107,7 @@ public class SpoonModel {
      */
     private void initLauncherAndCreatePomModels(boolean analyzeFromJar) {
         if (!analyzeFromJar) {
-            this.launcher = new MavenLauncher(this.currProjectPath, MavenLauncher.SOURCE_TYPE.ALL_SOURCE);
+            this.launcher = new MavenLauncher(this.currProjectPath, MavenLauncher.SOURCE_TYPE.APP_SOURCE); // change source type to all_source to include tests
             this.baseModel = new ImplSpoon(this.currProjectPath);
             searchModulesForPom(new File(currProjectPath));
 
@@ -252,7 +252,7 @@ public class SpoonModel {
                     searchInvocation(m, s, leafInvocations);
                     //}
                 }
-            } catch (SpoonException e) {
+            } catch (SpoonException | NullPointerException e) {
                 System.err.println("could not iterate over methods in class: " + s.getSimpleName());
             }
         }
@@ -286,7 +286,7 @@ public class SpoonModel {
      * @param currClass       String signature of class which current method belongs to
      * @param leafInvocations List of current leaf Invocations
      */
-    private void searchInvocation(CtMethod method, CtType currClass, List<Invocation> leafInvocations) {
+    private void searchInvocation(CtMethod method, CtType currClass, List<Invocation> leafInvocations) throws NullPointerException{
         // get all method body elements
         String currClassName = currClass.getQualifiedName();
 

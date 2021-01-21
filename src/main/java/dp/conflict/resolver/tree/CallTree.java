@@ -25,7 +25,7 @@ public class CallTree {
     /**
      * Tree data structure which contains all method call traces from a given root project
      *
-     * @param targetProjectPath path to maven project which is to be analyzed
+     * @param targetProjectPath path to maven project which is to be analyzed, MUST end with a "/" (File separator)
      */
     public CallTree(String targetProjectPath) {
         this.targetProjectPath = targetProjectPath;
@@ -72,21 +72,44 @@ public class CallTree {
             recursiveSearch(node, trace);
         }
         for (CallNode call : trace) {
-            for (CallNode checkCall : trace) {
-                switch (type) {
-                    case TYPE_1:
+            switch (type) {
+                case TYPE_1:
+                    for (CallNode checkCall : trace) {
                         if (checkForConflictType1(call, checkCall)) {
                             this.conflicts.add(call);
                         }
-                        break;
-                    case TYPE_2:
+                    }
+                    break;
+                case TYPE_2:
+                    for (CallNode checkCall : trace) {
                         if (checkForConflictType2(call, checkCall)) {
                             this.conflicts.add(call);
                         }
-                        break;
-                }
+                    }
+                    break;
+                case TYPE_3:
+                    if (checkForConflictType3(call)){
+                        this.conflicts.add(call);
+                    }
             }
         }
+
+    }
+
+    /**
+     * helper function which checks if a callNode is a leaf node, this type sees all nodes as potential conflicts
+     * @param call {@link CallNode}
+     * @return true if node is a leaf object of current tree
+     */
+    private boolean checkForConflictType3(CallNode call) {
+        if (call.getInvocations() == null || call.getInvocations().size() == 0) {
+            return true;
+        } else {
+            for (Invocation inv : call.getInvocations()){
+                if (inv.getNextNode() != null) return false;
+            }
+        }
+        return true;
     }
 
     /**
