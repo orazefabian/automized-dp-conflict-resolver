@@ -10,7 +10,7 @@ mustIncludeMethod(C,N,S) :- invocation(0,_,C,N,S).
 includeMethod(C,N,S) :- includeJar(X), method(X,C,N,S), jar(X,_,_,_).
 
 % compute missing methods that are not covered by the included jars but must be included
-missingMethod(C,N,S) :- method(_,C,N,S), mustIncludeMethod(C,N,S), not includeMethod(C,N,S).
+missingMethod(C,N,S) :- mustIncludeMethod(C,N,S), not includeMethod(C,N,S).
 
 % generate clash facts based on the usage of methods with same names and different signatures
 clash(X,X2,C,N) :- includeJar(X), includeJar(X2), jar(X,Y,Z,V), jar(X2,Y,Z,V2), method(X,C,N,S), method(X2,C,N,S2), X != X2, S != S2.

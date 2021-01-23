@@ -29,8 +29,9 @@ public class AnswerObject {
      * @throws IOException          when reading the input files fails
      * @throws InterruptedException when clingo process gets interrupted
      */
-    public void solve() throws IOException, InterruptedException {
+    public void solve() throws IOException, InterruptedException, NoConflictException {
         this.stdOut = ClingoSolver.runClingo();
+        if (this.idMap == null) throw new NoConflictException();
         parseAnswers();
     }
 
