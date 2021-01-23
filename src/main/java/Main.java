@@ -1,5 +1,6 @@
 import dp.conflict.resolver.parse.AnswerObject;
 import dp.conflict.resolver.parse.FactParser;
+import dp.conflict.resolver.parse.NoConflictException;
 import dp.conflict.resolver.tree.CallTree;
 import dp.conflict.resolver.tree.ConflictType;
 
@@ -33,16 +34,18 @@ public class Main {
         long time = System.currentTimeMillis();
         CallTree tree = null;
         try {
-            tree = new CallTree(test);
+            tree = new CallTree(target);
             tree.computeCallTree();
-            long currTime = (System.currentTimeMillis() - time) / 1000 / 60;
-            System.out.println(currTime);
             FactParser parser;
-            parser = new FactParser(tree.getConflicts(ConflictType.TYPE_2));
-            AnswerObject answer = parser.getAnswerSet();
+            parser = new FactParser(tree.getConflicts(ConflictType.TYPE_3));
+            AnswerObject answer = parser.getAnswerObject();
+            long currTime = (System.currentTimeMillis() - time) / 1000 / 60;
+            System.out.println("Needed time: "+currTime);
             System.out.println(answer.getAnswers());
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
+        } catch (NoConflictException e) {
+            System.err.println("No conflicts to solve");
         }
 
 

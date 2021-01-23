@@ -33,7 +33,20 @@ public class CentralMavenAPI {
      */
     public static synchronized void downloadMissingFiles(String currProjectPath) {
         // check if the folder structure is given
-        if (Files.exists(Path.of(currProjectPath))) {
+        createFolderStructure(currProjectPath);
+        System.out.println("Downloading jar and pom from central repo...");
+        downloadJar(currProjectPath);
+        downloadPom(currProjectPath);
+
+    }
+
+    /**
+     * creates folder structure for a given path if it is not present
+     *
+     * @param currProjectPath mostly path to a jar
+     */
+    private static void createFolderStructure(String currProjectPath) {
+        if (!Files.exists(Path.of(currProjectPath))) {
             String[] dirNames = currProjectPath.split("/");
             StringBuilder dirNameNew = new StringBuilder();
             for (int i = 0; i < dirNames.length - 1; i++) {
@@ -42,10 +55,6 @@ public class CentralMavenAPI {
             File dirFile = new File(dirNameNew.toString());
             dirFile.mkdirs();
         }
-        System.out.println("Downloading jar and pom from central repo...");
-        downloadJar(currProjectPath);
-        downloadPom(currProjectPath);
-
     }
 
     /**
@@ -93,8 +102,11 @@ public class CentralMavenAPI {
      */
     private static void downloadJar(String path) {
         String url = MAVEN_REPO_URL + path.split("/repository")[1];
-        try (BufferedInputStream inputStream = new BufferedInputStream(new URL(url).openStream());
-             FileOutputStream fileOS = new FileOutputStream(path)) {
+        try {
+            BufferedInputStream inputStream = new BufferedInputStream(new URL(url).openStream());
+            File file = new File(path);
+            file.createNewFile();
+            FileOutputStream fileOS = new FileOutputStream(file, false);
             byte[] data = new byte[1024];
             int byteContent;
             while ((byteContent = inputStream.read(data, 0, 1024)) != -1) {
@@ -114,8 +126,11 @@ public class CentralMavenAPI {
     private static void downloadPom(String path) {
         String url = MAVEN_REPO_URL + path.split("/repository")[1];
         url.replace(".jar", ".pom");
-        try (BufferedInputStream inputStream = new BufferedInputStream(new URL(url).openStream());
-             FileOutputStream fileOS = new FileOutputStream(path.replace(".jar", ".pom"))) {
+        try {
+            BufferedInputStream inputStream = new BufferedInputStream(new URL(url).openStream());
+            File file = new File(path.replace(".jar", ".pom"));
+            file.createNewFile();
+            FileOutputStream fileOS = new FileOutputStream(file, false);
             byte[] data = new byte[1024];
             int byteContent;
             while ((byteContent = inputStream.read(data, 0, 1024)) != -1) {
