@@ -142,14 +142,14 @@ public class JarParser {
     }
 
     /**
-     * retrieves the class methods as an array from the JarParserClass
+     * retrieves the class methods and other content as an array from the JarParserClass
      *
      * @param jarPath   the full path to the jar with .jar ending
      * @param className the fullyQualified class name
-     * @return array with objects for each method from given jar inside given class
+     * @return array with objects for each method/field from given jar inside given class
      */
     @NotNull
-    public static Object[] getMethodNames(String jarPath, String className) {
+    public static Object[] getContentNames(String jarPath, String className) {
         String content = null;
         try {
             content = JarParser.parseJarContent(jarPath, className);
