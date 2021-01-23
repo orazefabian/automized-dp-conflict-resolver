@@ -343,8 +343,7 @@ public class FactParser {
             for (Object cl : classNames) {
                 // this line creates the fact for the jarClass
                 String clName = cl.toString().replace(".class", "").replace(File.separator, ".");
-                this.factsBuilder.append("class(").append(this.idMap.get(jarPath)).append(",\"")
-                        .append(clName).append("\").\n");
+                // this.factsBuilder.append("class(").append(this.idMap.get(jarPath)).append(",\"").append(clName).append("\").\n");
                 Object[] methodNames = getContentNames(jarPath, cl.toString().replace(".class", ""));
                 for (Object mt : methodNames) {
                     if (mt.toString().contains("(") && mt.toString().contains(")")) {
