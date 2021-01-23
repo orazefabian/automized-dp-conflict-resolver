@@ -36,5 +36,5 @@ hs_err_pid*
 effectivePom.xml
 
 # clingo
-# *.lp
+facts.lp
 # *.asp
