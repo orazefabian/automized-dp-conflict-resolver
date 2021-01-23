@@ -71,41 +71,47 @@ public class CallTree {
         for (CallNode node : this.startNodes) {
             recursiveSearch(node, trace);
         }
-        for (CallNode call : trace) {
-            switch (type) {
-                case TYPE_1:
+        switch (type) {
+            case TYPE_1:
+                for (CallNode call : trace) {
                     for (CallNode checkCall : trace) {
                         if (checkForConflictType1(call, checkCall)) {
                             this.conflicts.add(call);
                         }
                     }
-                    break;
-                case TYPE_2:
+                }
+                break;
+            case TYPE_2:
+                for (CallNode call : trace) {
                     for (CallNode checkCall : trace) {
                         if (checkForConflictType2(call, checkCall)) {
                             this.conflicts.add(call);
                         }
                     }
-                    break;
-                case TYPE_3:
-                    if (checkForConflictType3(call)){
+                }
+                break;
+            case TYPE_3:
+                for (CallNode call : trace) {
+                    if (checkForConflictType3(call)) {
                         this.conflicts.add(call);
                     }
-            }
+                }
         }
-
     }
+
 
     /**
      * helper function which checks if a callNode is a leaf node, this type sees all nodes as potential conflicts
+     *
      * @param call {@link CallNode}
      * @return true if node is a leaf object of current tree
      */
     private boolean checkForConflictType3(CallNode call) {
         if (call.getInvocations() == null || call.getInvocations().size() == 0) {
+            if (call.getPrevious() == null) return false; // do not add root nodes!!
             return true;
         } else {
-            for (Invocation inv : call.getInvocations()){
+            for (Invocation inv : call.getInvocations()) {
                 if (inv.getNextNode() != null) return false;
             }
         }
@@ -119,7 +125,7 @@ public class CallTree {
      * @param second {@link CallNode}
      * @return true if two calleNodes cause a possible thread
      */
-    private boolean checkForConflictType1(CallNode first, CallNode second) {
+    private boolean checkForConflictType2(CallNode first, CallNode second) {
         return !first.equals(second) && first.getClassName().equals(second.getClassName()) && !first.getFromJar().equals(second.getFromJar());
     }
 
@@ -130,7 +136,7 @@ public class CallTree {
      * @param second {@link CallNode}
      * @return true if they definitely cause an error
      */
-    private boolean checkForConflictType2(CallNode first, CallNode second) {
+    private boolean checkForConflictType1(CallNode first, CallNode second) {
         boolean isOfTypeOne = !first.equals(second) && first.getClassName().equals(second.getClassName()) && !first.getFromJar().equals(second.getFromJar());
         if (!isOfTypeOne) return false;
         for (Invocation invFirst : first.getPrevious().getInvocations()) {
@@ -160,6 +166,12 @@ public class CallTree {
         return this.conflicts;
     }
 
+    /**
+     * function that recursively fills a set with all nodes from the given root node
+     *
+     * @param callNode the root node
+     * @param trace    the set with call nodes that is being filled
+     */
     private void recursiveSearch(CallNode callNode, Set<CallNode> trace) {
         trace.add(callNode);
         try {
