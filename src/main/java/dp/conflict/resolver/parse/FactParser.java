@@ -213,10 +213,10 @@ public class FactParser {
                 int nextJarID = this.idMap.get(jarPath);
                 // this line creates the fact in asp language syntax
                 this.factsBuilder.append("\njar(").append(nextJarID).append(",\"").append(groupID).append("\",\"").append(artifactID).append("\",\"").append(version).append("\").\n");
-                // now compute the rest of the needed facts
-                // parseClassFact(jarPath); class facts are not needed because method facts contain all information
-                parseMethodFact(jarPath, node.getClassName().replace(".", File.separator));
             }
+            // now compute the rest of the needed facts
+            // parseClassFact(jarPath); class facts are not needed because method facts contain all information
+            parseMethodFact(jarPath, node.getClassName().replace(".", File.separator));
         } catch (StringIndexOutOfBoundsException e) {
             System.err.println("Could not parse jar fact");
         }
@@ -250,7 +250,7 @@ public class FactParser {
             if (mth.toString().contains("(") && mth.toString().contains(")")) {
                 String[] methodModifiers = mth.toString().substring(0, mth.toString().indexOf("(")).split(" ");
                 String methodName = methodModifiers[methodModifiers.length - 1];
-                String methodSignature = mth.toString().substring(mth.toString().indexOf("("), mth.toString().indexOf(";"));
+                String methodSignature = mth.toString().substring(mth.toString().indexOf("("), mth.toString().indexOf(")") + 1);
                 int paramCount = computeParamCount(methodSignature);
                 // create fact which maps method to a class and jar
                 this.factsBuilder.append("method(").append(this.idMap.get(jarPath)).append(",\"")

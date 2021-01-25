@@ -108,9 +108,9 @@ public class CallTree {
      */
     private boolean checkForConflictType3(CallNode call) {
         if (call.getPrevious() == null) return false; // do not add root nodes!!
-        else if (call.getInvocations() == null || call.getInvocations().size() == 0) {
+        /*else if (call.getInvocations() == null || call.getInvocations().size() == 0) {
             return true;
-        } else {
+        }*/ else {
             for (Invocation inv : call.getInvocations()) {
                 if (inv.getNextNode() != null) return false;
             }
