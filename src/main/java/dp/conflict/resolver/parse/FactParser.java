@@ -207,6 +207,8 @@ public class FactParser {
         String artifactID = construct[construct.length - 3];
         String groupID;
         try {
+            // TODO: make jars that cannot be traced completely automatically included!?
+
             groupID = jarPath.substring(jarPath.indexOf(repoSeparator) + repoSeparator.length(), jarPath.indexOf(artifactID) - 1).replace(File.separator, ".");
             if (!this.idMap.containsKey(jarPath)) {
                 this.idMap.put(jarPath, this.currJarID++);

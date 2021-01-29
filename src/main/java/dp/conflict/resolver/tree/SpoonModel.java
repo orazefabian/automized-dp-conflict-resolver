@@ -4,6 +4,7 @@ import dp.conflict.resolver.base.ImplSpoon;
 import dp.conflict.resolver.loader.CentralMavenAPI;
 import org.apache.maven.pom._4_0.Dependency;
 import org.apache.maven.pom._4_0.Model;
+import org.jetbrains.annotations.NotNull;
 import spoon.JarLauncher;
 import spoon.Launcher;
 import spoon.MavenLauncher;
@@ -286,7 +287,7 @@ public class SpoonModel {
      * @param currClass       String signature of class which current method belongs to
      * @param leafInvocations List of current leaf Invocations
      */
-    private void searchInvocation(CtMethod method, CtType currClass, List<Invocation> leafInvocations) throws NullPointerException{
+    private void searchInvocation(CtMethod method, CtType currClass, List<Invocation> leafInvocations) throws NullPointerException {
         // get all method body elements
         String currClassName = currClass.getQualifiedName();
 
@@ -308,7 +309,7 @@ public class SpoonModel {
             }
             if (fromType != null && checkJDKClasses(fromType.getQualifiedName())) {
                 // if maven project is analyzed and the referred Object from the curr method is contained in the project
-                if (this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName()))break;
+                if (this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName())) break;
                 String methodSignature = element.getExecutable().toString();
                 Invocation invocation = new Invocation(methodSignature, fromType.getQualifiedName(), currNode);
                 currNode.addInvocation(invocation);
@@ -347,9 +348,22 @@ public class SpoonModel {
      */
     private CallNode getNodeByName(String currClass, String jarPath) {
         for (CallNode n : this.callNodes) {
-            if (n.getClassName().equals(currClass) && n.getFromJar().equals(jarPath)) return n;
+            if (n.getClassName().equals(currClass) && n.getFromJar().equals(jarPath)) {
+                if (n.getPrevious() == null) return n;
+            }
         }
-        CallNode currNode = new CallNode(currClass, this.currProjectPath, this.jarPaths.keySet(), null);
+        return getCallNode(currClass, jarPath);
+    }
+
+    /**
+     * creates a new call node and appends it to class list of callNodes
+     *
+     * @param currClass the class which the node should be bound to
+     * @param path      the path of the curr jar
+     * @return a {@link CallNode}
+     */
+    private CallNode getCallNode(String currClass, String path) {
+        CallNode currNode = new CallNode(currClass, path, this.jarPaths.keySet(), null);
         this.callNodes.add(currNode);
         return currNode;
     }
@@ -362,10 +376,18 @@ public class SpoonModel {
      */
     private void appendNodeToLeaf(CallNode currNode, List<Invocation> leafInvocations) {
         for (Invocation invocation : leafInvocations) {
-            if (currNode.getClassName().contains(invocation.getDeclaringType()) //TODO: maybe adapt checking!!
+            if (currNode.getClassName().contains(invocation.getDeclaringType())
                     && invocation.getParentNode().getCurrPomJarDependencies().contains(currNode.getFromJar()) && invocation.getNextNode() == null) {
                 invocation.setNextNode(currNode);
-                currNode.setPrevious(invocation.getParentNode());
+                if (currNode.getPrevious() == null) currNode.setPrevious(invocation.getParentNode());
+                // must check if parent node of invocations is same as the previous node of the nextNode
+                if (!invocation.getParentNode().getFromJar().equals(currNode.getPrevious().getFromJar())) {
+                    String clName = currNode.getClassName();
+                    String path = currNode.getFromJar();
+                    currNode = getCallNode(clName, path);
+                    invocation.setNextNode(currNode);
+                    invocation.getNextNode().setPrevious(invocation.getParentNode());
+                }
             }
         }
     }
