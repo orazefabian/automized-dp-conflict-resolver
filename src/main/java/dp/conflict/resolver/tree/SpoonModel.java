@@ -66,6 +66,10 @@ public class SpoonModel {
         }
     }
 
+    public String getCurrProjectPath() {
+        return currProjectPath;
+    }
+
     /**
      * should get all pom files from spoon model, also from sub modules, important for a maven launcher
      *

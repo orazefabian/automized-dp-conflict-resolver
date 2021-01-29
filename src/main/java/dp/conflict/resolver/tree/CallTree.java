@@ -1,6 +1,7 @@
 package dp.conflict.resolver.tree;
 
 import dp.conflict.resolver.loader.CentralMavenAPI;
+import dp.conflict.resolver.parse.AnswerObject;
 import dp.conflict.resolver.parse.JarParser;
 import spoon.compiler.ModelBuildingException;
 
@@ -16,6 +17,7 @@ public class CallTree {
 
     private final List<CallNode> startNodes;
     private final String targetProjectPath;
+    private AnswerObject answerObject;
     private SpoonModel model;
     private final Map<String, Boolean> jars;
     private final List<Invocation> currLeaves;
@@ -27,8 +29,9 @@ public class CallTree {
      *
      * @param targetProjectPath path to maven project which is to be analyzed, MUST end with a "/" (File separator)
      */
-    public CallTree(String targetProjectPath) {
+    public CallTree(String targetProjectPath, AnswerObject answerObject) {
         this.targetProjectPath = targetProjectPath;
+        this.answerObject = answerObject;
         this.startNodes = new ArrayList<>();
         this.jars = new HashMap<>();
         this.allUsedJars = new ArrayList<>();
@@ -110,7 +113,8 @@ public class CallTree {
         if (call.getPrevious() == null) return false; // do not add root nodes!!
         /*else if (call.getInvocations() == null || call.getInvocations().size() == 0) {
             return true;
-        }*/ else {
+        }*/
+        else {
             for (Invocation inv : call.getInvocations()) {
                 if (inv.getNextNode() != null) return false;
             }
@@ -215,6 +219,8 @@ public class CallTree {
         }
         for (String key : jarsToRemove) {
             this.jars.remove(key);
+            if (this.model.getCurrProjectPath().equals(this.targetProjectPath))
+                this.answerObject.addBloatedJar(key); // add jars that are directly bloated (root pom)
         }
         String nextJar = getNonTraversedJar();
         // save already traversed jars for later conflict search

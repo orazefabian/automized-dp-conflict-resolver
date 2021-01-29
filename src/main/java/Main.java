@@ -6,6 +6,7 @@ import dp.conflict.resolver.tree.ConflictType;
 
 import java.io.IOException;
 
+
 public class Main {
 
     public static void main(String[] args) {
@@ -33,19 +34,23 @@ public class Main {
 
         long time = System.currentTimeMillis();
         CallTree tree = null;
+        AnswerObject answer = new AnswerObject();
         try {
-            tree = new CallTree(target);
+            tree = new CallTree(test, answer);
             tree.computeCallTree();
             FactParser parser;
-            parser = new FactParser(tree.getConflicts(ConflictType.TYPE_3));
-            AnswerObject answer = parser.getAnswerObject();
+            parser = new FactParser(tree.getConflicts(ConflictType.TYPE_2));
+            answer.setIDMap(parser.getIdMap());
+            answer.solve();
             long currTime = (System.currentTimeMillis() - time) / 1000 / 60;
-            System.out.println("Needed time: "+currTime);
-            System.out.println(answer.getAnswers());
+            System.out.println("Needed time: " + currTime + " min");
+            System.out.println("Possible jar configurations: "+ answer.getAnswers());
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         } catch (NoConflictException e) {
             System.err.println("No conflicts to solve");
+        } finally {
+            System.out.println("Bloated jars: " + answer.getBloatedJars());
         }
 
 

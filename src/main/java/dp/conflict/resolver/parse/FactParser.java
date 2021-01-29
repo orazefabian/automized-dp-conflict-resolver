@@ -31,7 +31,6 @@ public class FactParser {
     private Map<String, Integer> idMap;
     private Set<String> alreadyLoadedJars;
     private int currJarID;
-    private AnswerObject answerObject;
 
     public FactParser(List<CallNode> conflictNodes) throws IOException {
         // check weather conflicts are empty
@@ -62,19 +61,8 @@ public class FactParser {
         writer.close();
     }
 
-    /**
-     * retrieve an object representation of a clingo answer after solving program
-     *
-     * @return {@link AnswerObject}
-     * @throws IOException          when reading input files fails
-     * @throws InterruptedException when clingo process gets interrupted
-     * @throws NoConflictException  if there are no conflicts to solve
-     */
-    public AnswerObject getAnswerObject() throws IOException, InterruptedException, NoConflictException {
-        if (this.answerObject == null) this.answerObject = new AnswerObject();
-        this.answerObject.setIDMap(this.idMap);
-        this.answerObject.solve();
-        return this.answerObject;
+    public Map<String, Integer> getIdMap() {
+        return idMap;
     }
 
     public String getFacts() {
