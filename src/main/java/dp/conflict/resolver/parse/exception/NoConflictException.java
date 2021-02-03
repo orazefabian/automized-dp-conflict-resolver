@@ -1,4 +1,4 @@
-package dp.conflict.resolver.parse;
+package dp.conflict.resolver.parse.exception;
 
 /*********************************
  Created by Fabian Oraze on 22.01.21

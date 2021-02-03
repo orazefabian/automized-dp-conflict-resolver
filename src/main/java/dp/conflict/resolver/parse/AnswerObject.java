@@ -1,7 +1,7 @@
 package dp.conflict.resolver.parse;
 
 import dp.conflict.resolver.asp.ClingoSolver;
-import dp.conflict.resolver.tree.CallNode;
+import dp.conflict.resolver.parse.exception.NoConflictException;
 
 import java.io.IOException;
 import java.util.*;
