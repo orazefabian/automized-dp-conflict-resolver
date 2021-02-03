@@ -17,7 +17,7 @@ public class ClingoSolver {
     //OPTIONS TO GIVE ALL OPTIMUM ANSWERS
     private static final String OPTIONS = "--opt-mode=optN --quiet=1,2";
     private static final String CMD = "clingo rules.lp facts.lp " + OPTIONS;
-    private static final String PATH = /*System.getProperty("user.dir") + */"src/main/java/dp/conflict/resolver/asp";
+    private static final String PATH = /*System.getProperty("user.dir") + */"src/main/java/dp/resolver/asp";
 
 
     /**

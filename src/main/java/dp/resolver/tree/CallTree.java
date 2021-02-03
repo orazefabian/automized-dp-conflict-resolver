@@ -1,7 +1,6 @@
 package dp.resolver.tree;
 
 import dp.resolver.loader.CentralMavenAPI;
-import dp.resolver.parse.AnswerObject;
 import dp.resolver.parse.JarParser;
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;

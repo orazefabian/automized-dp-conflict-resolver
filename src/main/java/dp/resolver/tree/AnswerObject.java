@@ -1,4 +1,4 @@
-package dp.resolver.parse;
+package dp.resolver.tree;
 
 import dp.resolver.asp.ClingoSolver;
 import dp.resolver.parse.exception.NoConflictException;
