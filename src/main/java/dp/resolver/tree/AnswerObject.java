@@ -30,6 +30,7 @@ public class AnswerObject {
      *
      * @throws IOException          when reading the input files fails
      * @throws InterruptedException when clingo process gets interrupted
+     * @throws NoConflictException  when the idMap is null (this means the previous FactBuilder was given no conflicts)
      */
     public void solve() throws IOException, InterruptedException, NoConflictException {
         this.stdOut = ClingoSolver.runClingo();
@@ -46,9 +47,10 @@ public class AnswerObject {
 
     /**
      * adds a boated jar to local list
+     *
      * @param jarPath the path to the jar
      */
-    public void addBloatedJar(String jarPath){
+    public void addBloatedJar(String jarPath) {
         this.bloatedJars.add(jarPath);
     }
 

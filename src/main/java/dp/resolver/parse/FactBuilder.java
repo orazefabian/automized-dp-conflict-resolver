@@ -349,6 +349,8 @@ public class FactBuilder {
             this.factsBuilder.append("\njar(").append(nextJarID).append(",\"").append(groupID).append("\",\"").append(artifactID).append("\",\"").append(version).append("\").\n");
             //Object[] classNames = JarParser.getClassNames(jarPath);
             parseMethodFact(jarPath);
+
+
             /*for (Object cl : classNames) {
                 // this line creates the fact for the jarClass
                 String clName = cl.toString().replace(".class", "").replace(File.separator, ".");
