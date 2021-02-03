@@ -1,4 +1,4 @@
-package dp.conflict.resolver.parse;
+package dp.resolver.parse;
 
 import org.jetbrains.annotations.NotNull;
 

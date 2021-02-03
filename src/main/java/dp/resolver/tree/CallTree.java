@@ -1,7 +1,9 @@
-package dp.conflict.resolver.tree;
+package dp.resolver.tree;
 
-import dp.conflict.resolver.loader.CentralMavenAPI;
-import dp.conflict.resolver.parse.JarParser;
+import dp.resolver.loader.CentralMavenAPI;
+import dp.resolver.parse.JarParser;
+import dp.resolver.tree.element.CallNode;
+import dp.resolver.tree.element.Invocation;
 import spoon.compiler.ModelBuildingException;
 
 import javax.xml.bind.JAXBException;
@@ -12,10 +14,11 @@ import java.util.*;
  Created by Fabian Oraze on 03.12.20
  *********************************/
 
-public class CallTree {
+public class CallTree implements Tree {
 
     private final List<CallNode> startNodes;
     private final String targetProjectPath;
+    private AnswerObject answerObject;
     private SpoonModel model;
     private final Map<String, Boolean> jars;
     private final List<Invocation> currLeaves;
@@ -27,8 +30,9 @@ public class CallTree {
      *
      * @param targetProjectPath path to maven project which is to be analyzed, MUST end with a "/" (File separator)
      */
-    public CallTree(String targetProjectPath) {
+    public CallTree(String targetProjectPath, AnswerObject answerObject) {
         this.targetProjectPath = targetProjectPath;
+        this.answerObject = answerObject;
         this.startNodes = new ArrayList<>();
         this.jars = new HashMap<>();
         this.allUsedJars = new ArrayList<>();
@@ -41,20 +45,15 @@ public class CallTree {
         }
     }
 
-    /**
-     * @return complete call tree
-     */
+    @Override
     public List<CallNode> getCallTree() {
         return this.startNodes;
     }
 
-    /**
-     * method which computes the complete call trace for all method invocations from
-     * the root project pointing to other dependencies recursively
-     */
+    @Override
     public void computeCallTree() {
         createNewModel();
-        this.model.iterateClasses(this.currLeaves);
+        this.model.analyzeModel(this.currLeaves);
         computeLeafElements();
         if (jarsToTraverseLeft())
             computeCallTree();
@@ -110,7 +109,8 @@ public class CallTree {
         if (call.getPrevious() == null) return false; // do not add root nodes!!
         /*else if (call.getInvocations() == null || call.getInvocations().size() == 0) {
             return true;
-        }*/ else {
+        }*/
+        else {
             for (Invocation inv : call.getInvocations()) {
                 if (inv.getNextNode() != null) return false;
             }
@@ -155,12 +155,7 @@ public class CallTree {
         return false;
     }
 
-    /**
-     * computes the conflicts if called the first time
-     *
-     * @param type {@link ConflictType} enumeration of the type of conflict that should be determined
-     * @return {@link List<CallNode>} which cause an issue
-     */
+    @Override
     public List<CallNode> getConflicts(ConflictType type) {
         computeConflicts(type);
         return this.conflicts;
@@ -198,7 +193,7 @@ public class CallTree {
         } catch (IOException | InterruptedException | JAXBException e) {
             e.printStackTrace();
         }
-        this.startNodes.addAll(this.model.iterateClasses(null));
+        this.startNodes.addAll(this.model.analyzeModel(null));
     }
 
     /**
@@ -215,6 +210,8 @@ public class CallTree {
         }
         for (String key : jarsToRemove) {
             this.jars.remove(key);
+            if (this.model.getCurrProjectPath().equals(this.targetProjectPath))
+                this.answerObject.addBloatedJar(key); // add jars that are directly bloated (root pom)
         }
         String nextJar = getNonTraversedJar();
         // save already traversed jars for later conflict search

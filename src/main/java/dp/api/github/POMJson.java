@@ -1,4 +1,4 @@
-package dp.conflict.api.github;
+package dp.api.github;
 
 /*********************************
  Created by Fabian Oraze on 28.10.20

@@ -1,4 +1,4 @@
-package dp.conflict.resolver.tree;
+package dp.resolver.tree.element;
 
 /*********************************
  Created by Fabian Oraze on 03.12.20

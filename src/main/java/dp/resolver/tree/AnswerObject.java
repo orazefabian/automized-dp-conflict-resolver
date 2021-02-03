@@ -1,7 +1,7 @@
-package dp.conflict.resolver.parse;
+package dp.resolver.tree;
 
-import dp.conflict.resolver.asp.ClingoSolver;
-import dp.conflict.resolver.tree.CallNode;
+import dp.resolver.asp.ClingoSolver;
+import dp.resolver.parse.exception.NoConflictException;
 
 import java.io.IOException;
 import java.util.*;
@@ -15,12 +15,14 @@ public class AnswerObject {
     private Map<String, Integer> idMap;
     private String stdOut;
     private Set<List<String>> answers;
+    public List<String> bloatedJars;
 
     /**
      * Object that represents the answer set of a clingo command
      */
     public AnswerObject() {
         this.answers = new HashSet<>();
+        this.bloatedJars = new ArrayList<>();
     }
 
     /**
@@ -28,11 +30,28 @@ public class AnswerObject {
      *
      * @throws IOException          when reading the input files fails
      * @throws InterruptedException when clingo process gets interrupted
+     * @throws NoConflictException  when the idMap is null (this means the previous FactBuilder was given no conflicts)
      */
     public void solve() throws IOException, InterruptedException, NoConflictException {
         this.stdOut = ClingoSolver.runClingo();
         if (this.idMap == null) throw new NoConflictException();
         parseAnswers();
+    }
+
+    /**
+     * @return a list of all bloated Jars that should be removed from project
+     */
+    public List<String> getBloatedJars() {
+        return bloatedJars;
+    }
+
+    /**
+     * adds a boated jar to local list
+     *
+     * @param jarPath the path to the jar
+     */
+    public void addBloatedJar(String jarPath) {
+        this.bloatedJars.add(jarPath);
     }
 
     /**

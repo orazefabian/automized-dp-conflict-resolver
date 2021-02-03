@@ -1,4 +1,4 @@
-package dp.conflict.resolver.base;
+package dp.resolver.base;
 import org.paukov.combinatorics3.Generator;
 import javax.xml.bind.JAXBException;
 import java.io.*;

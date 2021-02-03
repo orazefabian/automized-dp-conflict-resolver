@@ -36,5 +36,5 @@ hs_err_pid*
 effectivePom.xml
 
 # clingo
-src/main/java/dp/conflict/resolver/asp/facts.lp
+*.lp
 # *.asp

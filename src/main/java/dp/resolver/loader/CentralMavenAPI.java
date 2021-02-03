@@ -1,4 +1,4 @@
-package dp.conflict.resolver.loader;
+package dp.resolver.loader;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;

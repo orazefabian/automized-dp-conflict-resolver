@@ -1,4 +1,4 @@
-package dp.conflict.resolver.base;
+package dp.resolver.base;
 
 import org.apache.maven.pom._4_0.Dependency;
 import org.apache.maven.pom._4_0.Model;

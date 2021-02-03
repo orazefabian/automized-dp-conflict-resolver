@@ -1,7 +1,9 @@
-package dp.conflict.resolver.tree;
+package dp.resolver.tree;
 
-import dp.conflict.resolver.base.ImplSpoon;
-import dp.conflict.resolver.loader.CentralMavenAPI;
+import dp.resolver.base.ImplSpoon;
+import dp.resolver.loader.CentralMavenAPI;
+import dp.resolver.tree.element.CallNode;
+import dp.resolver.tree.element.Invocation;
 import org.apache.maven.pom._4_0.Dependency;
 import org.apache.maven.pom._4_0.Model;
 import spoon.JarLauncher;
@@ -26,7 +28,7 @@ import java.util.*;
  Created by Fabian Oraze on 27.11.20
  *********************************/
 
-public class SpoonModel {
+public class SpoonModel implements CallModel {
 
     private List<ImplSpoon> pomModels; // holds all possible pom models of sub modules
     private ImplSpoon baseModel; // the base pom model from the root project
@@ -65,6 +67,10 @@ public class SpoonModel {
         }
     }
 
+    public String getCurrProjectPath() {
+        return currProjectPath;
+    }
+
     /**
      * should get all pom files from spoon model, also from sub modules, important for a maven launcher
      *
@@ -84,18 +90,12 @@ public class SpoonModel {
         }
     }
 
-    /**
-     * @return list of CallNodes of the current model
-     */
+    @Override
     public List<CallNode> getCallNodes() {
         return callNodes;
     }
 
-    /**
-     * set the available CallNodes for current model
-     *
-     * @param callNodes list of {@link CallNode}
-     */
+    @Override
     public void setCallNodes(List<CallNode> callNodes) {
         this.callNodes = callNodes;
     }
@@ -149,12 +149,7 @@ public class SpoonModel {
         }
     }
 
-    /**
-     * compute jar paths for all dependencies of the current spoon model
-     * further checks if effective poms are needed to compute the correct jar file
-     *
-     * @return HashMap with String pathsToJar as keys and a initial boolean value false
-     */
+    @Override
     public Map<String, Boolean> computeJarPaths() throws NullPointerException, IOException, InterruptedException, JAXBException {
         this.jarPaths.clear();
         checkModelForDPs(this.baseModel);
@@ -231,14 +226,8 @@ public class SpoonModel {
     }
 
 
-    /**
-     * function that iterates over all methods of all classes of the current spoon model and analyzes the invocations of
-     * used methods
-     *
-     * @param leafInvocations a list of current leafInvocations that represent the bottom of the current call tree
-     * @return list of current used CallNodes
-     */
-    public List<CallNode> iterateClasses(List<Invocation> leafInvocations) {
+    @Override
+    public List<CallNode> analyzeModel(List<Invocation> leafInvocations) {
         // iterate over all classes in model
         System.out.println("Iterating over classes...");
         for (Object type : this.ctModel.filterChildren(new TypeFilter<>(CtType.class)).list()) {
@@ -286,7 +275,7 @@ public class SpoonModel {
      * @param currClass       String signature of class which current method belongs to
      * @param leafInvocations List of current leaf Invocations
      */
-    private void searchInvocation(CtMethod method, CtType currClass, List<Invocation> leafInvocations) throws NullPointerException{
+    private void searchInvocation(CtMethod method, CtType currClass, List<Invocation> leafInvocations) throws NullPointerException {
         // get all method body elements
         String currClassName = currClass.getQualifiedName();
 
@@ -308,7 +297,7 @@ public class SpoonModel {
             }
             if (fromType != null && checkJDKClasses(fromType.getQualifiedName())) {
                 // if maven project is analyzed and the referred Object from the curr method is contained in the project
-                if (this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName()))break;
+                if (this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName())) break;
                 String methodSignature = element.getExecutable().toString();
                 Invocation invocation = new Invocation(methodSignature, fromType.getQualifiedName(), currNode);
                 currNode.addInvocation(invocation);
@@ -347,9 +336,22 @@ public class SpoonModel {
      */
     private CallNode getNodeByName(String currClass, String jarPath) {
         for (CallNode n : this.callNodes) {
-            if (n.getClassName().equals(currClass) && n.getFromJar().equals(jarPath)) return n;
+            if (n.getClassName().equals(currClass) && n.getFromJar().equals(jarPath)) {
+                if (n.getPrevious() == null) return n;
+            }
         }
-        CallNode currNode = new CallNode(currClass, this.currProjectPath, this.jarPaths.keySet(), null);
+        return getCallNode(currClass, jarPath);
+    }
+
+    /**
+     * creates a new call node and appends it to class list of callNodes
+     *
+     * @param currClass the class which the node should be bound to
+     * @param path      the path of the curr jar
+     * @return a {@link CallNode}
+     */
+    private CallNode getCallNode(String currClass, String path) {
+        CallNode currNode = new CallNode(currClass, path, this.jarPaths.keySet(), null);
         this.callNodes.add(currNode);
         return currNode;
     }
@@ -362,10 +364,18 @@ public class SpoonModel {
      */
     private void appendNodeToLeaf(CallNode currNode, List<Invocation> leafInvocations) {
         for (Invocation invocation : leafInvocations) {
-            if (currNode.getClassName().contains(invocation.getDeclaringType()) //TODO: maybe adapt checking!!
+            if (currNode.getClassName().contains(invocation.getDeclaringType())
                     && invocation.getParentNode().getCurrPomJarDependencies().contains(currNode.getFromJar()) && invocation.getNextNode() == null) {
                 invocation.setNextNode(currNode);
-                currNode.setPrevious(invocation.getParentNode());
+                if (currNode.getPrevious() == null) currNode.setPrevious(invocation.getParentNode());
+                // must check if parent node of invocations is same as the previous node of the nextNode
+                if (!invocation.getParentNode().getFromJar().equals(currNode.getPrevious().getFromJar())) {
+                    String clName = currNode.getClassName();
+                    String path = currNode.getFromJar();
+                    currNode = getCallNode(clName, path);
+                    invocation.setNextNode(currNode);
+                    invocation.getNextNode().setPrevious(invocation.getParentNode());
+                }
             }
         }
     }
