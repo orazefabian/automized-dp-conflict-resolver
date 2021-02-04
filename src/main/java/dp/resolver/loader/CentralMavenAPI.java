@@ -60,14 +60,20 @@ public class CentralMavenAPI {
     /**
      * function that retrieves all versions for a given jar and downloads them
      *
+     * @param path       the path to the local jar file
      * @param groupID    the group id of the dependency
      * @param artifactID the artifact id of the dependency
      * @throws IOException                  when reading or writing file fails
      * @throws ParserConfigurationException when creating documentBuilder fails
      * @throws SAXException                 when parsing dom object fails
      */
-    public static void getAllVersionsFromCMR(String groupID, String artifactID) throws IOException, ParserConfigurationException, SAXException {
-        URL url = new URL(MAVEN_REPO_URL + File.separator + groupID + File.separator + artifactID + "/maven-metadata.xml");
+    public static void getAllVersionsFromCMR(String groupID, String artifactID, String path) throws IOException, ParserConfigurationException, SAXException {
+        String suffix = path.split("repository" + File.separator)[1];
+        String infix = suffix.substring(0, suffix.lastIndexOf(File.separator));
+        infix = infix.substring(0, infix.lastIndexOf(File.separator));
+        URL url = new URL(MAVEN_REPO_URL + "/" + infix + "/maven-metadata.xml");
+
+        //URL url = new URL(MAVEN_REPO_URL + File.separator + groupID + File.separator + artifactID + "/maven-metadata.xml");
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder db = dbf.newDocumentBuilder();
         Document doc = db.parse(url.openStream());
@@ -75,7 +81,9 @@ public class CentralMavenAPI {
         setPathM2();
         for (int i = 0; i < nodes.getLength(); i++) {
             String version = nodes.item(i).getTextContent();
-            String jarPath = pathM2 + groupID + File.separator + artifactID + File.separator + version
+            /*String jarPath = pathM2 + groupID + File.separator + artifactID + File.separator + version
+                    + File.separator + artifactID + "-" + version + ".jar";*/
+            String jarPath = pathM2 + infix + File.separator + version
                     + File.separator + artifactID + "-" + version + ".jar";
             downloadMissingFiles(jarPath);
         }

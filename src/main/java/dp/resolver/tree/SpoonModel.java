@@ -182,9 +182,9 @@ public class SpoonModel implements CallModel {
                 String postFixJar = dp.getArtifactId() + "-" + version + ".jar";
                 String currPath;
                 if (System.getProperty("os.name").startsWith("Windows")) {
-                    currPath = this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '\\') + "\\" + version + "\\" + postFixJar;
+                    currPath = this.pathM2 + (dp.getGroupId().replace('.', '\\') + "\\" + dp.getArtifactId()) + "\\" + version + "\\" + postFixJar;
                 } else {
-                    currPath = this.pathM2 + (dp.getGroupId() + "." + dp.getArtifactId()).replace('.', '/') + "/" + version + "/" + postFixJar;
+                    currPath = this.pathM2 + (dp.getGroupId().replace('.', '/') + "/" + dp.getArtifactId()) + "/" + version + "/" + postFixJar;
                 }
 
                 this.jarPaths.put(currPath, false);

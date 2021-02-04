@@ -2,6 +2,8 @@ package dp.resolver.tree;
 
 import dp.resolver.loader.CentralMavenAPI;
 import dp.resolver.parse.JarParser;
+import dp.resolver.parse.assist.AssistParser;
+import dp.resolver.parse.assist.ClazzWithMethodsDto;
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
 import spoon.compiler.ModelBuildingException;
@@ -300,22 +302,22 @@ public class CallTree implements Tree {
      * @return true if the given jar is not used
      */
     private boolean checkIfJarUsed(String jarPath) {
-        String jarContent = null;
-        try {
-            jarContent = JarParser.
-                    parseJarClasses(jarPath);
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
+        List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jarPath);
         boolean remove = true;
-        //for (CallNode node : prevCallNodes) {
         for (Invocation invocation : this.currLeaves) {
-            if (jarContent.contains(invocation.getDeclaringType().replace(".", "/"))) {
-                remove = false;
-                break;
+            try {
+                for (ClazzWithMethodsDto clazz : jarClassList) {
+                    if (clazz.getClazzName().replace(".class", "").replace(File.separator, ".").equals(invocation.getDeclaringType())) {
+                        remove = false;
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                // skip to next inovcation
             }
+            if (!remove) break;
         }
-        //}
+
         return remove;
     }
 

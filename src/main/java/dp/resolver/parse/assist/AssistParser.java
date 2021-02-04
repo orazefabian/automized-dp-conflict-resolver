@@ -91,7 +91,7 @@ public class AssistParser {
 //            pool.insertClassPath(new File(jarFile).getAbsolutePath());
 
             CtClass cc = pool.get(clazzName.replace(".class", ""));
-            System.out.println("Parsing class: " + clazzName);
+            //System.out.println("Parsing class: " + clazzName);
             CtMethod[] methods = cc.getMethods();
             /*if (cc.getAnnotation(Deprecated.class) != null) {
                 System.out.println("DEPRECATED CLASS: " + cc.getName());

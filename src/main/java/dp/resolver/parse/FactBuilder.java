@@ -142,7 +142,7 @@ public class FactBuilder {
                 String artifactID = construct[construct.length - 3];
                 String groupID = jarPath.substring(jarPath.indexOf(repoSeparator) + repoSeparator.length(), jarPath.indexOf(artifactID) - 1).replace(File.separator, ".");
                 try {
-                    CentralMavenAPI.getAllVersionsFromCMR(groupID, artifactID);
+                    CentralMavenAPI.getAllVersionsFromCMR(groupID, artifactID, jarPath);
                 } catch (IOException | ParserConfigurationException | SAXException e) {
                     System.err.println("could not download versions fromm central repo");
                 }
