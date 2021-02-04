@@ -241,15 +241,19 @@ public class FactBuilder {
      * @param jarPath the full path to the jar
      */
     private void parseMethodFact(String jarPath) {
-        if (this.alreadyParsedJars.add(jarPath)) { //already parsed jars are skipped
-            List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jarPath);
-            for (ClazzWithMethodsDto clazz : jarClassList) {
-                for (MethodInformation methodInformation : clazz.getMethods()) {
-                    this.factsBuilder.append("method(").append(this.idMap.get(jarPath)).append(",\"").append(clazz.getClazzName().replace(".class", "")
-                            .replace(File.separator, ".")).append("\",\"").
-                            append(methodInformation.getMethodName()).append("\",").append(methodInformation.getNumberOfParams()).append(").\n");
+        try {
+            if (this.alreadyParsedJars.add(jarPath)) { //already parsed jars are skipped
+                List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jarPath);
+                for (ClazzWithMethodsDto clazz : jarClassList) {
+                    for (MethodInformation methodInformation : clazz.getMethods()) {
+                        this.factsBuilder.append("method(").append(this.idMap.get(jarPath)).append(",\"").append(clazz.getClazzName().replace(".class", "")
+                                .replace(File.separator, ".")).append("\",\"").
+                                append(methodInformation.getMethodName()).append("\",").append(methodInformation.getNumberOfParams()).append(").\n");
+                    }
                 }
             }
+        }catch (NullPointerException e){
+            System.err.println("Jar contains no classes");
         }
 
         //Object[] content = JarParser.getContentNames(jarPath, className);

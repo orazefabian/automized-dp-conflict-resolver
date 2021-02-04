@@ -19,10 +19,12 @@ public class AssistParser {
 
     /**
      * parses a jar file to {@link ClazzWithMethodsDto} objects
+     *
      * @param path the full path to the Jar
      * @return a list with all classes from jar
      */
     public static List<ClazzWithMethodsDto> getJarClassList(String path) {
+        System.out.println("Parsing jar: " + path);
         List<ClazzWithMethodsDto> list = new ArrayList<ClazzWithMethodsDto>();
         JarFile jarFile;
         try {
@@ -44,13 +46,13 @@ public class AssistParser {
 
                     ClazzWithMethodsDto clazzWithMethodsDto = new ClazzWithMethodsDto();
 
-                    if (cc.getAnnotation(Deprecated.class) != null) {
+                    /*if (cc.getAnnotation(Deprecated.class) != null) {
 //                        System.out.println("DEPRECATED CLASS: "+cc.getName());
                         clazzWithMethodsDto.setDeprecated(true);
                         for (MethodInformation methodInformation : methodInformations) {
                             methodInformation.setDeprecated(true);
                         }
-                    }
+                    }*/
 
                     clazzWithMethodsDto.setClazzName(name);
                     clazzWithMethodsDto.setMethods(methodInformations);
@@ -89,11 +91,11 @@ public class AssistParser {
 //            pool.insertClassPath(new File(jarFile).getAbsolutePath());
 
             CtClass cc = pool.get(clazzName.replace(".class", ""));
-
+            System.out.println("Parsing class: " + clazzName);
             CtMethod[] methods = cc.getMethods();
-            if (cc.getAnnotation(Deprecated.class) != null) {
+            /*if (cc.getAnnotation(Deprecated.class) != null) {
                 System.out.println("DEPRECATED CLASS: " + cc.getName());
-            }
+            }*/
             for (CtMethod method : methods) {
                 try {
                     if (!isMethodFromObjectClazz(method)) {
