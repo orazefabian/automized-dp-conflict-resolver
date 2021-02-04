@@ -67,6 +67,7 @@ public class SpoonModel implements CallModel {
         }
     }
 
+    @Override
     public String getCurrProjectPath() {
         return currProjectPath;
     }

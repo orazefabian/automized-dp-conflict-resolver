@@ -15,6 +15,8 @@ import java.util.Map;
 public interface CallModel {
 
 
+    String getCurrProjectPath();
+
     /**
      * @return list of CallNodes of the current model
      */

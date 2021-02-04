@@ -21,7 +21,7 @@ public class CallTree implements Tree {
     private final List<CallNode> startNodes;
     private final String targetProjectPath;
     private AnswerObject answerObject;
-    private SpoonModel model;
+    private CallModel model;
     private final Map<String, Boolean> jars;
     private final List<Invocation> currLeaves;
     private final List<CallNode> conflicts;
