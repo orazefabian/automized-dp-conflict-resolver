@@ -118,12 +118,11 @@ public class FactBuilder {
     private void parseRoot(CallNode node) throws NullPointerException {
         for (Invocation inv : node.getInvocations()) {
             int fromID = 0;
-            int toID = this.idMap.get(inv.getNextNode().getFromJar());
             String fromClass = inv.getDeclaringType();
             String name = inv.getMethodSignature().substring(0, inv.getMethodSignature().indexOf("("));
             String signature = inv.getMethodSignature().split(name)[1];
             int paramCount = computeParamCount(signature);
-            this.factsBuilder.append("\ninvocation(").append(fromID).append(",").append(toID).append(",\"").append(fromClass).append("\",\"")
+            this.factsBuilder.append("\ninvocation(").append(fromID).append(",\"").append(fromClass).append("\",\"")
                     .append(name).append("\",").append(paramCount).append(").\n");
         }
     }
@@ -164,7 +163,7 @@ public class FactBuilder {
 
     /**
      * parser function that constructs invocation facts for a given list of invocations from a node:
-     * invocation(FromJarID, ToJarID, Object, MethodName, paramCount).
+     * invocation(FromJarID, Object, MethodName, paramCount).
      *
      * @param invocations a list of invocation objects given by a CallNode
      */
@@ -172,12 +171,11 @@ public class FactBuilder {
         try {
             for (Invocation invocation : invocations) {
                 int fromID = this.idMap.get(invocation.getParentNode().getFromJar());
-                int toID = this.idMap.get(invocation.getNextNode().getFromJar());
                 String fromClass = invocation.getDeclaringType();
                 String name = invocation.getMethodSignature().substring(0, invocation.getMethodSignature().indexOf("("));
                 String signature = invocation.getMethodSignature().split(name)[1];
                 int paramCount = computeParamCount(signature);
-                this.factsBuilder.append("\ninvocation(").append(fromID).append(",").append(toID).append(",\"").append(fromClass).append("\",\"")
+                this.factsBuilder.append("\ninvocation(").append(fromID).append(",\"").append(fromClass).append("\",\"")
                         .append(name).append("\",").append(paramCount).append(").\n");
             }
         } catch (NullPointerException e) {

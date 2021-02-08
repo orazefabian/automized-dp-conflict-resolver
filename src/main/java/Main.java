@@ -1,4 +1,4 @@
-import dp.resolver.parse.AnswerObject;
+import dp.resolver.tree.AnswerObject;
 import dp.resolver.parse.FactBuilder;
 import dp.resolver.parse.exception.NoConflictException;
 import dp.resolver.tree.CallTree;
