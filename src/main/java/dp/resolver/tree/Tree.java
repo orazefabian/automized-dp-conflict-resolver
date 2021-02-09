@@ -3,6 +3,7 @@ package dp.resolver.tree;
 import dp.resolver.tree.element.CallNode;
 
 import java.util.List;
+import java.util.Set;
 
 /*********************************
  Created by Fabian Oraze on 03.02.21
@@ -27,4 +28,9 @@ public interface Tree {
      * @return {@link List<CallNode>} which cause an issue
      */
     List<CallNode> getConflicts(ConflictType type);
+
+    /**
+     * @return set of needed jars that could not be fully analyzed
+     */
+    Set getNeededJars();
 }

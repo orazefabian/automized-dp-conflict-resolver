@@ -38,3 +38,4 @@ effectivePom.xml
 # clingo
 *.lp
 # *.asp
+/automized-dp-conflict-resolver.iml

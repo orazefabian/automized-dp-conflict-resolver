@@ -1,3 +1,4 @@
+import dp.api.maven.CentralMavenAPI;
 import dp.resolver.tree.AnswerObject;
 import dp.resolver.parse.FactBuilder;
 import dp.resolver.parse.exception.NoConflictException;
@@ -40,16 +41,17 @@ public class Main {
         long time = System.currentTimeMillis();
         Tree tree = null;
         AnswerObject answer = new AnswerObject();
+        CentralMavenAPI.setMaxVersionsNum(5);
         try {
-            tree = new CallTree(test, answer);
+            tree = new CallTree(curr, answer);
             tree.computeCallTree();
             FactBuilder parser;
-            parser = new FactBuilder(tree.getConflicts(ConflictType.TYPE_1));
+            parser = new FactBuilder(tree.getConflicts(ConflictType.TYPE_3), tree.getNeededJars());
             answer.setIDMap(parser.getIdMap());
             answer.solve();
             long currTime = (System.currentTimeMillis() - time) / 1000 / 60;
             System.out.println("Needed time: " + currTime + " min");
-            System.out.println("Possible jar configurations: "+ answer.getAnswers());
+            System.out.println("Possible jar configurations: " + answer.getAnswers());
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         } catch (NoConflictException e) {

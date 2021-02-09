@@ -1,7 +1,6 @@
 package dp.resolver.tree;
 
-import dp.resolver.loader.CentralMavenAPI;
-import dp.resolver.parse.JarParser;
+import dp.api.maven.CentralMavenAPI;
 import dp.resolver.parse.assist.AssistParser;
 import dp.resolver.parse.assist.ClazzWithMethodsDto;
 import dp.resolver.tree.element.CallNode;
@@ -25,7 +24,7 @@ public class CallTree implements Tree {
     private final Map<String, Boolean> jars;
     private final List<Invocation> currLeaves;
     private final List<CallNode> conflicts;
-    private final List<String> allUsedJars;
+    private final Set<String> neededJars;
 
     /**
      * Tree data structure which contains all method call traces from a given root project
@@ -37,7 +36,7 @@ public class CallTree implements Tree {
         this.answerObject = answerObject;
         this.startNodes = new ArrayList<>();
         this.jars = new HashMap<>();
-        this.allUsedJars = new ArrayList<>();
+        this.neededJars = new HashSet<>();
         this.conflicts = new ArrayList<>();
         initModel();
         this.currLeaves = new ArrayList<>();
@@ -163,6 +162,11 @@ public class CallTree implements Tree {
         return this.conflicts;
     }
 
+    @Override
+    public Set getNeededJars() {
+        return this.neededJars;
+    }
+
     /**
      * function that recursively fills a set with all nodes from the given root node
      *
@@ -212,12 +216,14 @@ public class CallTree implements Tree {
         }
         for (String key : jarsToRemove) {
             this.jars.remove(key);
-            if (this.model.getCurrProjectPath().equals(this.targetProjectPath))
-                this.answerObject.addBloatedJar(key); // add jars that are directly bloated (root pom)
+            if (checkIfJarNeeded(key)) {
+                this.neededJars.add(key); // if jar is possibly needed it will get added to needed jars for safety reasons
+            } else if (this.model.getCurrProjectPath().equals(this.targetProjectPath)) {
+                this.answerObject.addBloatedJar(key);
+            }// add jars that are directly bloated (root pom)
         }
         String nextJar = getNonTraversedJar();
         // save already traversed jars for later conflict search
-        this.allUsedJars.add(nextJar);
         try {
             this.model = new SpoonModel(nextJar, true);
             this.model.setCallNodes(prevCallNodes);
@@ -307,6 +313,7 @@ public class CallTree implements Tree {
         for (Invocation invocation : this.currLeaves) {
             try {
                 for (ClazzWithMethodsDto clazz : jarClassList) {
+
                     if (clazz.getClazzName().replace(".class", "").replace(File.separator, ".").equals(invocation.getDeclaringType())) {
                         remove = false;
                         break;
@@ -319,6 +326,35 @@ public class CallTree implements Tree {
         }
 
         return remove;
+    }
+
+    /**
+     * checks whether a pom file contains the string prefix of a groupID (does not have to bee a dependency) hence jar is possibly needed
+     *
+     * @param jarPath path from the jar to be checked
+     * @return true if pom file contains the prefix
+     */
+    private boolean checkIfJarNeeded(String jarPath) {
+        for (Invocation invocation : this.currLeaves) {
+            try {
+            String groupID = invocation.getDeclaringType()
+                    .substring(0, invocation.getDeclaringType().indexOf(".", invocation.getDeclaringType().indexOf(".") + 1));
+            String pom = jarPath.replace(".jar", ".pom");
+            File pomFile = new File(pom);
+                Scanner scanner = new Scanner(pomFile);
+                while (scanner.hasNextLine()) {
+                    String line = scanner.nextLine();
+                    if (line.contains(groupID)) {
+                        scanner.close();
+                        return true;
+                    }
+                }
+                scanner.close();
+            } catch (Exception e) {
+                // skip invocation@
+            }
+        }
+        return false;
     }
 
 

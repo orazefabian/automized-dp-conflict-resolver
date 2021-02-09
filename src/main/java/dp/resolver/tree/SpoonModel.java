@@ -1,7 +1,7 @@
 package dp.resolver.tree;
 
 import dp.resolver.base.ImplSpoon;
-import dp.resolver.loader.CentralMavenAPI;
+import dp.api.maven.CentralMavenAPI;
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
 import org.apache.maven.pom._4_0.Dependency;
@@ -238,7 +238,7 @@ public class SpoonModel implements CallModel {
                 for (Object obj : s.filterChildren(new TypeFilter<CtMethod>(CtMethod.class)).list()) {
                     CtMethodImpl m = (CtMethodImpl) obj;
                     //if (checkMethodFromCallChain(m, leafInvocations)) {
-                    System.out.println("    Checking body of method: " + m.getSimpleName());
+                    //System.out.println("    Checking body of method: " + m.getSimpleName());
                     searchInvocation(m, s, leafInvocations);
                     //}
                 }
