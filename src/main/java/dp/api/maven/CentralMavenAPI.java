@@ -1,4 +1,4 @@
-package dp.resolver.loader;
+package dp.api.maven;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -24,6 +24,16 @@ public class CentralMavenAPI {
 
     private static final String MAVEN_REPO_URL = "https://repo1.maven.org/maven2";
     private static String pathM2;
+    private static int MAX_VERSIONS_NUM = 10;
+
+    /**
+     * sets the maximal number of versions that should be downloaded when accessing all version from central repo (default is 10)
+     *
+     * @param maxVersionsNum number of max newest versions e.g. 'maxVersionsNum = 2' means the two newest versions are downloaded
+     */
+    public static void setMaxVersionsNum(int maxVersionsNum) {
+        MAX_VERSIONS_NUM = maxVersionsNum;
+    }
 
     /**
      * function which creates the missing folder structure for a non existent jar and
@@ -79,13 +89,14 @@ public class CentralMavenAPI {
         Document doc = db.parse(url.openStream());
         NodeList nodes = doc.getElementsByTagName("version");
         setPathM2();
-        for (int i = 0; i < nodes.getLength(); i++) {
+        for (int i = nodes.getLength() - 1; i >= 0; i--) {
             String version = nodes.item(i).getTextContent();
             /*String jarPath = pathM2 + groupID + File.separator + artifactID + File.separator + version
                     + File.separator + artifactID + "-" + version + ".jar";*/
             String jarPath = pathM2 + infix + File.separator + version
                     + File.separator + artifactID + "-" + version + ".jar";
             downloadMissingFiles(jarPath);
+            if (nodes.getLength() - i >= MAX_VERSIONS_NUM) break; // only the newest versions until the max limit
         }
     }
 
@@ -133,7 +144,7 @@ public class CentralMavenAPI {
      */
     private static void downloadPom(String path) {
         String url = MAVEN_REPO_URL + path.split("/repository")[1];
-        url.replace(".jar", ".pom");
+        url = url.replace(".jar", ".pom");
         try {
             BufferedInputStream inputStream = new BufferedInputStream(new URL(url).openStream());
             File file = new File(path.replace(".jar", ".pom"));
