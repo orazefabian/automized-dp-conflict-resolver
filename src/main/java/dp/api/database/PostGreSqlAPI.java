@@ -15,10 +15,13 @@ public class PostGreSqlAPI {
     private static String USER = EnvConfig.USER;
     private static String PW = EnvConfig.PASSWORD;
 
-    private QueryGenerator queryGenerator;
-
-    public PostGreSqlAPI() throws SQLException {
-        queryGenerator = new QueryGeneratorImpl(connect());
+    /**
+     * creates the connection to the database and returns a QueryGenerator
+     * @return {@link QueryGenerator}
+     * @throws SQLException if connection to db fails
+     */
+    public static QueryGenerator getQueryGenerator() throws SQLException {
+        return new QueryGeneratorImpl(connect());
 
     }
 
@@ -28,7 +31,7 @@ public class PostGreSqlAPI {
      * @return the {@link Connection} object
      * @throws SQLException when connecting fails
      */
-    private Connection connect() throws SQLException {
+    private static Connection connect() throws SQLException {
         Connection conn = null;
         conn = DriverManager.getConnection(URL, USER, PW);
         if (conn == null) {
