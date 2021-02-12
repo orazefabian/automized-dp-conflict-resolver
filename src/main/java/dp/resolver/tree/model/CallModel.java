@@ -1,7 +1,7 @@
-package dp.resolver.tree;
+package dp.resolver.tree.model;
 
-import dp.resolver.base.ImplSpoon;
 import dp.api.maven.CentralMavenAPI;
+import dp.resolver.base.ImplSpoon;
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
 import org.apache.maven.pom._4_0.Dependency;
@@ -21,55 +21,36 @@ import spoon.support.reflect.code.CtLocalVariableImpl;
 import spoon.support.reflect.declaration.CtMethodImpl;
 
 import javax.xml.bind.JAXBException;
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /*********************************
- Created by Fabian Oraze on 27.11.20
+ Created by Fabian Oraze on 12.02.21
  *********************************/
 
-public class SpoonModel implements CallModel {
+public abstract class CallModel {
 
-    private List<ImplSpoon> pomModels; // holds all possible pom models of sub modules
-    private ImplSpoon baseModel; // the base pom model from the root project
-    private Launcher launcher;
-    private final CtModel ctModel;
+
+    protected CtModel ctModel;
+    protected final List<String> classNames;
+    protected final Map<String, Boolean> jarPaths;
+    protected final String currProjectPath;
+    protected List<ImplSpoon> pomModels; // holds all possible pom models of sub modules
+    protected Launcher launcher;
+    protected List<CallNode> callNodes;
+    protected ImplSpoon baseModel; // the base pom model from the root project
     private String pathM2;
-    private final List<String> classNames;
-    private final Map<String, Boolean> jarPaths;
-    private final String currProjectPath;
-    private List<CallNode> callNodes;
 
-
-    /**
-     * object which builds a new spoon launcher which provides a AST
-     *
-     * @param pathToProject  String to a project, can be maven root folder or path to .jar file
-     * @param analyzeFromJar boolean whether the pathToProject is a .jar file
-     * @throws Exception if building the spoon model fails
-     */
-    public SpoonModel(String pathToProject, boolean analyzeFromJar) throws Exception {
-        this.currProjectPath = pathToProject;
-        setPathM2();
+    protected CallModel(String pathToProject) {
+        this.pomModels = new ArrayList<>();
         this.classNames = new ArrayList<>();
         this.jarPaths = new HashMap<>();
-        this.pomModels = new ArrayList<>();
-        System.out.println("Starting to build spoon model from " + pathToProject + "...");
-        initLauncherAndCreatePomModels(analyzeFromJar);
-        this.ctModel = this.launcher.buildModel();
-        System.out.println("Building spoon model finished");
+        this.currProjectPath = pathToProject;
         callNodes = new ArrayList<>();
-        initClassNames();
-        try {
-            computeJarPaths();
-        } catch (NullPointerException e) {
-            System.err.println("No dependencies for project: " + pathToProject);
-        }
-    }
-
-    @Override
-    public String getCurrProjectPath() {
-        return currProjectPath;
     }
 
     /**
@@ -77,7 +58,7 @@ public class SpoonModel implements CallModel {
      *
      * @param file the file which should be checked for pom occurrences
      */
-    private void searchModulesForPom(File file) {
+    protected void searchModulesForPom(File file) {
         if (file.isDirectory()) {
             for (File f : file.listFiles()) {
                 if (f.isDirectory()) {
@@ -91,44 +72,18 @@ public class SpoonModel implements CallModel {
         }
     }
 
-    @Override
     public List<CallNode> getCallNodes() {
         return callNodes;
     }
 
-    @Override
     public void setCallNodes(List<CallNode> callNodes) {
         this.callNodes = callNodes;
     }
 
     /**
-     * function which initializes a new spoon launcher and fills pomModel list with all poms located in Maven-project/jar
-     *
-     * @param analyzeFromJar whether the launcher will be a JarLauncher of MavenLauncher
-     */
-    private void initLauncherAndCreatePomModels(boolean analyzeFromJar) {
-        if (!analyzeFromJar) {
-            this.launcher = new MavenLauncher(this.currProjectPath, MavenLauncher.SOURCE_TYPE.APP_SOURCE); // change source type to all_source to include tests
-            this.baseModel = new ImplSpoon(this.currProjectPath);
-            searchModulesForPom(new File(currProjectPath));
-
-        } else {
-            File jar = new File(this.currProjectPath);
-            File pom = new File(this.currProjectPath.replace(".jar", ".pom"));
-            if (!jar.exists() || !pom.exists()) {
-                System.out.println("Jar and/or pom not found... proceeding with download");
-                CentralMavenAPI.downloadMissingFiles(this.currProjectPath);
-            }
-            this.launcher = new JarLauncher(this.currProjectPath);
-            // add new pom model
-            this.baseModel = new ImplSpoon(this.currProjectPath);
-        }
-    }
-
-    /**
      * function which initializes all local class names for current model
      */
-    private void initClassNames() {
+    protected void initClassNames() {
         this.classNames.clear();
         for (Object type : this.ctModel.filterChildren(new TypeFilter<>(CtType.class)).list()) {
             CtType c = (CtType) type;
@@ -139,7 +94,7 @@ public class SpoonModel implements CallModel {
     /**
      * creates path to local repository folder where maven dependency jars are saved
      */
-    private void setPathM2() {
+    protected void setPathM2() {
         String user = System.getProperty("user.name");
         if (System.getProperty("os.name").startsWith("Mac")) {
             this.pathM2 = "/Users/" + user + "/.m2/repository/";
@@ -150,7 +105,6 @@ public class SpoonModel implements CallModel {
         }
     }
 
-    @Override
     public Map<String, Boolean> computeJarPaths() throws NullPointerException, IOException, InterruptedException, JAXBException {
         this.jarPaths.clear();
         checkModelForDPs(this.baseModel);
@@ -226,8 +180,6 @@ public class SpoonModel implements CallModel {
         return pomModel;
     }
 
-
-    @Override
     public List<CallNode> analyzeModel(List<Invocation> leafInvocations) {
         // iterate over all classes in model
         System.out.println("Iterating over classes...");
@@ -248,7 +200,6 @@ public class SpoonModel implements CallModel {
         }
         return this.callNodes;
     }
-
 
     /**
      * helper function that check if a method is part of current call chain
@@ -327,7 +278,6 @@ public class SpoonModel implements CallModel {
         }
     }
 
-
     /**
      * helper function that gets a CallNode from local list of callNodes
      *
@@ -393,5 +343,7 @@ public class SpoonModel implements CallModel {
         else return !strings[0].equals("java");
     }
 
-
+    public String getCurrProjectPath() {
+        return this.currProjectPath;
+    }
 }

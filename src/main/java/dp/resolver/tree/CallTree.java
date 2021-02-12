@@ -5,6 +5,7 @@ import dp.resolver.parse.assist.AssistParser;
 import dp.resolver.parse.assist.ClazzWithMethodsDto;
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
+import dp.resolver.tree.model.*;
 import spoon.compiler.ModelBuildingException;
 
 import javax.xml.bind.JAXBException;
@@ -19,12 +20,13 @@ public class CallTree implements Tree {
 
     private final List<CallNode> startNodes;
     private final String targetProjectPath;
-    private AnswerObject answerObject;
-    private CallModel model;
+    private final ModelFactory modelFactory;
     private final Map<String, Boolean> jars;
     private final List<Invocation> currLeaves;
     private final List<CallNode> conflicts;
     private final Set<String> neededJars;
+    private final AnswerObject answerObject;
+    private CallModel model;
 
     /**
      * Tree data structure which contains all method call traces from a given root project
@@ -34,6 +36,7 @@ public class CallTree implements Tree {
     public CallTree(String targetProjectPath, AnswerObject answerObject) {
         this.targetProjectPath = targetProjectPath;
         this.answerObject = answerObject;
+        this.modelFactory = new ModelFactoryImpl();
         this.startNodes = new ArrayList<>();
         this.jars = new HashMap<>();
         this.neededJars = new HashSet<>();
@@ -53,7 +56,10 @@ public class CallTree implements Tree {
 
     @Override
     public void computeCallTree() {
-        createNewModel();
+        try {
+            createNewModel();
+        } catch (Exception ignored) {
+        }
         this.model.analyzeModel(this.currLeaves);
         computeLeafElements();
         if (jarsToTraverseLeft())
@@ -190,7 +196,7 @@ public class CallTree implements Tree {
     private void initModel() {
         // compute starting nodes for call tree
         try {
-            this.model = new SpoonModel(targetProjectPath, false);
+            this.model = modelFactory.createCallModelFromMaven(targetProjectPath);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -203,10 +209,10 @@ public class CallTree implements Tree {
     }
 
     /**
-     * helper function to create new {@link SpoonModel} for next jar, after analyzing previous one
+     * helper function to create new {@link MavenSpoonModel} for next jar, after analyzing previous one
      * also removes unused/bloated jars
      */
-    private void createNewModel() {
+    private void createNewModel() throws NullPointerException {
         List<CallNode> prevCallNodes = this.model.getCallNodes();
         List<String> jarsToRemove = new ArrayList<>();
         for (String jarPath : this.jars.keySet()) {
@@ -225,7 +231,7 @@ public class CallTree implements Tree {
         String nextJar = getNonTraversedJar();
         // save already traversed jars for later conflict search
         try {
-            this.model = new SpoonModel(nextJar, true);
+            this.model = modelFactory.createCallModelFromJar(nextJar);
             this.model.setCallNodes(prevCallNodes);
             this.jars.putAll(this.model.computeJarPaths());
         } catch (ModelBuildingException e) {
@@ -307,7 +313,7 @@ public class CallTree implements Tree {
      * @param jarPath String representation of the complete path to the Jar to be checked for usage
      * @return true if the given jar is not used
      */
-    private boolean checkIfJarUsed(String jarPath) {
+    private boolean checkIfJarUsed(String jarPath) throws NullPointerException {
         List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jarPath);
         boolean remove = true;
         for (Invocation invocation : this.currLeaves) {
@@ -337,10 +343,10 @@ public class CallTree implements Tree {
     private boolean checkIfJarNeeded(String jarPath) {
         for (Invocation invocation : this.currLeaves) {
             try {
-            String groupID = invocation.getDeclaringType()
-                    .substring(0, invocation.getDeclaringType().indexOf(".", invocation.getDeclaringType().indexOf(".") + 1));
-            String pom = jarPath.replace(".jar", ".pom");
-            File pomFile = new File(pom);
+                String groupID = invocation.getDeclaringType()
+                        .substring(0, invocation.getDeclaringType().indexOf(".", invocation.getDeclaringType().indexOf(".") + 1));
+                String pom = jarPath.replace(".jar", ".pom");
+                File pomFile = new File(pom);
                 Scanner scanner = new Scanner(pomFile);
                 while (scanner.hasNextLine()) {
                     String line = scanner.nextLine();

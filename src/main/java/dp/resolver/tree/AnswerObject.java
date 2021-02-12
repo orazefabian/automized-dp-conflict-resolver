@@ -14,14 +14,14 @@ public class AnswerObject {
 
     private Map<String, Integer> idMap;
     private String stdOut;
-    private Set<List<String>> answers;
+    private List<List<String>> answers;
     public Set<String> bloatedJars;
 
     /**
      * Object that represents the answer set of a clingo command
      */
     public AnswerObject() {
-        this.answers = new HashSet<>();
+        this.answers = new ArrayList<>();
         this.bloatedJars = new HashSet<>();
     }
 
@@ -89,7 +89,7 @@ public class AnswerObject {
     /**
      * @return Set of lists each containing a answer set
      */
-    public Set<List<String>> getAnswers() {
+    public List<List<String>> getAnswers() {
         return answers;
     }
 

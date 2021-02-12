@@ -9,10 +9,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /*********************************
  Created by Fabian Oraze on 22.10.20
@@ -26,7 +23,7 @@ public class TestOnSampleProject {
 
     private List<String> answerOne;
     private List<String> answerTwo;
-    private Set<List> expectedAnswer;
+    private List<List<String>> expectedAnswer;
 
     @BeforeEach
     public void setup() {
@@ -42,9 +39,12 @@ public class TestOnSampleProject {
         answerTwo.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_B/2.0/Project_B-2.0.jar");
         answerTwo.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_C/2.0/Project_C-2.0.jar");
 
-        expectedAnswer = new HashSet<>();
+        expectedAnswer = new ArrayList<>();
         expectedAnswer.add(answerOne);
         expectedAnswer.add(answerTwo);
+
+        Collections.sort(answerOne);
+        Collections.sort(answerTwo);
     }
 
     @AfterEach
@@ -67,10 +67,18 @@ public class TestOnSampleProject {
         } catch (Exception e) {
         }
 
-        Assertions.assertArrayEquals(answer.getAnswers().toArray(), expectedAnswer.toArray());
+        sortAnswer(answer);
+
         Assertions.assertEquals(2, answer.getBloatedJars().size());
         Assertions.assertEquals(2, answer.getAnswers().size());
+        Assertions.assertArrayEquals(answer.getAnswers().toArray(), expectedAnswer.toArray());
 
+    }
+
+    private void sortAnswer(AnswerObject answer) {
+        for (List<String> list : answer.getAnswers()) {
+            Collections.sort(list);
+        }
     }
 
 
