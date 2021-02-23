@@ -22,7 +22,7 @@ public class CallTree implements Tree {
     private final String targetProjectPath;
     private final ModelFactory modelFactory;
     private final Map<String, Boolean> jars;
-    private final List<Invocation> currLeaves;
+    private List<Invocation> currLeaves;
     private final List<CallNode> conflicts;
     private final Set<String> neededJars;
     private final AnswerObject answerObject;
@@ -42,8 +42,12 @@ public class CallTree implements Tree {
         this.neededJars = new HashSet<>();
         this.conflicts = new ArrayList<>();
         initModel();
-        this.currLeaves = new ArrayList<>();
+        setInitialLeaves();
+    }
+
+    private void setInitialLeaves() {
         // set current leaf elements
+        this.currLeaves = new ArrayList<>();
         for (CallNode node : this.startNodes) {
             currLeaves.addAll(node.getInvocations());
         }
@@ -201,7 +205,7 @@ public class CallTree implements Tree {
             e.printStackTrace();
         }
         try {
-            this.jars.putAll(this.model.computeJarPaths());
+            this.jars.putAll(this.model.getDependenciesToJarPaths());
         } catch (IOException | InterruptedException | JAXBException e) {
             e.printStackTrace();
         }
@@ -218,7 +222,7 @@ public class CallTree implements Tree {
         try {
             this.model = modelFactory.createCallModelFromJar(nextJar, this.currLeaves);
             //this.model.setCallNodes(prevCallNodes);
-            this.jars.putAll(this.model.computeJarPaths());
+            this.jars.putAll(this.model.getDependenciesToJarPaths());
         } catch (ModelBuildingException e) {
             System.err.println("Error building models: " + e.getMessage());
         } catch (NullPointerException e) {
