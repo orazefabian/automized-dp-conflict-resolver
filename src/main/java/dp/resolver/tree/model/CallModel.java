@@ -121,7 +121,6 @@ public abstract class CallModel {
             checkModelForDPs(model);
         }
         return this.jarPaths;
-
     }
 
     /**
@@ -255,7 +254,7 @@ public abstract class CallModel {
             } else {
                 fromType = element.getExecutable().getType();
             }
-            if (fromType != null && checkJDKClasses(fromType.getQualifiedName())) {
+            if (checkJDKClasses(fromType.getQualifiedName())) {
                 // if maven project is analyzed and the referred Object from the curr method is contained in the project
                 if (this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName())) break;
                 String methodSignature = element.getExecutable().toString();
@@ -347,7 +346,13 @@ public abstract class CallModel {
     private boolean checkJDKClasses(String qualifiedName) {
         String[] strings = qualifiedName.split("[.]");
         if (strings.length == 1) return true;
-        else return !strings[0].equals("java");
+        else {
+            String packagePrefix = strings[0];
+            return (!packagePrefix.equals("java") && (!packagePrefix.equals("javax")
+                    && (!packagePrefix.equals("com.sun")) && (!packagePrefix.equals("sun"))
+                    && (!packagePrefix.equals("oracle")) && (!packagePrefix.equals("org.xml"))
+                    && (!packagePrefix.equals("com.oracle")) && (!packagePrefix.equals("jdk"))));
+        }
     }
 
     public String getCurrProjectPath() {
