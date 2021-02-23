@@ -23,13 +23,12 @@ public class MavenSpoonModel extends CallModel {
      */
     protected MavenSpoonModel(String pathToProject, List<Invocation> leafInvocations) throws Exception {
         super(pathToProject, leafInvocations);
-        setPathM2();
         System.out.println("Starting to build Maven spoon model from " + pathToProject + "...");
         initLauncherAndCreatePomModels();
         System.out.println("Building spoon model finished");
         initClassNames();
         try {
-            computeJarPaths();
+            getDependenciesToJarPaths();
         } catch (NullPointerException e) {
             System.err.println("No dependencies for project: " + pathToProject);
         }

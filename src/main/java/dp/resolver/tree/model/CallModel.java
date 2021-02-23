@@ -49,8 +49,9 @@ public abstract class CallModel {
         this.classNames = new ArrayList<>();
         this.jarPaths = new HashMap<>();
         this.currProjectPath = pathToProject;
-        callNodes = new ArrayList<>();
+        this.callNodes = new ArrayList<>();
         this.leafInvocations = leafInvocations;
+        setPathM2();
     }
 
     /**
@@ -93,7 +94,7 @@ public abstract class CallModel {
     /**
      * creates path to local repository folder where maven dependency jars are saved
      */
-    protected void setPathM2() {
+    private void setPathM2() {
         String user = System.getProperty("user.name");
         if (System.getProperty("os.name").startsWith("Mac")) {
             this.pathM2 = "/Users/" + user + "/.m2/repository/";
@@ -104,7 +105,16 @@ public abstract class CallModel {
         }
     }
 
-    public Map<String, Boolean> computeJarPaths() throws NullPointerException, IOException, InterruptedException, JAXBException {
+    /**
+     * checks all pom files from current model and computes all dependencies to other jars
+     *
+     * @return a map with keys from all jarPaths referenced in curr and an initial bool value set to true
+     * @throws NullPointerException
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws JAXBException
+     */
+    public Map<String, Boolean> getDependenciesToJarPaths() throws NullPointerException, IOException, InterruptedException, JAXBException {
         this.jarPaths.clear();
         checkModelForDPs(this.baseModel);
         for (ImplSpoon model : this.pomModels) {
@@ -179,6 +189,7 @@ public abstract class CallModel {
         return pomModel;
     }
 
+
     public List<CallNode> analyzeModel() {
         // iterate over all classes in model
         System.out.println("Iterating over classes...");
@@ -220,8 +231,9 @@ public abstract class CallModel {
     /**
      * called by iterateClasses for each method that is part of call chain, than searches for invocations that point to non-local classes and if needed adds them
      * to the call chain of the call tree
-     *  @param method          current method to analyze
-     * @param currClass       String signature of class which current method belongs to
+     *
+     * @param method    current method to analyze
+     * @param currClass String signature of class which current method belongs to
      */
     private void searchInvocation(CtMethod method, CtType currClass) throws NullPointerException {
         // get all method body elements
@@ -305,8 +317,8 @@ public abstract class CallModel {
 
     /**
      * helper function to append a CallNode to the correct Invocation from the leaf elements
-     *  @param currNode        CallNode which corresponds to current Class
      *
+     * @param currNode CallNode which corresponds to current Class
      */
     private void appendNodeToLeaf(CallNode currNode) {
         for (Invocation invocation : this.leafInvocations) {
