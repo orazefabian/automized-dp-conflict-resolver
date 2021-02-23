@@ -65,7 +65,7 @@ public abstract class CallModel {
                 if (f.isDirectory()) {
                     // recursive call of next directory search
                     searchModulesForPom(f);
-                } else if (f.getName().toLowerCase().equals("pom.xml") && !f.getAbsolutePath().equals(this.currProjectPath)) {
+                } else if (f.getName().equalsIgnoreCase("pom.xml") && !f.getAbsolutePath().equals(this.currProjectPath)) {
                     this.pomModels.add(new ImplSpoon(f.getParentFile().getAbsolutePath() + File.separator));
                 }
             }
@@ -220,7 +220,7 @@ public abstract class CallModel {
         if (this.leafInvocations == null) return true;
         for (Invocation invocation : this.leafInvocations) {
             if (invocation.getMethodSignature().split("\\(")[0].equals(method.getSimpleName())
-                    && checkJDKClasses(method.getDeclaringType().getQualifiedName())) {
+                    && !checkJDKClasses(method.getDeclaringType().getQualifiedName())) {
                 return true;
             }
         }
@@ -243,7 +243,7 @@ public abstract class CallModel {
         CallNode currNode = null;
         // creates new Node from and if needed appends it to a leaf
         if (methodCalls.size() != 0 || constructorCalls.size() != 0 || currClass.toString().contains("interface " + currClass.getSimpleName())) {
-            currNode = getNodeByName(currClassName, this.currProjectPath);
+            currNode = getNodeByName(currClassName);
             if (this.leafInvocations != null) appendNodeToLeaf(currNode);
         }
         // adds invocations called by current method to the current CallNode
@@ -254,7 +254,7 @@ public abstract class CallModel {
             } else {
                 fromType = element.getExecutable().getType();
             }
-            if (checkJDKClasses(fromType.getQualifiedName())) {
+            if (!checkJDKClasses(fromType.getQualifiedName())) {
                 // if maven project is analyzed and the referred Object from the curr method is contained in the project
                 if (this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName())) break;
                 String methodSignature = element.getExecutable().toString();
@@ -289,16 +289,15 @@ public abstract class CallModel {
      * helper function that gets a CallNode from local list of callNodes
      *
      * @param currClass String name of current class
-     * @param jarPath   String path of jar where class should be located
      * @return {@link CallNode}
      */
-    private CallNode getNodeByName(String currClass, String jarPath) {
+    private CallNode getNodeByName(String currClass) {
         for (CallNode n : this.callNodes) {
-            if (n.getClassName().equals(currClass) && n.getFromJar().equals(jarPath)) {
+            if (n.getClassName().equals(currClass) && n.getFromJar().equals(this.currProjectPath)) {
                 if (n.getPrevious() == null) return n;
             }
         }
-        return getCallNode(currClass, jarPath);
+        return getCallNode(currClass, this.currProjectPath);
     }
 
     /**
@@ -341,18 +340,14 @@ public abstract class CallModel {
      * helper function which checks if a class is part of the JDK
      *
      * @param qualifiedName String name of class
-     * @return true if class is not part of JDK
+     * @return true if class is part of JDK
      */
     private boolean checkJDKClasses(String qualifiedName) {
-        String[] strings = qualifiedName.split("[.]");
-        if (strings.length == 1) return true;
-        else {
-            String packagePrefix = strings[0];
-            return (!packagePrefix.equals("java") && (!packagePrefix.equals("javax")
-                    && (!packagePrefix.equals("com.sun")) && (!packagePrefix.equals("sun"))
-                    && (!packagePrefix.equals("oracle")) && (!packagePrefix.equals("org.xml"))
-                    && (!packagePrefix.equals("com.oracle")) && (!packagePrefix.equals("jdk"))));
-        }
+        return (qualifiedName.startsWith("java.") || (qualifiedName.startsWith("javax.xml.parsers")
+                || (qualifiedName.startsWith("com.sun")) || (qualifiedName.startsWith("sun"))
+                || (qualifiedName.startsWith("oracle")) || (qualifiedName.startsWith("org.xml"))
+                || (qualifiedName.startsWith("com.oracle")) || (qualifiedName.startsWith("jdk"))
+                || (qualifiedName.startsWith("javax.xml.stream"))));
     }
 
     public String getCurrProjectPath() {
