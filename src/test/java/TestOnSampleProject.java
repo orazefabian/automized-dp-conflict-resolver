@@ -4,29 +4,23 @@ import dp.resolver.tree.AnswerObject;
 import dp.resolver.tree.CallTree;
 import dp.resolver.tree.ConflictType;
 import dp.resolver.tree.Tree;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.*;
 
-/*********************************
- Created by Fabian Oraze on 22.10.20
- *********************************/
 
 public class TestOnSampleProject {
 
-    private Tree tree;
-    private final String testProjectPath = "/Users/fabian/Projects/Sample/runtime_conflict_sample/Project_A/";
-    private AnswerObject answer;
+    private static Tree tree;
+    private static final String testProjectPath = "/Users/fabian/Projects/Sample/runtime_conflict_sample/Project_A/";
+    private static AnswerObject answer;
 
-    private List<String> answerOne;
-    private List<String> answerTwo;
-    private List<List<String>> expectedAnswer;
+    private static List<String> answerOne;
+    private static List<String> answerTwo;
+    private static List<List<String>> expectedAnswer;
 
-    @BeforeEach
-    public void setup() {
+    @BeforeAll
+    public static void setup() {
         answer = new AnswerObject();
         CentralMavenAPI.setMaxVersionsNum(5);
         tree = new CallTree(testProjectPath, answer);
@@ -45,19 +39,11 @@ public class TestOnSampleProject {
 
         Collections.sort(answerOne);
         Collections.sort(answerTwo);
+
+        start();
     }
 
-    @AfterEach
-    public void tearDown() {
-        answer = null;
-        tree = null;
-        answerOne = null;
-        answerTwo = null;
-        expectedAnswer = null;
-    }
-
-    @Test
-    public void testAnswerOnSampleProject() {
+    private static void start() {
         try {
             tree.computeCallTree();
             FactBuilder parser;
@@ -68,18 +54,38 @@ public class TestOnSampleProject {
         }
 
         sortAnswer(answer);
-
-        Assertions.assertEquals(2, answer.getBloatedJars().size());
-        Assertions.assertEquals(2, answer.getAnswers().size());
-        Assertions.assertArrayEquals(answer.getAnswers().toArray(), expectedAnswer.toArray());
-
     }
 
-    private void sortAnswer(AnswerObject answer) {
+    private static void sortAnswer(AnswerObject answer) {
         for (List<String> list : answer.getAnswers()) {
             Collections.sort(list);
         }
     }
+
+    @AfterAll
+    public static void tearDown() {
+        answer = null;
+        tree = null;
+        answerOne = null;
+        answerTwo = null;
+        expectedAnswer = null;
+    }
+
+    @Test
+    public void testCorrectAmountBloatedJars() {
+        Assertions.assertEquals(2, answer.getBloatedJars().size());
+    }
+
+    @Test
+    public void testCorrectAmountAnswers() {
+        Assertions.assertEquals(2, answer.getAnswers().size());
+    }
+
+    @Test
+    public void testCorrectAnswerArrays() {
+        Assertions.assertArrayEquals(answer.getAnswers().toArray(), expectedAnswer.toArray());
+    }
+
 
 
 }

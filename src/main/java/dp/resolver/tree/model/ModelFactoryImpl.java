@@ -1,5 +1,9 @@
 package dp.resolver.tree.model;
 
+import dp.resolver.tree.element.Invocation;
+
+import java.util.List;
+
 /*********************************
  Created by Fabian Oraze on 12.02.21
  *********************************/
@@ -7,12 +11,12 @@ package dp.resolver.tree.model;
 public class ModelFactoryImpl implements ModelFactory {
 
     @Override
-    public CallModel createCallModelFromMaven(String pathToMaven) throws Exception {
-        return new MavenSpoonModel(pathToMaven);
+    public CallModel createCallModelFromMaven(String pathToMaven, List<Invocation> leafInvocations) throws Exception {
+        return new MavenSpoonModel(pathToMaven, leafInvocations);
     }
 
     @Override
-    public CallModel createCallModelFromJar(String pathToJar) throws Exception {
-        return new JarSpoonModel(pathToJar);
+    public CallModel createCallModelFromJar(String pathToJar, List<Invocation> leafInvocations) throws Exception {
+        return new JarSpoonModel(pathToJar, leafInvocations);
     }
 }

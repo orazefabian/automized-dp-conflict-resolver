@@ -22,7 +22,6 @@ public class PostGreSqlAPI {
      */
     public static QueryGenerator getQueryGenerator() throws SQLException {
         return new QueryGeneratorImpl(connect());
-
     }
 
     /**

@@ -100,4 +100,8 @@ public class AnswerObject {
         return stdOut;
     }
 
+
+    public void addAllBloatedJars(List<String> jarsToRemove) {
+        this.bloatedJars.addAll(jarsToRemove);
+    }
 }

@@ -60,7 +60,7 @@ public class CallTree implements Tree {
             createNewModel();
         } catch (Exception ignored) {
         }
-        this.model.analyzeModel(this.currLeaves);
+        this.model.analyzeModel();
         computeLeafElements();
         if (jarsToTraverseLeft())
             computeCallTree();
@@ -196,7 +196,7 @@ public class CallTree implements Tree {
     private void initModel() {
         // compute starting nodes for call tree
         try {
-            this.model = modelFactory.createCallModelFromMaven(targetProjectPath);
+            this.model = modelFactory.createCallModelFromMaven(targetProjectPath, this.currLeaves);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -205,15 +205,34 @@ public class CallTree implements Tree {
         } catch (IOException | InterruptedException | JAXBException e) {
             e.printStackTrace();
         }
-        this.startNodes.addAll(this.model.analyzeModel(null));
+        this.startNodes.addAll(this.model.analyzeModel());
     }
 
     /**
      * helper function to create new {@link MavenSpoonModel} for next jar, after analyzing previous one
-     * also removes unused/bloated jars
      */
     private void createNewModel() throws NullPointerException {
-        List<CallNode> prevCallNodes = this.model.getCallNodes();
+        removeNonUsedOrNeededJars();
+        String nextJar = getNonTraversedJar();
+        // save already traversed jars for later conflict search
+        try {
+            this.model = modelFactory.createCallModelFromJar(nextJar, this.currLeaves);
+            //this.model.setCallNodes(prevCallNodes);
+            this.jars.putAll(this.model.computeJarPaths());
+        } catch (ModelBuildingException e) {
+            System.err.println("Error building models: " + e.getMessage());
+        } catch (NullPointerException e) {
+            System.out.println("No Dependencies found for given project");
+        } catch (InterruptedException | IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            System.err.println("New launcher model could not be built for: " + nextJar);
+            e.printStackTrace();
+        }
+
+    }
+
+    private void removeNonUsedOrNeededJars() {
         List<String> jarsToRemove = new ArrayList<>();
         for (String jarPath : this.jars.keySet()) {
             // remove non used jars
@@ -228,23 +247,6 @@ public class CallTree implements Tree {
                 this.answerObject.addBloatedJar(key);
             }// add jars that are directly bloated (root pom)
         }
-        String nextJar = getNonTraversedJar();
-        // save already traversed jars for later conflict search
-        try {
-            this.model = modelFactory.createCallModelFromJar(nextJar);
-            this.model.setCallNodes(prevCallNodes);
-            this.jars.putAll(this.model.computeJarPaths());
-        } catch (ModelBuildingException e) {
-            System.err.println("Error building models: " + e.getMessage());
-        } catch (NullPointerException e) {
-            System.out.println("No Dependencies found for given project");
-        } catch (InterruptedException | IOException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            System.err.println("New launcher model could not be built for: " + nextJar);
-            e.printStackTrace();
-        }
-
     }
 
     /**

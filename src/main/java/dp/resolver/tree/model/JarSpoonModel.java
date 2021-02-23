@@ -2,8 +2,10 @@ package dp.resolver.tree.model;
 
 import dp.api.maven.CentralMavenAPI;
 import dp.resolver.base.ImplSpoon;
+import dp.resolver.tree.element.Invocation;
 import spoon.JarLauncher;
 import java.io.File;
+import java.util.List;
 
 /*********************************
  Created by Fabian Oraze on 12.02.21
@@ -18,8 +20,8 @@ public class JarSpoonModel extends CallModel {
      * @param pathToProject String to a project, can be maven root folder or path to .jar file
      * @throws Exception if building the spoon model fails
      */
-    protected JarSpoonModel(String pathToProject) throws Exception {
-        super(pathToProject);
+    protected JarSpoonModel(String pathToProject, List<Invocation> leafInvocations) throws Exception {
+        super(pathToProject, leafInvocations);
         setPathM2();
         System.out.println("Starting to build Maven spoon model from " + pathToProject + "...");
         initLauncherAndCreatePomModels();

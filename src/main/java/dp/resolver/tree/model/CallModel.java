@@ -1,12 +1,10 @@
 package dp.resolver.tree.model;
 
-import dp.api.maven.CentralMavenAPI;
 import dp.resolver.base.ImplSpoon;
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
 import org.apache.maven.pom._4_0.Dependency;
 import org.apache.maven.pom._4_0.Model;
-import spoon.JarLauncher;
 import spoon.Launcher;
 import spoon.MavenLauncher;
 import spoon.SpoonException;
@@ -35,6 +33,7 @@ import java.util.Map;
 public abstract class CallModel {
 
 
+    private final List<Invocation> leafInvocations;
     protected CtModel ctModel;
     protected final List<String> classNames;
     protected final Map<String, Boolean> jarPaths;
@@ -45,12 +44,13 @@ public abstract class CallModel {
     protected ImplSpoon baseModel; // the base pom model from the root project
     private String pathM2;
 
-    protected CallModel(String pathToProject) {
+    protected CallModel(String pathToProject, List<Invocation> leafInvocations) {
         this.pomModels = new ArrayList<>();
         this.classNames = new ArrayList<>();
         this.jarPaths = new HashMap<>();
         this.currProjectPath = pathToProject;
         callNodes = new ArrayList<>();
+        this.leafInvocations = leafInvocations;
     }
 
     /**
@@ -67,7 +67,6 @@ public abstract class CallModel {
                 } else if (f.getName().toLowerCase().equals("pom.xml") && !f.getAbsolutePath().equals(this.currProjectPath)) {
                     this.pomModels.add(new ImplSpoon(f.getParentFile().getAbsolutePath() + File.separator));
                 }
-
             }
         }
     }
@@ -180,7 +179,7 @@ public abstract class CallModel {
         return pomModel;
     }
 
-    public List<CallNode> analyzeModel(List<Invocation> leafInvocations) {
+    public List<CallNode> analyzeModel() {
         // iterate over all classes in model
         System.out.println("Iterating over classes...");
         for (Object type : this.ctModel.filterChildren(new TypeFilter<>(CtType.class)).list()) {
@@ -191,7 +190,7 @@ public abstract class CallModel {
                     CtMethodImpl m = (CtMethodImpl) obj;
                     //if (checkMethodFromCallChain(m, leafInvocations)) {
                     //System.out.println("    Checking body of method: " + m.getSimpleName());
-                    searchInvocation(m, s, leafInvocations);
+                    searchInvocation(m, s);
                     //}
                 }
             } catch (SpoonException | NullPointerException e) {
@@ -205,12 +204,11 @@ public abstract class CallModel {
      * helper function that check if a method is part of current call chain
      *
      * @param method currently iterated method
-     * @param leaves list of current leaf Invocations
      * @return true if method is part of call chain
      */
-    private boolean checkMethodFromCallChain(CtMethod method, List<Invocation> leaves) {
-        if (leaves == null) return true;
-        for (Invocation invocation : leaves) {
+    private boolean checkMethodFromCallChain(CtMethod method) {
+        if (this.leafInvocations == null) return true;
+        for (Invocation invocation : this.leafInvocations) {
             if (invocation.getMethodSignature().split("\\(")[0].equals(method.getSimpleName())
                     && checkJDKClasses(method.getDeclaringType().getQualifiedName())) {
                 return true;
@@ -222,12 +220,10 @@ public abstract class CallModel {
     /**
      * called by iterateClasses for each method that is part of call chain, than searches for invocations that point to non-local classes and if needed adds them
      * to the call chain of the call tree
-     *
-     * @param method          current method to analyze
+     *  @param method          current method to analyze
      * @param currClass       String signature of class which current method belongs to
-     * @param leafInvocations List of current leaf Invocations
      */
-    private void searchInvocation(CtMethod method, CtType currClass, List<Invocation> leafInvocations) throws NullPointerException {
+    private void searchInvocation(CtMethod method, CtType currClass) throws NullPointerException {
         // get all method body elements
         String currClassName = currClass.getQualifiedName();
 
@@ -237,7 +233,7 @@ public abstract class CallModel {
         // creates new Node from and if needed appends it to a leaf
         if (methodCalls.size() != 0 || constructorCalls.size() != 0 || currClass.toString().contains("interface " + currClass.getSimpleName())) {
             currNode = getNodeByName(currClassName, this.currProjectPath);
-            if (leafInvocations != null) appendNodeToLeaf(currNode, leafInvocations);
+            if (this.leafInvocations != null) appendNodeToLeaf(currNode);
         }
         // adds invocations called by current method to the current CallNode
         for (CtInvocation element : methodCalls) {
@@ -309,12 +305,11 @@ public abstract class CallModel {
 
     /**
      * helper function to append a CallNode to the correct Invocation from the leaf elements
+     *  @param currNode        CallNode which corresponds to current Class
      *
-     * @param currNode        CallNode which corresponds to current Class
-     * @param leafInvocations list of invocations from current bottom of call tree
      */
-    private void appendNodeToLeaf(CallNode currNode, List<Invocation> leafInvocations) {
-        for (Invocation invocation : leafInvocations) {
+    private void appendNodeToLeaf(CallNode currNode) {
+        for (Invocation invocation : this.leafInvocations) {
             if (currNode.getClassName().contains(invocation.getDeclaringType())
                     && invocation.getParentNode().getCurrPomJarDependencies().contains(currNode.getFromJar()) && invocation.getNextNode() == null) {
                 invocation.setNextNode(currNode);

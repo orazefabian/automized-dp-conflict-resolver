@@ -87,7 +87,9 @@ public class FactBuilder {
         for (String jar : this.neededJars) {
             parseIncludeJar(jar);
         }
+
     }
+
 
     /**
      * creates a fact to include a jar e.g 'includeJar(jar)'
@@ -121,6 +123,7 @@ public class FactBuilder {
             }
         }
     }
+
 
     /**
      * parses all root invocations as facts: invocation(0["indicates root project"], toJarID, QualifiedName, MethodName, ParameterCount).
@@ -182,13 +185,16 @@ public class FactBuilder {
     private void parseInvocationFact(List<Invocation> invocations) {
         try {
             for (Invocation invocation : invocations) {
-                int fromID = this.idMap.get(invocation.getParentNode().getFromJar());
-                String fromClass = invocation.getDeclaringType();
-                String name = invocation.getMethodSignature().substring(0, invocation.getMethodSignature().indexOf("("));
-                String signature = invocation.getMethodSignature().split(name)[1];
-                int paramCount = computeParamCount(signature);
-                this.factsBuilder.append("\ninvocation(").append(fromID).append(",\"").append(fromClass).append("\",\"")
-                        .append(name).append("\",").append(paramCount).append(").\n");
+                // if it is null the next jar in call trace could not be determined and therefore no fact should be generated
+                if (invocation.getNextNode() != null) {
+                    int fromID = this.idMap.get(invocation.getParentNode().getFromJar());
+                    String fromClass = invocation.getDeclaringType();
+                    String name = invocation.getMethodSignature().substring(0, invocation.getMethodSignature().indexOf("("));
+                    String signature = invocation.getMethodSignature().split(name)[1];
+                    int paramCount = computeParamCount(signature);
+                    this.factsBuilder.append("\ninvocation(").append(fromID).append(",\"").append(fromClass).append("\",\"")
+                            .append(name).append("\",").append(paramCount).append(").\n");
+                }
             }
         } catch (NullPointerException e) {
             System.err.println("Parsing invocation not possible");
@@ -218,6 +224,7 @@ public class FactBuilder {
             }
             // now compute the rest of the needed facts
             // parseClassFact(jarPath); class facts are not needed because method facts contain all information
+
             parseMethodFact(jarPath);
         } catch (StringIndexOutOfBoundsException e) {
             System.err.println("Could not parse jar fact");
@@ -265,20 +272,6 @@ public class FactBuilder {
             System.err.println("Jar contains no classes");
         }
 
-        //Object[] content = JarParser.getContentNames(jarPath, className);
-        /*for (Object mth : content) {
-            // skip parsing if not method
-            if (mth.toString().contains("(") && mth.toString().contains(")")) {
-                String[] methodModifiers = mth.toString().substring(0, mth.toString().indexOf("(")).split(" ");
-                String methodName = methodModifiers[methodModifiers.length - 1];
-                String methodSignature = mth.toString().substring(mth.toString().indexOf("("), mth.toString().indexOf(")") + 1);
-                int paramCount = computeParamCount(methodSignature);
-                // create fact which maps method to a class and jar
-                this.factsBuilder.append("method(").append(this.idMap.get(jarPath)).append(",\"")
-                        .append(className.replace(File.separator, ".")).append("\",\"").append(methodName)
-                        .append("\",").append(paramCount).append(").\n");
-            }
-        }*/
     }
 
 
@@ -362,26 +355,6 @@ public class FactBuilder {
             this.factsBuilder.append("\njar(").append(nextJarID).append(",\"").append(groupID).append("\",\"").append(artifactID).append("\",\"").append(version).append("\").\n");
             //Object[] classNames = JarParser.getClassNames(jarPath);
             parseMethodFact(jarPath);
-
-
-            /*for (Object cl : classNames) {
-                // this line creates the fact for the jarClass
-                String clName = cl.toString().replace(".class", "").replace(File.separator, ".");
-                // this.factsBuilder.append("class(").append(this.idMap.get(jarPath)).append(",\"").append(clName).append("\").\n");
-                Object[] methodNames = JarParser.getContentNames(jarPath, cl.toString().replace(".class", ""));
-                for (Object mt : methodNames) {
-                    if (mt.toString().contains("(") && mt.toString().contains(")")) {
-                        String[] methodModifiers = mt.toString().substring(0, mt.toString().indexOf("(")).split(" ");
-                        String methodName = methodModifiers[methodModifiers.length - 1];
-                        String methodSignature = mt.toString().substring(mt.toString().indexOf("("), mt.toString().indexOf(";"));
-                        int paramCount = computeParamCount(methodSignature);
-                        // create fact which maps method to a class and jar
-                        this.factsBuilder.append("method(").append(this.idMap.get(jarPath)).append(",\"")
-                                .append((clName).replace(File.separator, ".")).append("\",\"").append(methodName)
-                                .append("\",").append(paramCount).append(").\n");
-                    }
-                }
-            }*/
         }
     }
 
