@@ -117,10 +117,7 @@ public class CallTree implements Tree {
      * @return true if node is a leaf object of current tree
      */
     private boolean checkForConflictType3(CallNode call) {
-        if (call.getPrevious() == null) return false; // do not add root nodes!!
-        /*else if (call.getInvocations() == null || call.getInvocations().size() == 0) {
-            return true;
-        }*/
+        if (call.getPrevious() == null) return false; // do not add root nodes
         else {
             for (Invocation inv : call.getInvocations()) {
                 if (inv.getNextNode() != null) return false;

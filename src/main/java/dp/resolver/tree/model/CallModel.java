@@ -173,10 +173,7 @@ public abstract class CallModel {
                 System.out.println("Searching class: " + s.getSimpleName());
                 for (Object obj : s.filterChildren(new TypeFilter<CtMethod>(CtMethod.class)).list()) {
                     CtMethodImpl m = (CtMethodImpl) obj;
-                    //if (checkMethodFromCallChain(m, leafInvocations)) {
-                    //System.out.println("    Checking body of method: " + m.getSimpleName());
                     searchInvocation(m, s);
-                    //}
                 }
             } catch (SpoonException | NullPointerException e) {
                 System.err.println("could not iterate over methods in class: " + s.getSimpleName());
@@ -195,7 +192,7 @@ public abstract class CallModel {
         if (this.leafInvocations == null) return true;
         for (Invocation invocation : this.leafInvocations) {
             if (invocation.getMethodSignature().split("\\(")[0].equals(method.getSimpleName())
-                    && !checkJDKClasses(method.getDeclaringType().getQualifiedName())) {
+                    && !isPartOfJDKClasses(method.getDeclaringType().getQualifiedName())) {
                 return true;
             }
         }
@@ -238,12 +235,8 @@ public abstract class CallModel {
     private void addPossibleInvocation(List<CtInvocation> methodCalls, List<CtConstructorCall> constructorCalls, CallNode currNode) {
         for (CtInvocation element : methodCalls) {
             CtTypeReference fromType;
-            if (element.getExecutable().getType() == null || element.getExecutable().getType().toString().equals("void") || element.getExecutable().getType().isPrimitive()) {
-                fromType = element.getExecutable().getDeclaringType();
-            } else {
-                fromType = element.getExecutable().getType();
-            }
-            if (!checkJDKClasses(fromType.getQualifiedName()) && checkForValidDeclaringType(fromType.getQualifiedName())) {
+            fromType = extractTargetTypeFromElement(element);
+            if (!isPartOfJDKClasses(fromType.getQualifiedName()) && checkForValidDeclaringType(fromType.getQualifiedName())) {
                 // if maven project is analyzed and the referred Object from the curr method is contained in the project
                 if (this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName())) break;
                 String methodSignature = element.getExecutable().toString();
@@ -254,6 +247,21 @@ public abstract class CallModel {
 
             }
         }
+    }
+
+    private CtTypeReference extractTargetTypeFromElement(CtInvocation element) {
+        CtTypeReference fromType;
+        /*if (element.getExecutable().getType() == null || element.getExecutable().getType().toString().equals("void") || element.getExecutable().getType().isPrimitive()) {
+            fromType = element.getExecutable().getDeclaringType();
+        } else {
+            fromType = element.getExecutable().getType();
+        }*/
+        if (element.getTarget().getType().toString().equals("void")){
+            fromType = element.getExecutable().getType();
+        }else {
+            fromType = element.getTarget().getType();
+        }
+        return fromType;
     }
 
     private boolean checkForValidDeclaringType(String qualifiedName) {
@@ -334,7 +342,7 @@ public abstract class CallModel {
      * @param qualifiedName String name of class
      * @return true if class is part of JDK
      */
-    private boolean checkJDKClasses(String qualifiedName) {
+    private boolean isPartOfJDKClasses(String qualifiedName) {
         return (qualifiedName.startsWith("java.") || (qualifiedName.startsWith("javax.xml.parsers.")
                 || (qualifiedName.startsWith("com.sun.")) || (qualifiedName.startsWith("sun."))
                 || (qualifiedName.startsWith("oracle.")) || (qualifiedName.startsWith("org.xml"))
