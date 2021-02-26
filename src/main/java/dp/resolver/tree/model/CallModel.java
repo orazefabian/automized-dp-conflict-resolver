@@ -132,7 +132,7 @@ public abstract class CallModel {
      * @throws InterruptedException if process gets interrupted
      */
     private void checkModelForDPs(ImplSpoon model) throws JAXBException, IOException, InterruptedException {
-        Model effPom = getEffectivePomModel(model);
+        Model effPom = model.getEffectivePomModel(this.launcher);
         try {
             for (Dependency dp : model.getPomModel().getDependencies().getDependency()) {
                 String version = null;
@@ -158,37 +158,12 @@ public abstract class CallModel {
     }
 
     /**
-     * creates effective pom via the ImplSpoon object and retrieves the version from it
+     * main method which starts analyzing the current model for its call-chain
+     * creates new {@link CallNode} and appends them to previous invocations
+     * creates new {@link Invocation} and appends them to correct CallNodes
      *
-     * @param model the ImplSpoon model which refers to a certain pom.xml
-     * @return the version from the effective pom
-     * @throws JAXBException        if marshalling fails
-     * @throws IOException          if reading or writing file fails
-     * @throws InterruptedException if process gets interrupted
+     * @return a list of all current {@link CallNode}
      */
-    private Model getEffectivePomModel(ImplSpoon model) throws JAXBException, IOException, InterruptedException {
-        File currPro = new File(model.getPath());
-        String currPath;
-        boolean fromMaven;
-        if (this.launcher instanceof MavenLauncher) {
-            currPath = currPro.getAbsolutePath();
-            fromMaven = true;
-        } else {
-            currPath = currPro.getAbsolutePath().substring(0, currPro.getAbsolutePath().lastIndexOf(File.separator));
-            fromMaven = false;
-        }
-        File pom = new File(currPath + File.separator + "pom.xml");
-        if (!pom.exists()) {
-            // must write pom.xml file before creating effective pom, because it does not recognize .pom endings
-            model.writePom(new File(currPath + File.separator + "pom.xml"), model.getPomModel());
-        }
-        File effectivePom = model.createEffectivePom(currPro, fromMaven);
-        Model pomModel = model.createEffectivePomModel(effectivePom);
-
-        return pomModel;
-    }
-
-
     public List<CallNode> analyzeModel() {
         // iterate over all classes in model
         System.out.println("Iterating over classes...");
@@ -242,11 +217,25 @@ public abstract class CallModel {
         List<CtConstructorCall> constructorCalls = method.filterChildren(new TypeFilter<>(CtConstructorCall.class)).list();
         CallNode currNode = null;
         // creates new Node from and if needed appends it to a leaf
-        if (methodCalls.size() != 0 || constructorCalls.size() != 0 || currClass.toString().contains("interface " + currClass.getSimpleName())) {
+        if (methodCalls.size() != 0 /*|| constructorCalls.size() != 0*/ || currClass.toString().contains("interface " + currClass.getSimpleName())) {
             currNode = getNodeByName(currClassName);
             if (this.leafInvocations != null) appendNodeToLeaf(currNode);
         }
         // adds invocations called by current method to the current CallNode
+        addPossibleInvocation(methodCalls, constructorCalls, currNode);
+        // delete node if it has no outgoing invocations
+        if (currNode != null && currNode.getInvocations().size() == 0) currNode = null;
+    }
+
+    /**
+     * checks whether a call from a list of method calls should be appended as an invocation to a CallNode
+     *
+     * @param methodCalls      {@link CtInvocation} list of outgoing calls inside a method
+     * @param constructorCalls {@link CtConstructorCall} list of all constructor calls inside a method, is used to check if an invocation
+     *                         is referring to an interface
+     * @param currNode         {@link CallNode} the curr node which should be the parentNode of the possibly appended invocations
+     */
+    private void addPossibleInvocation(List<CtInvocation> methodCalls, List<CtConstructorCall> constructorCalls, CallNode currNode) {
         for (CtInvocation element : methodCalls) {
             CtTypeReference fromType;
             if (element.getExecutable().getType() == null || element.getExecutable().getType().toString().equals("void") || element.getExecutable().getType().isPrimitive()) {
@@ -254,7 +243,7 @@ public abstract class CallModel {
             } else {
                 fromType = element.getExecutable().getType();
             }
-            if (!checkJDKClasses(fromType.getQualifiedName())) {
+            if (!checkJDKClasses(fromType.getQualifiedName()) && checkForValidDeclaringType(fromType.getQualifiedName())) {
                 // if maven project is analyzed and the referred Object from the curr method is contained in the project
                 if (this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName())) break;
                 String methodSignature = element.getExecutable().toString();
@@ -262,10 +251,13 @@ public abstract class CallModel {
                 currNode.addInvocation(invocation);
                 // checks if invocations may refer to an interface and changes it to the actual implementation object
                 checkIfInterfaceIsReferenced(invocation, constructorCalls);
+
             }
         }
-        // delete node if it has no outgoing invocations
-        if (currNode != null && currNode.getInvocations().size() == 0) currNode = null;
+    }
+
+    private boolean checkForValidDeclaringType(String qualifiedName) {
+        return !qualifiedName.equals("?");
     }
 
     /**
@@ -343,11 +335,12 @@ public abstract class CallModel {
      * @return true if class is part of JDK
      */
     private boolean checkJDKClasses(String qualifiedName) {
-        return (qualifiedName.startsWith("java.") || (qualifiedName.startsWith("javax.xml.parsers")
-                || (qualifiedName.startsWith("com.sun")) || (qualifiedName.startsWith("sun"))
-                || (qualifiedName.startsWith("oracle")) || (qualifiedName.startsWith("org.xml"))
-                || (qualifiedName.startsWith("com.oracle")) || (qualifiedName.startsWith("jdk"))
-                || (qualifiedName.startsWith("javax.xml.stream"))));
+        return (qualifiedName.startsWith("java.") || (qualifiedName.startsWith("javax.xml.parsers.")
+                || (qualifiedName.startsWith("com.sun.")) || (qualifiedName.startsWith("sun."))
+                || (qualifiedName.startsWith("oracle.")) || (qualifiedName.startsWith("org.xml"))
+                || (qualifiedName.startsWith("com.oracle.")) || (qualifiedName.startsWith("jdk."))
+                || (qualifiedName.startsWith("javax.xml.stream.")) || (qualifiedName.startsWith("javax.xml.transform."))
+                || (qualifiedName.startsWith("org.w3c.dom."))));
     }
 
     public String getCurrProjectPath() {

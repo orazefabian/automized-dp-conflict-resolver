@@ -1,13 +1,18 @@
 package dp.resolver.base;
 
+import dp.resolver.tree.model.CallModel;
 import org.apache.maven.pom._4_0.Model;
+import spoon.Launcher;
+import spoon.MavenLauncher;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.List;
 
 /*********************************
@@ -66,5 +71,36 @@ public class ImplSpoon extends DPUpdaterBase {
     @Override
     public List<Object> getWorkingConfigurations() {
         return null;
+    }
+
+    /**
+     * creates effective pom via the ImplSpoon object and retrieves the version from it
+     *
+     * @param launcher
+     * @return the version from the effective pom
+     * @throws JAXBException        if marshalling fails
+     * @throws IOException          if reading or writing file fails
+     * @throws InterruptedException if process gets interrupted
+     */
+    public Model getEffectivePomModel(Launcher launcher) throws JAXBException, IOException, InterruptedException {
+        File currPro = new File(getPath());
+        String currPath;
+        boolean fromMaven;
+        if (launcher instanceof MavenLauncher) {
+            currPath = currPro.getAbsolutePath();
+            fromMaven = true;
+        } else {
+            currPath = currPro.getAbsolutePath().substring(0, currPro.getAbsolutePath().lastIndexOf(File.separator));
+            fromMaven = false;
+        }
+        File pom = new File(currPath + File.separator + "pom.xml");
+        if (!pom.exists()) {
+            // must write pom.xml file before creating effective pom, because it does not recognize .pom endings
+            writePom(new File(currPath + File.separator + "pom.xml"), getPomModel());
+        }
+        File effectivePom = createEffectivePom(currPro, fromMaven);
+        Model pomModel = createEffectivePomModel(effectivePom);
+
+        return pomModel;
     }
 }
