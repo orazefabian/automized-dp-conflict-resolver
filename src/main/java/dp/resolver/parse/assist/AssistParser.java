@@ -168,7 +168,10 @@ public class AssistParser {
         try {
             mi.setNumberOfParams(Long.valueOf(method.getParameterTypes().length));
         } catch (Exception e) {
-            mi.setNumberOfParams(Long.valueOf(method.getMethodInfo().getAttributes().size()));
+            try {
+                mi.setNumberOfParams(Long.valueOf(method.getParameterAnnotations().length));
+            } catch (ClassNotFoundException ignored) {
+            }
             errorFlag = true;
         }
         String paramString = "UNKNOWN";

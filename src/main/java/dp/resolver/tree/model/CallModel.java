@@ -176,6 +176,7 @@ public abstract class CallModel {
                     searchInvocation(m, s);
                 }
             } catch (SpoonException | NullPointerException e) {
+                e.printStackTrace();
                 System.err.println("could not iterate over methods in class: " + s.getSimpleName());
             }
         }
@@ -206,7 +207,7 @@ public abstract class CallModel {
      * @param method    current method to analyze
      * @param currClass String signature of class which current method belongs to
      */
-    private void searchInvocation(CtMethod method, CtType currClass) throws NullPointerException {
+    private void searchInvocation(CtMethod method, CtType currClass) /*throws NullPointerException */ {
         // get all method body elements
         String currClassName = currClass.getQualifiedName();
 
@@ -235,32 +236,34 @@ public abstract class CallModel {
     private void addPossibleInvocation(List<CtInvocation> methodCalls, List<CtConstructorCall> constructorCalls, CallNode currNode) {
         for (CtInvocation element : methodCalls) {
             CtTypeReference fromType;
-            fromType = extractTargetTypeFromElement(element);
-            if (!isPartOfJDKClasses(fromType.getQualifiedName()) && checkForValidDeclaringType(fromType.getQualifiedName())) {
-                // if maven project is analyzed and the referred Object from the curr method is contained in the project
-                if (this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName())) break;
-                String methodSignature = element.getExecutable().toString();
-                Invocation invocation = new Invocation(methodSignature, fromType.getQualifiedName(), currNode);
-                currNode.addInvocation(invocation);
-                // checks if invocations may refer to an interface and changes it to the actual implementation object
-                checkIfInterfaceIsReferenced(invocation, constructorCalls);
-
+            try {
+                fromType = extractTargetTypeFromElement(element);
+                if (!isPartOfJDKClasses(fromType.getQualifiedName()) && checkForValidDeclaringType(fromType.getQualifiedName())) {
+                    // if maven project is analyzed and the referred Object from the curr method is contained in the project
+                    if (this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName()))
+                        break;
+                    String methodSignature = element.getExecutable().toString();
+                    Invocation invocation = new Invocation(methodSignature, fromType.getQualifiedName(), currNode);
+                    currNode.addInvocation(invocation);
+                    // checks if invocations may refer to an interface and changes it to the actual implementation object
+                    checkIfInterfaceIsReferenced(invocation, constructorCalls);
+                }
+            } catch (NullPointerException e) {
+                // skip element
             }
         }
     }
 
-    private CtTypeReference extractTargetTypeFromElement(CtInvocation element) {
+    private CtTypeReference extractTargetTypeFromElement(CtInvocation element) throws NullPointerException {
         CtTypeReference fromType;
-        /*if (element.getExecutable().getType() == null || element.getExecutable().getType().toString().equals("void") || element.getExecutable().getType().isPrimitive()) {
+        if (element.getExecutable().isStatic()) {
             fromType = element.getExecutable().getDeclaringType();
+        } else if (element.getTarget().getType().toString().equals("void")) {
+            fromType = element.getExecutable().getType();
         } else {
-            fromType = element.getExecutable().getType();
-        }*/
-        if (element.getTarget().getType().toString().equals("void")){
-            fromType = element.getExecutable().getType();
-        }else {
             fromType = element.getTarget().getType();
         }
+        if (fromType == null) throw new NullPointerException();
         return fromType;
     }
 
