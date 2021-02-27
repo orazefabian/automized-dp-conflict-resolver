@@ -5,8 +5,13 @@ import dp.resolver.parse.exception.NoConflictException;
 import dp.resolver.tree.CallTree;
 import dp.resolver.tree.ConflictType;
 import dp.resolver.tree.Tree;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Scanner;
 
 
 public class Main {
@@ -31,15 +36,24 @@ public class Main {
         dp.DPGraphCreator cf = new dp.DPGraphCreator(target);
         cf.getDPJson(null);
         cf.createPNG();
+
     */
-
-        /*List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jar);
-        System.out.println(jarClassList.toString());
-
-        System.exit(0);*/
+        /*
+        try {
+            CentralMavenAPI.getAllVersionsFromCMR("javax.xml.bind", "jaxb-api", "/Users/fabian/.m2/repository/javax/xml/bind/jaxb-api/2.2.3/jaxb-api-2.2.3.jar");
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+        } catch (SAXException e) {
+            e.printStackTrace();
+        }
+        System.out.println();
+        System.exit(0);
+        */
 
         long time = System.currentTimeMillis();
-        Tree tree = null;
+        Tree tree;
         AnswerObject answer = new AnswerObject();
         CentralMavenAPI.setMaxVersionsNum(5);
         try {
