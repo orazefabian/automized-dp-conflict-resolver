@@ -15,6 +15,7 @@ import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtType;
 import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.filter.TypeFilter;
+import spoon.support.SpoonClassNotFoundException;
 import spoon.support.reflect.code.CtLocalVariableImpl;
 import spoon.support.reflect.declaration.CtMethodImpl;
 
@@ -173,7 +174,7 @@ public abstract class CallModel {
                 System.out.println("Searching class: " + s.getSimpleName());
                 for (Object obj : s.filterChildren(new TypeFilter<CtMethod>(CtMethod.class)).list()) {
                     CtMethodImpl m = (CtMethodImpl) obj;
-                    searchInvocation(m, s);
+                    searchMethodForInvocations(m, s);
                 }
             } catch (SpoonException | NullPointerException e) {
                 e.printStackTrace();
@@ -207,7 +208,7 @@ public abstract class CallModel {
      * @param method    current method to analyze
      * @param currClass String signature of class which current method belongs to
      */
-    private void searchInvocation(CtMethod method, CtType currClass) /*throws NullPointerException */ {
+    private void searchMethodForInvocations(CtMethod method, CtType currClass) /*throws NullPointerException */ {
         // get all method body elements
         String currClassName = currClass.getQualifiedName();
 
@@ -256,13 +257,7 @@ public abstract class CallModel {
 
     private CtTypeReference extractTargetTypeFromElement(CtInvocation element) throws NullPointerException {
         CtTypeReference fromType;
-        if (element.getExecutable().isStatic()) {
-            fromType = element.getExecutable().getDeclaringType();
-        } else if (element.getTarget().getType().toString().equals("void")) {
-            fromType = element.getExecutable().getType();
-        } else {
-            fromType = element.getTarget().getType();
-        }
+        fromType = element.getExecutable().getDeclaringType();
         if (fromType == null) throw new NullPointerException();
         return fromType;
     }

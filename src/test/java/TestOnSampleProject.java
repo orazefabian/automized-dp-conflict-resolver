@@ -4,6 +4,7 @@ import dp.resolver.tree.AnswerObject;
 import dp.resolver.tree.CallTree;
 import dp.resolver.tree.ConflictType;
 import dp.resolver.tree.Tree;
+import dp.resolver.tree.element.CallNode;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -27,15 +28,15 @@ public class TestOnSampleProject {
 
         answerOne = new ArrayList<>();
         answerOne.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_B/2.0/Project_B-2.0.jar");
-        answerOne.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_C/1.0/Project_C-1.0.jar");
+        answerOne.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_C/2.0/Project_C-2.0.jar");
 
         answerTwo = new ArrayList<>();
         answerTwo.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_B/2.0/Project_B-2.0.jar");
-        answerTwo.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_C/2.0/Project_C-2.0.jar");
+        answerTwo.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_C/1.0/Project_C-1.0.jar");
 
         expectedAnswer = new ArrayList<>();
-        expectedAnswer.add(answerOne);
         expectedAnswer.add(answerTwo);
+        expectedAnswer.add(answerOne);
 
         Collections.sort(answerOne);
         Collections.sort(answerTwo);
@@ -52,7 +53,6 @@ public class TestOnSampleProject {
             answer.solve();
         } catch (Exception e) {
         }
-
         sortAnswer(answer);
     }
 
@@ -83,9 +83,22 @@ public class TestOnSampleProject {
 
     @Test
     public void testCorrectAnswerArrays() {
-        Assertions.assertArrayEquals(answer.getAnswers().toArray(), expectedAnswer.toArray());
+        Assertions.assertArrayEquals(expectedAnswer.toArray(), answer.getAnswers().toArray());
     }
 
+    @Test
+    public void testCorrectConflictNodes() {
+        List<CallNode> conflicts = tree.getConflicts(ConflictType.TYPE_3);
+
+        Assertions.assertEquals("conflict.ExtraObject_D", conflicts.get(0).getClassName());
+        Assertions.assertTrue(conflicts.get(0).getFromJar().endsWith("3.0.jar"));
+
+        Assertions.assertEquals("conflict.Object_D", conflicts.get(1).getClassName());
+        Assertions.assertTrue(conflicts.get(1).getFromJar().endsWith("2.0.jar"));
+
+        Assertions.assertEquals("conflict.Object_D", conflicts.get(2).getClassName());
+        Assertions.assertTrue(conflicts.get(2).getFromJar().endsWith("3.0.jar"));
+    }
 
 
 }

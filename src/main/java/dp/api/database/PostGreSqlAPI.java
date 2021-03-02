@@ -41,7 +41,6 @@ public class PostGreSqlAPI {
         return conn;
     }
 
-
     public static void setPW(String PW) {
         PostGreSqlAPI.PW = PW;
     }
