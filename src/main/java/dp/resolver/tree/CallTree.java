@@ -1,9 +1,11 @@
 package dp.resolver.tree;
 
-import dp.resolver.loader.CentralMavenAPI;
-import dp.resolver.parse.JarParser;
+import dp.api.maven.CentralMavenAPI;
+import dp.resolver.parse.assist.AssistParser;
+import dp.resolver.parse.assist.ClazzWithMethodsDto;
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
+import dp.resolver.tree.model.*;
 import spoon.compiler.ModelBuildingException;
 
 import javax.xml.bind.JAXBException;
@@ -18,12 +20,13 @@ public class CallTree implements Tree {
 
     private final List<CallNode> startNodes;
     private final String targetProjectPath;
-    private AnswerObject answerObject;
-    private SpoonModel model;
+    private final ModelFactory modelFactory;
     private final Map<String, Boolean> jars;
-    private final List<Invocation> currLeaves;
+    private List<Invocation> currLeaves;
     private final List<CallNode> conflicts;
-    private final List<String> allUsedJars;
+    private final Set<String> neededJars;
+    private final AnswerObject answerObject;
+    private CallModel model;
 
     /**
      * Tree data structure which contains all method call traces from a given root project
@@ -33,13 +36,18 @@ public class CallTree implements Tree {
     public CallTree(String targetProjectPath, AnswerObject answerObject) {
         this.targetProjectPath = targetProjectPath;
         this.answerObject = answerObject;
+        this.modelFactory = new ModelFactoryImpl();
         this.startNodes = new ArrayList<>();
         this.jars = new HashMap<>();
-        this.allUsedJars = new ArrayList<>();
+        this.neededJars = new HashSet<>();
         this.conflicts = new ArrayList<>();
         initModel();
-        this.currLeaves = new ArrayList<>();
+        setInitialLeaves();
+    }
+
+    private void setInitialLeaves() {
         // set current leaf elements
+        this.currLeaves = new ArrayList<>();
         for (CallNode node : this.startNodes) {
             currLeaves.addAll(node.getInvocations());
         }
@@ -52,8 +60,11 @@ public class CallTree implements Tree {
 
     @Override
     public void computeCallTree() {
-        createNewModel();
-        this.model.analyzeModel(this.currLeaves);
+        try {
+            createNewModel();
+        } catch (Exception ignored) {
+        }
+        this.model.analyzeModel();
         computeLeafElements();
         if (jarsToTraverseLeft())
             computeCallTree();
@@ -106,10 +117,7 @@ public class CallTree implements Tree {
      * @return true if node is a leaf object of current tree
      */
     private boolean checkForConflictType3(CallNode call) {
-        if (call.getPrevious() == null) return false; // do not add root nodes!!
-        /*else if (call.getInvocations() == null || call.getInvocations().size() == 0) {
-            return true;
-        }*/
+        if (call.getPrevious() == null) return false; // do not add root nodes
         else {
             for (Invocation inv : call.getInvocations()) {
                 if (inv.getNextNode() != null) return false;
@@ -161,6 +169,11 @@ public class CallTree implements Tree {
         return this.conflicts;
     }
 
+    @Override
+    public Set getNeededJars() {
+        return this.neededJars;
+    }
+
     /**
      * function that recursively fills a set with all nodes from the given root node
      *
@@ -184,42 +197,29 @@ public class CallTree implements Tree {
     private void initModel() {
         // compute starting nodes for call tree
         try {
-            this.model = new SpoonModel(targetProjectPath, false);
+            this.model = modelFactory.createCallModelFromMaven(targetProjectPath, this.currLeaves);
         } catch (Exception e) {
             e.printStackTrace();
         }
         try {
-            this.jars.putAll(this.model.computeJarPaths());
+            this.jars.putAll(this.model.getDependenciesToJarPaths());
         } catch (IOException | InterruptedException | JAXBException e) {
             e.printStackTrace();
         }
-        this.startNodes.addAll(this.model.analyzeModel(null));
+        this.startNodes.addAll(this.model.analyzeModel());
     }
 
     /**
-     * helper function to create new {@link SpoonModel} for next jar, after analyzing previous one
-     * also removes unused/bloated jars
+     * helper function to create new {@link MavenSpoonModel} for next jar, after analyzing previous one
      */
-    private void createNewModel() {
-        List<CallNode> prevCallNodes = this.model.getCallNodes();
-        List<String> jarsToRemove = new ArrayList<>();
-        for (String jarPath : this.jars.keySet()) {
-            // remove non used jars
-            checkIfJarExists(jarPath);
-            if (checkIfJarUsed(jarPath)) jarsToRemove.add(jarPath);
-        }
-        for (String key : jarsToRemove) {
-            this.jars.remove(key);
-            if (this.model.getCurrProjectPath().equals(this.targetProjectPath))
-                this.answerObject.addBloatedJar(key); // add jars that are directly bloated (root pom)
-        }
+    private void createNewModel() throws NullPointerException {
+        removeNonUsedOrNeededJars();
         String nextJar = getNonTraversedJar();
         // save already traversed jars for later conflict search
-        this.allUsedJars.add(nextJar);
         try {
-            this.model = new SpoonModel(nextJar, true);
-            this.model.setCallNodes(prevCallNodes);
-            this.jars.putAll(this.model.computeJarPaths());
+            this.model = modelFactory.createCallModelFromJar(nextJar, this.currLeaves);
+            //this.model.setCallNodes(prevCallNodes);
+            this.jars.putAll(this.model.getDependenciesToJarPaths());
         } catch (ModelBuildingException e) {
             System.err.println("Error building models: " + e.getMessage());
         } catch (NullPointerException e) {
@@ -231,6 +231,23 @@ public class CallTree implements Tree {
             e.printStackTrace();
         }
 
+    }
+
+    private void removeNonUsedOrNeededJars() {
+        List<String> jarsToRemove = new ArrayList<>();
+        for (String jarPath : this.jars.keySet()) {
+            // remove non used jars
+            checkIfJarExists(jarPath);
+            if (checkIfJarUsed(jarPath)) jarsToRemove.add(jarPath);
+        }
+        for (String key : jarsToRemove) {
+            this.jars.remove(key);
+            if (checkIfJarNeeded(key)) {
+                this.neededJars.add(key); // if jar is possibly needed it will get added to needed jars for safety reasons
+            } else if (this.model.getCurrProjectPath().equals(this.targetProjectPath)) {
+                this.answerObject.addBloatedJar(key);
+            }// add jars that are directly bloated (root pom)
+        }
     }
 
     /**
@@ -299,24 +316,54 @@ public class CallTree implements Tree {
      * @param jarPath String representation of the complete path to the Jar to be checked for usage
      * @return true if the given jar is not used
      */
-    private boolean checkIfJarUsed(String jarPath) {
-        String jarContent = null;
-        try {
-            jarContent = JarParser.
-                    parseJarClasses(jarPath);
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
+    private boolean checkIfJarUsed(String jarPath) throws NullPointerException {
+        List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jarPath);
         boolean remove = true;
-        //for (CallNode node : prevCallNodes) {
         for (Invocation invocation : this.currLeaves) {
-            if (jarContent.contains(invocation.getDeclaringType().replace(".", "/"))) {
-                remove = false;
-                break;
+            try {
+                for (ClazzWithMethodsDto clazz : jarClassList) {
+
+                    if (clazz.getClazzName().replace(".class", "").replace(File.separator, ".").equals(invocation.getDeclaringType())) {
+                        remove = false;
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                // skip to next inovcation
+            }
+            if (!remove) break;
+        }
+
+        return remove;
+    }
+
+    /**
+     * checks whether a pom file contains the string prefix of a groupID (does not have to bee a dependency) hence jar is possibly needed
+     *
+     * @param jarPath path from the jar to be checked
+     * @return true if pom file contains the prefix
+     */
+    private boolean checkIfJarNeeded(String jarPath) {
+        for (Invocation invocation : this.currLeaves) {
+            try {
+                String groupID = invocation.getDeclaringType()
+                        .substring(0, invocation.getDeclaringType().indexOf(".", invocation.getDeclaringType().indexOf(".") + 1));
+                String pom = jarPath.replace(".jar", ".pom");
+                File pomFile = new File(pom);
+                Scanner scanner = new Scanner(pomFile);
+                while (scanner.hasNextLine()) {
+                    String line = scanner.nextLine();
+                    if (line.contains(groupID)) {
+                        scanner.close();
+                        return true;
+                    }
+                }
+                scanner.close();
+            } catch (Exception e) {
+                // skip invocation@
             }
         }
-        //}
-        return remove;
+        return false;
     }
 
 

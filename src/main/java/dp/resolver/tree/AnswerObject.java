@@ -14,15 +14,15 @@ public class AnswerObject {
 
     private Map<String, Integer> idMap;
     private String stdOut;
-    private Set<List<String>> answers;
-    public List<String> bloatedJars;
+    private List<List<String>> answers;
+    public Set<String> bloatedJars;
 
     /**
      * Object that represents the answer set of a clingo command
      */
     public AnswerObject() {
-        this.answers = new HashSet<>();
-        this.bloatedJars = new ArrayList<>();
+        this.answers = new ArrayList<>();
+        this.bloatedJars = new HashSet<>();
     }
 
     /**
@@ -41,7 +41,7 @@ public class AnswerObject {
     /**
      * @return a list of all bloated Jars that should be removed from project
      */
-    public List<String> getBloatedJars() {
+    public Set<String> getBloatedJars() {
         return bloatedJars;
     }
 
@@ -89,7 +89,7 @@ public class AnswerObject {
     /**
      * @return Set of lists each containing a answer set
      */
-    public Set<List<String>> getAnswers() {
+    public List<List<String>> getAnswers() {
         return answers;
     }
 
@@ -100,4 +100,8 @@ public class AnswerObject {
         return stdOut;
     }
 
+
+    public void addAllBloatedJars(List<String> jarsToRemove) {
+        this.bloatedJars.addAll(jarsToRemove);
+    }
 }

@@ -38,3 +38,5 @@ effectivePom.xml
 # clingo
 *.lp
 # *.asp
+/automized-dp-conflict-resolver.iml
+/src/main/java/dp/api/database/EnvConfig.java

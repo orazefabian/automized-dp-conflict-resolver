@@ -1,7 +1,7 @@
 package dp.resolver.parse;
 
 import dp.resolver.base.ImplSpoon;
-import dp.resolver.loader.CentralMavenAPI;
+import dp.api.maven.CentralMavenAPI;
 import dp.resolver.parse.assist.AssistParser;
 import dp.resolver.parse.assist.ClazzWithMethodsDto;
 import dp.resolver.parse.assist.MethodInformation;
@@ -34,23 +34,26 @@ public class FactBuilder {
     private Set<String> alreadyLoadedJars;
     private Set<String> alreadyParsedJars;
     private int currJarID;
+    private Set<String> neededJars;
 
-    public FactBuilder(List<CallNode> conflictNodes) throws IOException {
+    public FactBuilder(List<CallNode> conflictNodes, Set neededJars) throws IOException {
         // check weather conflicts are empty
         if (conflictNodes.size() == 0) {
             System.out.println("No conflicts detected");
         } else {
-            init(conflictNodes);
+            init(conflictNodes, neededJars);
         }
     }
 
     /**
      * setup method
      *
-     * @param nodeList list of Nodes representing the leaf nodes
+     * @param nodeList   list of Nodes representing the leaf nodes
+     * @param neededJars the jars that have to be included
      */
-    private void init(List<CallNode> nodeList) throws IOException {
+    private void init(List<CallNode> nodeList, Set neededJars) throws IOException {
         this.idMap = new HashMap<>();
+        this.neededJars = neededJars;
         this.alreadyLoadedJars = new HashSet<>();
         this.alreadyParsedJars = new HashSet<>();
         this.conflictNodes = nodeList;
@@ -79,13 +82,24 @@ public class FactBuilder {
     private void generateFacts() {
         // compute facts for call tree
         for (CallNode node : this.conflictNodes) {
-            /*parseJarFact(node);
-            generateOptionalJarFacts(node);
-            if (node.getPrevious() != null) {
-                parsePreviousNodes(node.getPrevious());
-            }*/
             parsePreviousNodes(node);
         }
+        for (String jar : this.neededJars) {
+            parseIncludeJar(jar);
+        }
+
+    }
+
+
+    /**
+     * creates a fact to include a jar e.g 'includeJar(jar)'
+     *
+     * @param jar to be included
+     */
+    private void parseIncludeJar(String jar) {
+        parseJarFact(jar); // parse every needed jar and its method
+        Integer id = this.idMap.get(jar);
+        this.factsBuilder.append("\nincludeJar(").append(id).append(").\n");
     }
 
 
@@ -96,7 +110,7 @@ public class FactBuilder {
      */
     private void parsePreviousNodes(CallNode node) {
         if (node.getPrevious() != null) {
-            parseJarFact(node);
+            parseJarFact(node.getFromJar());
             generateOptionalJarFacts(node);
             parsePreviousNodes(node.getPrevious());
             parseInvocationFact(node.getInvocations());
@@ -110,6 +124,7 @@ public class FactBuilder {
         }
     }
 
+
     /**
      * parses all root invocations as facts: invocation(0["indicates root project"], toJarID, QualifiedName, MethodName, ParameterCount).
      *
@@ -118,12 +133,11 @@ public class FactBuilder {
     private void parseRoot(CallNode node) throws NullPointerException {
         for (Invocation inv : node.getInvocations()) {
             int fromID = 0;
-            int toID = this.idMap.get(inv.getNextNode().getFromJar());
             String fromClass = inv.getDeclaringType();
             String name = inv.getMethodSignature().substring(0, inv.getMethodSignature().indexOf("("));
             String signature = inv.getMethodSignature().split(name)[1];
             int paramCount = computeParamCount(signature);
-            this.factsBuilder.append("\ninvocation(").append(fromID).append(",").append(toID).append(",\"").append(fromClass).append("\",\"")
+            this.factsBuilder.append("\ninvocation(").append(fromID).append(",\"").append(fromClass).append("\",\"")
                     .append(name).append("\",").append(paramCount).append(").\n");
         }
     }
@@ -142,7 +156,7 @@ public class FactBuilder {
                 String artifactID = construct[construct.length - 3];
                 String groupID = jarPath.substring(jarPath.indexOf(repoSeparator) + repoSeparator.length(), jarPath.indexOf(artifactID) - 1).replace(File.separator, ".");
                 try {
-                    CentralMavenAPI.getAllVersionsFromCMR(groupID, artifactID);
+                    CentralMavenAPI.getAllVersionsFromCMR(groupID, artifactID, jarPath);
                 } catch (IOException | ParserConfigurationException | SAXException e) {
                     System.err.println("could not download versions fromm central repo");
                 }
@@ -164,21 +178,23 @@ public class FactBuilder {
 
     /**
      * parser function that constructs invocation facts for a given list of invocations from a node:
-     * invocation(FromJarID, ToJarID, Object, MethodName, paramCount).
+     * invocation(FromJarID, Object, MethodName, paramCount).
      *
      * @param invocations a list of invocation objects given by a CallNode
      */
     private void parseInvocationFact(List<Invocation> invocations) {
         try {
             for (Invocation invocation : invocations) {
-                int fromID = this.idMap.get(invocation.getParentNode().getFromJar());
-                int toID = this.idMap.get(invocation.getNextNode().getFromJar());
-                String fromClass = invocation.getDeclaringType();
-                String name = invocation.getMethodSignature().substring(0, invocation.getMethodSignature().indexOf("("));
-                String signature = invocation.getMethodSignature().split(name)[1];
-                int paramCount = computeParamCount(signature);
-                this.factsBuilder.append("\ninvocation(").append(fromID).append(",").append(toID).append(",\"").append(fromClass).append("\",\"")
-                        .append(name).append("\",").append(paramCount).append(").\n");
+                // if it is null the next jar in call trace could not be determined and therefore no fact should be generated
+                if (invocation.getNextNode() != null) {
+                    int fromID = this.idMap.get(invocation.getParentNode().getFromJar());
+                    String fromClass = invocation.getDeclaringType();
+                    String name = invocation.getMethodSignature().substring(0, invocation.getMethodSignature().indexOf("("));
+                    String signature = invocation.getMethodSignature().split(name)[1];
+                    int paramCount = computeParamCount(signature);
+                    this.factsBuilder.append("\ninvocation(").append(fromID).append(",\"").append(fromClass).append("\",\"")
+                            .append(name).append("\",").append(paramCount).append(").\n");
+                }
             }
         } catch (NullPointerException e) {
             System.err.println("Parsing invocation not possible");
@@ -189,10 +205,9 @@ public class FactBuilder {
      * parser function that constructs a jar fact with the signature: jar(ID, GroupID, ArtifactID, Version).
      * then calls the other needed parser functions
      *
-     * @param node CallNode with the full path to the jar, invocations and className
+     * @param jarPath String with the full path to the jar
      */
-    private void parseJarFact(CallNode node) {
-        String jarPath = node.getFromJar();
+    private void parseJarFact(String jarPath) {
         String repoSeparator = "repository" + File.separator;
         String[] construct = jarPath.split(File.separator);
         String version = construct[construct.length - 2];
@@ -207,8 +222,6 @@ public class FactBuilder {
                 // this line creates the fact in asp language syntax
                 this.factsBuilder.append("\njar(").append(nextJarID).append(",\"").append(groupID).append("\",\"").append(artifactID).append("\",\"").append(version).append("\").\n");
             }
-            // now compute the rest of the needed facts
-            // parseClassFact(jarPath); class facts are not needed because method facts contain all information
             parseMethodFact(jarPath);
         } catch (StringIndexOutOfBoundsException e) {
             System.err.println("Could not parse jar fact");
@@ -227,11 +240,6 @@ public class FactBuilder {
             this.factsBuilder.append("class(").append(this.idMap.get(jarPath)).append(",\"")
                     .append(clazz.getClazzName().replace(".class", "")).append("\").\n");
         }
-        /*for (Object cl : objects) {
-            // this line creates the fact for the jarClass
-            this.factsBuilder.append("class(").append(this.idMap.get(jarPath)).append(",\"")
-                    .append(cl.toString().replace(".class", "").replace(File.separator, ".")).append("\").\n");
-        }*/
     }
 
 
@@ -241,31 +249,22 @@ public class FactBuilder {
      * @param jarPath the full path to the jar
      */
     private void parseMethodFact(String jarPath) {
-        if (this.alreadyParsedJars.add(jarPath)) { //already parsed jars are skipped
-            List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jarPath);
-            for (ClazzWithMethodsDto clazz : jarClassList) {
-                for (MethodInformation methodInformation : clazz.getMethods()) {
-                    this.factsBuilder.append("method(").append(this.idMap.get(jarPath)).append(",\"").append(clazz.getClazzName().replace(".class", "")
-                            .replace(File.separator, ".")).append("\",\"").
-                            append(methodInformation.getMethodName()).append("\",").append(methodInformation.getNumberOfParams()).append(").\n");
+        try {
+            if (this.alreadyParsedJars.add(jarPath)) { //already parsed jars are skipped
+                List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jarPath);
+                for (ClazzWithMethodsDto clazz : jarClassList) {
+                    for (MethodInformation methodInformation : clazz.getMethods()) {
+                        String methodName = methodInformation.getMethodName();
+                        Long numberOfParams = methodInformation.getNumberOfParams();
+                        this.factsBuilder.append("method(").append(this.idMap.get(jarPath)).append(",\"").append(clazz.getClazzName().replace(".class", "")
+                                .replace(File.separator, ".")).append("\",\"").
+                                append(methodName).append("\",").append(numberOfParams).append(").\n");
+                    }
                 }
             }
+        } catch (NullPointerException e) {
+            System.err.println("Jar contains no classes");
         }
-
-        //Object[] content = JarParser.getContentNames(jarPath, className);
-        /*for (Object mth : content) {
-            // skip parsing if not method
-            if (mth.toString().contains("(") && mth.toString().contains(")")) {
-                String[] methodModifiers = mth.toString().substring(0, mth.toString().indexOf("(")).split(" ");
-                String methodName = methodModifiers[methodModifiers.length - 1];
-                String methodSignature = mth.toString().substring(mth.toString().indexOf("("), mth.toString().indexOf(")") + 1);
-                int paramCount = computeParamCount(methodSignature);
-                // create fact which maps method to a class and jar
-                this.factsBuilder.append("method(").append(this.idMap.get(jarPath)).append(",\"")
-                        .append(className.replace(File.separator, ".")).append("\",\"").append(methodName)
-                        .append("\",").append(paramCount).append(").\n");
-            }
-        }*/
     }
 
 
@@ -349,26 +348,6 @@ public class FactBuilder {
             this.factsBuilder.append("\njar(").append(nextJarID).append(",\"").append(groupID).append("\",\"").append(artifactID).append("\",\"").append(version).append("\").\n");
             //Object[] classNames = JarParser.getClassNames(jarPath);
             parseMethodFact(jarPath);
-
-
-            /*for (Object cl : classNames) {
-                // this line creates the fact for the jarClass
-                String clName = cl.toString().replace(".class", "").replace(File.separator, ".");
-                // this.factsBuilder.append("class(").append(this.idMap.get(jarPath)).append(",\"").append(clName).append("\").\n");
-                Object[] methodNames = JarParser.getContentNames(jarPath, cl.toString().replace(".class", ""));
-                for (Object mt : methodNames) {
-                    if (mt.toString().contains("(") && mt.toString().contains(")")) {
-                        String[] methodModifiers = mt.toString().substring(0, mt.toString().indexOf("(")).split(" ");
-                        String methodName = methodModifiers[methodModifiers.length - 1];
-                        String methodSignature = mt.toString().substring(mt.toString().indexOf("("), mt.toString().indexOf(";"));
-                        int paramCount = computeParamCount(methodSignature);
-                        // create fact which maps method to a class and jar
-                        this.factsBuilder.append("method(").append(this.idMap.get(jarPath)).append(",\"")
-                                .append((clName).replace(File.separator, ".")).append("\",\"").append(methodName)
-                                .append("\",").append(paramCount).append(").\n");
-                    }
-                }
-            }*/
         }
     }
 

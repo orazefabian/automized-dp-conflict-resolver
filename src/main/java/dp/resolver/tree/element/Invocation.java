@@ -12,9 +12,9 @@ public class Invocation {
     private CallNode nextNode;
 
     public Invocation(String methodSignature, String declaringType, CallNode parentNode) {
-        this.methodSignature = methodSignature;
-        this.declaringType = declaringType;
-        this.parentNode = parentNode;
+        this.setMethodSignature(methodSignature);
+        this.setDeclaringType(declaringType);
+        this.setParentNode(parentNode);
         this.nextNode = null;
     }
 
@@ -23,7 +23,7 @@ public class Invocation {
     }
 
     public void setDeclaringType(String declaringType) {
-        this.declaringType = declaringType;
+        this.declaringType = declaringType.replace("[]", "");
     }
 
     public String getMethodSignature() {

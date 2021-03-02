@@ -1,11 +1,17 @@
-import dp.resolver.parse.AnswerObject;
+import dp.api.maven.CentralMavenAPI;
+import dp.resolver.tree.AnswerObject;
 import dp.resolver.parse.FactBuilder;
 import dp.resolver.parse.exception.NoConflictException;
 import dp.resolver.tree.CallTree;
 import dp.resolver.tree.ConflictType;
 import dp.resolver.tree.Tree;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Scanner;
 
 
 public class Main {
@@ -30,26 +36,36 @@ public class Main {
         dp.DPGraphCreator cf = new dp.DPGraphCreator(target);
         cf.getDPJson(null);
         cf.createPNG();
+
     */
-
-        /*List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jar);
-        System.out.println(jarClassList.toString());
-
-        System.exit(0);*/
+        /*
+        try {
+            CentralMavenAPI.getAllVersionsFromCMR("javax.xml.bind", "jaxb-api", "/Users/fabian/.m2/repository/javax/xml/bind/jaxb-api/2.2.3/jaxb-api-2.2.3.jar");
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+        } catch (SAXException e) {
+            e.printStackTrace();
+        }
+        System.out.println();
+        System.exit(0);
+        */
 
         long time = System.currentTimeMillis();
-        Tree tree = null;
+        Tree tree;
         AnswerObject answer = new AnswerObject();
+        CentralMavenAPI.setMaxVersionsNum(5);
         try {
-            tree = new CallTree(test, answer);
+            tree = new CallTree(curr, answer);
             tree.computeCallTree();
             FactBuilder parser;
-            parser = new FactBuilder(tree.getConflicts(ConflictType.TYPE_1));
+            parser = new FactBuilder(tree.getConflicts(ConflictType.TYPE_3), tree.getNeededJars());
             answer.setIDMap(parser.getIdMap());
             answer.solve();
             long currTime = (System.currentTimeMillis() - time) / 1000 / 60;
             System.out.println("Needed time: " + currTime + " min");
-            System.out.println("Possible jar configurations: "+ answer.getAnswers());
+            System.out.println("Possible jar configurations: " + answer.getAnswers());
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         } catch (NoConflictException e) {
