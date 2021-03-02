@@ -20,7 +20,10 @@ clash(D,D2,C,N) :- includeJar(X), includeJar(X2), connection(X,D), connection(X2
 % CONSTRAINTS
 
 % if a minimum amount of included jars are satisfying the problem, do not add other jars
-:~ includeJar(X).[1,X]
+:~ includeJar(X).[2,X]
+
+% another weak constraint to filter
+:~ includeMethod(C,N,S).[1,C,N,S]
 
 % the amount of clashes must be 0
 :- #count{X,X2,C,N : clash(X,X2,C,N)} != 0.
