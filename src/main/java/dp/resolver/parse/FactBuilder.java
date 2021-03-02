@@ -222,9 +222,6 @@ public class FactBuilder {
                 // this line creates the fact in asp language syntax
                 this.factsBuilder.append("\njar(").append(nextJarID).append(",\"").append(groupID).append("\",\"").append(artifactID).append("\",\"").append(version).append("\").\n");
             }
-            // now compute the rest of the needed facts
-            // parseClassFact(jarPath); class facts are not needed because method facts contain all information
-
             parseMethodFact(jarPath);
         } catch (StringIndexOutOfBoundsException e) {
             System.err.println("Could not parse jar fact");
@@ -243,11 +240,6 @@ public class FactBuilder {
             this.factsBuilder.append("class(").append(this.idMap.get(jarPath)).append(",\"")
                     .append(clazz.getClazzName().replace(".class", "")).append("\").\n");
         }
-        /*for (Object cl : objects) {
-            // this line creates the fact for the jarClass
-            this.factsBuilder.append("class(").append(this.idMap.get(jarPath)).append(",\"")
-                    .append(cl.toString().replace(".class", "").replace(File.separator, ".")).append("\").\n");
-        }*/
     }
 
 
@@ -262,16 +254,17 @@ public class FactBuilder {
                 List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jarPath);
                 for (ClazzWithMethodsDto clazz : jarClassList) {
                     for (MethodInformation methodInformation : clazz.getMethods()) {
+                        String methodName = methodInformation.getMethodName();
+                        Long numberOfParams = methodInformation.getNumberOfParams();
                         this.factsBuilder.append("method(").append(this.idMap.get(jarPath)).append(",\"").append(clazz.getClazzName().replace(".class", "")
                                 .replace(File.separator, ".")).append("\",\"").
-                                append(methodInformation.getMethodName()).append("\",").append(methodInformation.getNumberOfParams()).append(").\n");
+                                append(methodName).append("\",").append(numberOfParams).append(").\n");
                     }
                 }
             }
         } catch (NullPointerException e) {
             System.err.println("Jar contains no classes");
         }
-
     }
 
 
