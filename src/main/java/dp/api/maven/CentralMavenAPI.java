@@ -11,7 +11,6 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,15 +23,15 @@ public class CentralMavenAPI {
 
     private static final String MAVEN_REPO_URL = "https://repo1.maven.org/maven2";
     private static String pathM2;
-    private static int MAX_VERSIONS_NUM = 10;
+    private static int MAX_VERSIONS_NUM_FROM_CMR = 10;
 
     /**
      * sets the maximal number of versions that should be downloaded when accessing all version from central repo (default is 10)
      *
      * @param maxVersionsNum number of max newest versions e.g. 'maxVersionsNum = 2' means the two newest versions are downloaded
      */
-    public static void setMaxVersionsNum(int maxVersionsNum) {
-        MAX_VERSIONS_NUM = maxVersionsNum;
+    public static void setMaxVersionsNumFromCmr(int maxVersionsNum) {
+        MAX_VERSIONS_NUM_FROM_CMR = maxVersionsNum;
     }
 
     /**
@@ -96,7 +95,7 @@ public class CentralMavenAPI {
             String jarPath = pathM2 + infix + File.separator + version
                     + File.separator + artifactID + "-" + version + ".jar";
             downloadMissingFiles(jarPath);
-            if (nodes.getLength() - i >= MAX_VERSIONS_NUM) break; // only the newest versions until the max limit
+            if (nodes.getLength() - i >= MAX_VERSIONS_NUM_FROM_CMR) break; // only the newest versions until the max limit
         }
     }
 

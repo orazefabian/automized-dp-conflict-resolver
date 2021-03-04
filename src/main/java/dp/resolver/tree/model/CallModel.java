@@ -1,6 +1,7 @@
 package dp.resolver.tree.model;
 
 import dp.resolver.base.ImplSpoon;
+import dp.resolver.tree.JDKClassHelper;
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
 import org.apache.maven.pom._4_0.Dependency;
@@ -15,7 +16,6 @@ import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtType;
 import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.filter.TypeFilter;
-import spoon.support.SpoonClassNotFoundException;
 import spoon.support.reflect.code.CtLocalVariableImpl;
 import spoon.support.reflect.declaration.CtMethodImpl;
 
@@ -194,7 +194,7 @@ public abstract class CallModel {
         if (this.leafInvocations == null) return true;
         for (Invocation invocation : this.leafInvocations) {
             if (invocation.getMethodSignature().split("\\(")[0].equals(method.getSimpleName())
-                    && !isPartOfJDKClasses(method.getDeclaringType().getQualifiedName())) {
+                    && !JDKClassHelper.isPartOfJDKClassesFromQualifiedName(method.getDeclaringType().getQualifiedName())) {
                 return true;
             }
         }
@@ -239,7 +239,7 @@ public abstract class CallModel {
             CtTypeReference fromType;
             try {
                 fromType = extractTargetTypeFromElement(element);
-                if (!isPartOfJDKClasses(fromType.getQualifiedName()) && checkForValidDeclaringType(fromType.getQualifiedName())) {
+                if (!JDKClassHelper.isPartOfJDKClassesFromQualifiedName(fromType.getQualifiedName()) && checkForValidDeclaringType(fromType.getQualifiedName())) {
                     // if maven project is analyzed and the referred Object from the curr method is contained in the project
                     if (this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName()))
                         break;
@@ -332,21 +332,6 @@ public abstract class CallModel {
                 }
             }
         }
-    }
-
-    /**
-     * helper function which checks if a class is part of the JDK
-     *
-     * @param qualifiedName String name of class
-     * @return true if class is part of JDK
-     */
-    private boolean isPartOfJDKClasses(String qualifiedName) {
-        return (qualifiedName.startsWith("java.") || (qualifiedName.startsWith("javax.xml.parsers.")
-                || (qualifiedName.startsWith("com.sun.")) || (qualifiedName.startsWith("sun."))
-                || (qualifiedName.startsWith("oracle.")) || (qualifiedName.startsWith("org.xml"))
-                || (qualifiedName.startsWith("com.oracle.")) || (qualifiedName.startsWith("jdk."))
-                || (qualifiedName.startsWith("javax.xml.stream.")) || (qualifiedName.startsWith("javax.xml.transform."))
-                || (qualifiedName.startsWith("org.w3c.dom."))));
     }
 
     public String getCurrProjectPath() {
