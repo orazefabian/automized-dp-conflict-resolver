@@ -12,6 +12,8 @@ import javax.xml.bind.JAXBException;
 import java.io.*;
 import java.util.*;
 
+import static java.lang.Character.isDigit;
+
 /*********************************
  Created by Fabian Oraze on 03.12.20
  *********************************/
@@ -210,7 +212,7 @@ public class CallTree implements Tree {
     }
 
     /**
-     * helper function to create new {@link MavenSpoonModel} for next jar, after analyzing previous one
+     * helper function to create new {@link CallModel} for next jar, after analyzing previous one
      */
     private void createNewModel() throws NullPointerException {
         removeNonUsedOrNeededJars();
@@ -242,11 +244,14 @@ public class CallTree implements Tree {
         }
         for (String key : jarsToRemove) {
             this.jars.remove(key);
-            if (checkIfJarIsPossiblyNeeded(key)) {
-                this.neededJars.add(key); // if jar is possibly needed it will get added to needed jars for safety reasons
-            } else if (this.model.getCurrProjectPath().equals(this.targetProjectPath)) {
-                this.answerObject.addBloatedJar(key);
-            }// add jars that are directly bloated (root pom)
+            if (this.model.getCurrProjectPath().equals(this.targetProjectPath)) {
+                if (checkIfJarIsPossiblyNeeded(key)) {
+                    this.neededJars.add(key); // if jar is possibly needed it will get added to needed jars for safety reasons
+                } else {
+                    // add jars that are directly bloated (root pom)
+                    this.answerObject.addBloatedJar(key);
+                }
+            }
         }
     }
 
@@ -327,8 +332,8 @@ public class CallTree implements Tree {
                         break;
                     }
                     // directly add jar to neededJars list if on its annotations was used by the model
-                    if (checkIfAnnotationIsUsed(clazz.getClazzName())) {
-                        this.neededJars.add(jarPath);
+                    if (checkIfAnnotationIsUsedByRoot(clazz.getClazzName())) {
+                        addJarToNeededListIfNoOtherVersionConflict(jarPath);
                         remove = false;
                         break;
                     }
@@ -342,12 +347,33 @@ public class CallTree implements Tree {
         return remove;
     }
 
+    private void addJarToNeededListIfNoOtherVersionConflict(String jarPath) {
+        String[] construct = jarPath.split("/");
+        StringBuilder builder = new StringBuilder();
+        boolean mustAdd = true;
+        for (int i = 1; i < construct.length; i++) {
+            if (isDigit(construct[i].charAt(0))) {
+                for (String neededJar : this.neededJars) {
+                    if (neededJar.startsWith(builder.toString())) mustAdd = false;
+                }
+                break;
+            } else {
+                builder.append("/").append(construct[i]);
+            }
+        }
+        if (mustAdd) this.neededJars.add(jarPath);
+    }
+
     private boolean checkIfInvocationDeclaringTypeIsEqualToClass(Invocation invocation, ClazzWithMethodsDto clazz) {
         return clazz.getClazzName().replace(".class", "").replace(File.separator, ".").equals(invocation.getDeclaringType());
     }
 
-    private boolean checkIfAnnotationIsUsed(String clazzName) {
-        return this.model.getAllAnnotations().contains(clazzName.replace("/", ".").split(".class")[0]);
+    private boolean checkIfAnnotationIsUsedByRoot(String clazzName) {
+        if (this.model instanceof MavenSpoonModel) {
+            return this.model.getAllAnnotations().contains(clazzName.replace("/", ".").split(".class")[0]);
+        } else {
+            return false;
+        }
     }
 
     /**

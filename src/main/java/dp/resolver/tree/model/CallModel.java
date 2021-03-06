@@ -259,13 +259,13 @@ public abstract class CallModel {
                 fromType = extractTargetTypeFromElement(element);
                 if (!JDKClassHelper.isPartOfJDKClassesFromQualifiedName(fromType.getQualifiedName()) && checkForValidDeclaringType(fromType.getQualifiedName())) {
                     // if maven project is analyzed and the referred Object from the curr method is contained in the project
-                    if (this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName()))
-                        break;
-                    String methodSignature = getMethodSignature(element);
-                    Invocation invocation = new Invocation(methodSignature, fromType.getQualifiedName(), currNode);
-                    currNode.addInvocation(invocation);
-                    // checks if invocations may refer to an interface and changes it to the actual implementation object
-                    checkIfInterfaceIsReferenced(invocation, constructorCalls);
+                    if (!(this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName()))) {
+                        String methodSignature = getMethodSignature(element);
+                        Invocation invocation = new Invocation(methodSignature, fromType.getQualifiedName(), currNode);
+                        currNode.addInvocation(invocation);
+                        // checks if invocations may refer to an interface and changes it to the actual implementation object
+                        checkIfInterfaceIsReferenced(invocation, constructorCalls);
+                    }
                 }
             } catch (NullPointerException e) {
                 // skip element
