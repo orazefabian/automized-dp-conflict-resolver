@@ -23,7 +23,7 @@ public class TestOnSampleProject {
     @BeforeAll
     public static void setup() {
         answer = new AnswerObject();
-        CentralMavenAPI.setMaxVersionsNum(5);
+        CentralMavenAPI.setMaxVersionsNumFromCmr(5);
         tree = new CallTree(testProjectPath, answer);
 
         answerOne = new ArrayList<>();
@@ -89,15 +89,46 @@ public class TestOnSampleProject {
     @Test
     public void testCorrectConflictNodes() {
         List<CallNode> conflicts = tree.getConflicts(ConflictType.TYPE_3);
+        testNodeAt0(conflicts);
+        testNodeAt1(conflicts);
+        testNodeAt2(conflicts);
+    }
 
-        Assertions.assertEquals("conflict.ExtraObject_D", conflicts.get(0).getClassName());
-        Assertions.assertTrue(conflicts.get(0).getFromJar().endsWith("3.0.jar"));
+    private void testNodeAt0(List<CallNode> conflicts) {
+        String extraObjectD = "conflict.ExtraObject_D";
+        String suffix = "3.0.jar";
+        boolean found = false;
 
-        Assertions.assertEquals("conflict.Object_D", conflicts.get(1).getClassName());
-        Assertions.assertTrue(conflicts.get(1).getFromJar().endsWith("2.0.jar"));
+        for (CallNode node : conflicts) {
+            if (node.getClassName().equals(extraObjectD) && node.getFromJar().endsWith(suffix)) {
+                found = true;
+            }
+        }
+        Assertions.assertTrue(found);
+    }
 
-        Assertions.assertEquals("conflict.Object_D", conflicts.get(2).getClassName());
-        Assertions.assertTrue(conflicts.get(2).getFromJar().endsWith("3.0.jar"));
+    private void testNodeAt1(List<CallNode> conflicts) {
+        String objectD = "conflict.Object_D";
+        String suffix = "2.0.jar";
+        boolean found = false;
+        for (CallNode node : conflicts) {
+            if (node.getClassName().equals(objectD) && node.getFromJar().endsWith(suffix)) {
+                found = true;
+            }
+        }
+        Assertions.assertTrue(found);
+    }
+
+    private void testNodeAt2(List<CallNode> conflicts) {
+        String objectD = "conflict.Object_D";
+        String suffix = "3.0.jar";
+        boolean found = false;
+        for (CallNode node : conflicts) {
+            if (node.getClassName().equals(objectD) && node.getFromJar().endsWith(suffix)) {
+                found = true;
+            }
+        }
+        Assertions.assertTrue(found);
     }
 
 

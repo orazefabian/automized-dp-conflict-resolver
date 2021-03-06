@@ -1,6 +1,7 @@
 package dp.resolver.parse.assist;
 
 import javassist.*;
+import spoon.reflect.code.CtAbstractInvocation;
 
 import java.io.File;
 import java.io.IOException;
@@ -93,6 +94,7 @@ public class AssistParser {
             CtClass cc = pool.get(clazzName.replace(".class", ""));
             //System.out.println("Parsing class: " + clazzName);
             CtMethod[] methods = cc.getMethods();
+            CtConstructor[] constructors = cc.getConstructors();
             /*if (cc.getAnnotation(Deprecated.class) != null) {
                 System.out.println("DEPRECATED CLASS: " + cc.getName());
             }*/
@@ -107,10 +109,89 @@ public class AssistParser {
                     //ignore and use next method
                 }
             }
+            for (CtConstructor constructor : constructors) {
+                try {
+                    MethodInformation mi = extractConstructorMethodInformation(constructor);
+//                        System.out.println("    " + mi);
+                    methodInformations.add(mi);
+                } catch (Exception e) {
+                    //ignore and use next method
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return methodInformations;
+    }
+
+    private static MethodInformation extractConstructorMethodInformation(CtConstructor constructor) {
+        MethodInformation mi = new MethodInformation();
+        boolean errorFlag = false;
+        try {
+            Object depcrecated = constructor.getAnnotation(Deprecated.class);
+//            System.out.println(constructor.getName()+" DEPRECATED: "+depcrecated);
+            mi.setDeprecated(depcrecated != null);
+        } catch (Exception e) {
+            errorFlag = true;
+        }
+        String abstractString = "";
+        try {
+            abstractString = Modifier.isAbstract(constructor.getModifiers()) ? "abstract" : "";
+            mi.setAbstract(Modifier.isAbstract(constructor.getModifiers()));
+        } catch (Exception e) {
+            errorFlag = true;
+        }
+        String finalString = "";
+        try {
+            finalString = Modifier.isFinal(constructor.getModifiers()) ? "final" : "";
+            mi.setFinal(Modifier.isFinal(constructor.getModifiers()));
+        } catch (Exception e) {
+            errorFlag = true;
+        }
+        String synchronizedString = "";
+        try {
+            synchronizedString = Modifier.isSynchronized(constructor.getModifiers()) ? "synchronized" : "";
+            mi.setSynchronized(Modifier.isSynchronized(constructor.getModifiers()));
+        } catch (Exception e) {
+            errorFlag = true;
+        }
+        String staticString = "";
+        try {
+            staticString = Modifier.isStatic(constructor.getModifiers()) ? "static" : "";
+            mi.setStatic(Modifier.isStatic(constructor.getModifiers()));
+        } catch (Exception e) {
+            errorFlag = true;
+        }
+        try {
+            mi.setNumberOfParams(Long.valueOf(constructor.getParameterTypes().length));
+        } catch (Exception e) {
+            try {
+                mi.setNumberOfParams(Long.valueOf(constructor.getParameterAnnotations().length));
+            } catch (ClassNotFoundException ignored) { //TODO: check if 99% correct
+            }
+            errorFlag = true;
+        }
+        String paramString = "UNKNOWN";
+        try {
+            CtClass[] parameterTypes = constructor.getParameterTypes();
+            List<String> params = new ArrayList<>();
+            for (CtClass parameterType : parameterTypes) {
+                params.add(parameterType.getName());
+            }
+            paramString = String.join(",", params);
+        } catch (Exception e) {
+            errorFlag = true;
+        }
+        String constructorString = "";
+        constructorString += staticString + " " + abstractString + " " + finalString + " " + synchronizedString + " " + constructor.getName();
+        constructorString += "(";
+        constructorString += paramString;
+        constructorString += ")";
+        constructorString = constructorString.replaceAll("\\s{2,}", " ");
+        mi.setMethodHeader(constructorString);
+        mi.setMethodName(constructor.getName());
+        mi.setInformationComplete(!errorFlag);
+        return mi;
     }
 
     private static MethodInformation extractMethodInformation(CtMethod method) {
@@ -170,7 +251,7 @@ public class AssistParser {
         } catch (Exception e) {
             try {
                 mi.setNumberOfParams(Long.valueOf(method.getParameterAnnotations().length));
-            } catch (ClassNotFoundException ignored) {
+            } catch (ClassNotFoundException ignored) { //TODO: check if 99% correct
             }
             errorFlag = true;
         }

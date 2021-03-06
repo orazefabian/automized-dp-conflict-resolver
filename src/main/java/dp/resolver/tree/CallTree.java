@@ -238,11 +238,11 @@ public class CallTree implements Tree {
         for (String jarPath : this.jars.keySet()) {
             // remove non used jars
             checkIfJarExists(jarPath);
-            if (checkIfJarUsed(jarPath)) jarsToRemove.add(jarPath);
+            if (checkIfJarUsedOrNeeded(jarPath)) jarsToRemove.add(jarPath);
         }
         for (String key : jarsToRemove) {
             this.jars.remove(key);
-            if (checkIfJarNeeded(key)) {
+            if (checkIfJarIsPossiblyNeeded(key)) {
                 this.neededJars.add(key); // if jar is possibly needed it will get added to needed jars for safety reasons
             } else if (this.model.getCurrProjectPath().equals(this.targetProjectPath)) {
                 this.answerObject.addBloatedJar(key);
@@ -311,19 +311,24 @@ public class CallTree implements Tree {
     }
 
     /**
-     * function that checks if a given jar is used by any call of the current invocations
+     * function that checks if a given jar is used by any call of the current invocations or if its needed
      *
      * @param jarPath String representation of the complete path to the Jar to be checked for usage
-     * @return true if the given jar is not used
+     * @return true if the given jar is not used or its per default needed due to annotations
      */
-    private boolean checkIfJarUsed(String jarPath) throws NullPointerException {
+    private boolean checkIfJarUsedOrNeeded(String jarPath) throws NullPointerException {
         List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jarPath);
         boolean remove = true;
         for (Invocation invocation : this.currLeaves) {
             try {
                 for (ClazzWithMethodsDto clazz : jarClassList) {
-
-                    if (clazz.getClazzName().replace(".class", "").replace(File.separator, ".").equals(invocation.getDeclaringType())) {
+                    if (checkIfInvocationDeclaringTypeIsEqualToClass(invocation, clazz)) {
+                        remove = false;
+                        break;
+                    }
+                    // directly add jar to neededJars list if on its annotations was used by the model
+                    if (checkIfAnnotationIsUsed(clazz.getClazzName())) {
+                        this.neededJars.add(jarPath);
                         remove = false;
                         break;
                     }
@@ -337,13 +342,21 @@ public class CallTree implements Tree {
         return remove;
     }
 
+    private boolean checkIfInvocationDeclaringTypeIsEqualToClass(Invocation invocation, ClazzWithMethodsDto clazz) {
+        return clazz.getClazzName().replace(".class", "").replace(File.separator, ".").equals(invocation.getDeclaringType());
+    }
+
+    private boolean checkIfAnnotationIsUsed(String clazzName) {
+        return this.model.getAllAnnotations().contains(clazzName.replace("/", ".").split(".class")[0]);
+    }
+
     /**
      * checks whether a pom file contains the string prefix of a groupID (does not have to bee a dependency) hence jar is possibly needed
      *
      * @param jarPath path from the jar to be checked
      * @return true if pom file contains the prefix
      */
-    private boolean checkIfJarNeeded(String jarPath) {
+    private boolean checkIfJarIsPossiblyNeeded(String jarPath) {
         if (JDKClassHelper.isPartOfJDKFromFullPath(jarPath)) return true;
         for (Invocation invocation : this.currLeaves) {
             try {
