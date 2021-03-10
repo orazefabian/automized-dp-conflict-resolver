@@ -245,11 +245,11 @@ public class CallTree implements Tree {
         for (String key : jarsToRemove) {
             this.jars.remove(key);
             if (this.model.getCurrProjectPath().equals(this.targetProjectPath)) {
-                if (checkIfJarIsPossiblyNeeded(key)) {
+                if (this.model instanceof MavenSpoonModel && checkIfJarIsPossiblyNeeded(key)) {
                     this.neededJars.add(key); // if jar is possibly needed it will get added to needed jars for safety reasons
                 } else {
-                    // add jars that are directly bloated (root pom)
                     this.answerObject.addBloatedJar(key);
+                    // add jars that are directly bloated (root pom)
                 }
             }
         }
@@ -322,6 +322,7 @@ public class CallTree implements Tree {
      * @return true if the given jar is not used or its per default needed due to annotations
      */
     private boolean checkIfJarUsedOrNeeded(String jarPath) throws NullPointerException {
+        if (JDKClassHelper.isPartOfJDKFromFullPath(jarPath)) return true;
         List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jarPath);
         boolean remove = true;
         for (Invocation invocation : this.currLeaves) {
@@ -383,7 +384,6 @@ public class CallTree implements Tree {
      * @return true if pom file contains the prefix
      */
     private boolean checkIfJarIsPossiblyNeeded(String jarPath) {
-        if (JDKClassHelper.isPartOfJDKFromFullPath(jarPath)) return true;
         for (Invocation invocation : this.currLeaves) {
             try {
                 String groupID = invocation.getDeclaringType()
