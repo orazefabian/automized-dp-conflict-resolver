@@ -1,6 +1,7 @@
 package dp.resolver.tree.model;
 
 import dp.resolver.base.ImplSpoon;
+import dp.resolver.tree.JDKClassHelper;
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
 import org.apache.maven.pom._4_0.Dependency;
@@ -9,13 +10,14 @@ import spoon.Launcher;
 import spoon.MavenLauncher;
 import spoon.SpoonException;
 import spoon.reflect.CtModel;
+import spoon.reflect.code.CtAbstractInvocation;
 import spoon.reflect.code.CtConstructorCall;
 import spoon.reflect.code.CtInvocation;
+import spoon.reflect.declaration.CtAnnotation;
 import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtType;
 import spoon.reflect.reference.CtTypeReference;
 import spoon.reflect.visitor.filter.TypeFilter;
-import spoon.support.SpoonClassNotFoundException;
 import spoon.support.reflect.code.CtLocalVariableImpl;
 import spoon.support.reflect.declaration.CtMethodImpl;
 
@@ -44,6 +46,7 @@ public abstract class CallModel {
     protected List<CallNode> callNodes;
     protected ImplSpoon baseModel; // the base pom model from the root project
     private String pathM2;
+    private ArrayList<String> allAnnotations;
 
     protected CallModel(String pathToProject, List<Invocation> leafInvocations) {
         this.pomModels = new ArrayList<>();
@@ -51,6 +54,7 @@ public abstract class CallModel {
         this.jarPaths = new HashMap<>();
         this.currProjectPath = pathToProject;
         this.callNodes = new ArrayList<>();
+        this.allAnnotations = new ArrayList<>();
         this.leafInvocations = leafInvocations;
         setPathM2();
     }
@@ -71,6 +75,10 @@ public abstract class CallModel {
                 }
             }
         }
+    }
+
+    public ArrayList<String> getAllAnnotations() {
+        return allAnnotations;
     }
 
     public List<CallNode> getCallNodes() {
@@ -176,12 +184,23 @@ public abstract class CallModel {
                     CtMethodImpl m = (CtMethodImpl) obj;
                     searchMethodForInvocations(m, s);
                 }
+                searchClassForAnnotations(s);
             } catch (SpoonException | NullPointerException e) {
                 e.printStackTrace();
                 System.err.println("could not iterate over methods in class: " + s.getSimpleName());
             }
         }
         return this.callNodes;
+    }
+
+    private void searchClassForAnnotations(CtType currClass) {
+        List<CtAnnotation> annotations = currClass.filterChildren(new TypeFilter<>(CtAnnotation.class)).list();
+        for (CtAnnotation annotation : annotations) {
+            String annotationType = annotation.getAnnotationType().toString();
+            if (!JDKClassHelper.isPartOfJDKClassesFromQualifiedName(annotationType)) {
+                this.allAnnotations.add(annotationType);
+            }
+        }
     }
 
     /**
@@ -194,7 +213,7 @@ public abstract class CallModel {
         if (this.leafInvocations == null) return true;
         for (Invocation invocation : this.leafInvocations) {
             if (invocation.getMethodSignature().split("\\(")[0].equals(method.getSimpleName())
-                    && !isPartOfJDKClasses(method.getDeclaringType().getQualifiedName())) {
+                    && !JDKClassHelper.isPartOfJDKClassesFromQualifiedName(method.getDeclaringType().getQualifiedName())) {
                 return true;
             }
         }
@@ -208,11 +227,10 @@ public abstract class CallModel {
      * @param method    current method to analyze
      * @param currClass String signature of class which current method belongs to
      */
-    private void searchMethodForInvocations(CtMethod method, CtType currClass) /*throws NullPointerException */ {
-        // get all method body elements
+    private void searchMethodForInvocations(CtMethod method, CtType currClass) {
         String currClassName = currClass.getQualifiedName();
 
-        List<CtInvocation> methodCalls = method.getElements(new TypeFilter<>(CtInvocation.class));
+        List<CtAbstractInvocation> methodCalls = method.getElements(new TypeFilter<>(CtAbstractInvocation.class));
         List<CtConstructorCall> constructorCalls = method.filterChildren(new TypeFilter<>(CtConstructorCall.class)).list();
         CallNode currNode = null;
         // creates new Node from and if needed appends it to a leaf
@@ -234,20 +252,20 @@ public abstract class CallModel {
      *                         is referring to an interface
      * @param currNode         {@link CallNode} the curr node which should be the parentNode of the possibly appended invocations
      */
-    private void addPossibleInvocation(List<CtInvocation> methodCalls, List<CtConstructorCall> constructorCalls, CallNode currNode) {
-        for (CtInvocation element : methodCalls) {
+    private void addPossibleInvocation(List<CtAbstractInvocation> methodCalls, List<CtConstructorCall> constructorCalls, CallNode currNode) {
+        for (CtAbstractInvocation element : methodCalls) {
             CtTypeReference fromType;
             try {
                 fromType = extractTargetTypeFromElement(element);
-                if (!isPartOfJDKClasses(fromType.getQualifiedName()) && checkForValidDeclaringType(fromType.getQualifiedName())) {
+                if (!JDKClassHelper.isPartOfJDKClassesFromQualifiedName(fromType.getQualifiedName()) && checkForValidDeclaringType(fromType.getQualifiedName())) {
                     // if maven project is analyzed and the referred Object from the curr method is contained in the project
-                    if (this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName()))
-                        break;
-                    String methodSignature = element.getExecutable().toString();
-                    Invocation invocation = new Invocation(methodSignature, fromType.getQualifiedName(), currNode);
-                    currNode.addInvocation(invocation);
-                    // checks if invocations may refer to an interface and changes it to the actual implementation object
-                    checkIfInterfaceIsReferenced(invocation, constructorCalls);
+                    if (!(this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getSimpleName()))) {
+                        String methodSignature = getMethodSignature(element);
+                        Invocation invocation = new Invocation(methodSignature, fromType.getQualifiedName(), currNode);
+                        currNode.addInvocation(invocation);
+                        // checks if invocations may refer to an interface and changes it to the actual implementation object
+                        checkIfInterfaceIsReferenced(invocation, constructorCalls);
+                    }
                 }
             } catch (NullPointerException e) {
                 // skip element
@@ -255,7 +273,22 @@ public abstract class CallModel {
         }
     }
 
-    private CtTypeReference extractTargetTypeFromElement(CtInvocation element) throws NullPointerException {
+    private String getMethodSignature(CtAbstractInvocation element) {
+        String signature = element.getExecutable().toString();
+        if (signature.split("\\(")[0].contains(".")) {
+            String[] construct = signature.split("\\(");
+            String suffix = construct[1];
+            String prefix = construct[0].substring(construct[0].lastIndexOf(".") + 1);
+            StringBuilder builder = new StringBuilder();
+            builder.append(prefix);
+            builder.append("(");
+            builder.append(suffix);
+            signature = builder.toString();
+        }
+        return signature;
+    }
+
+    private CtTypeReference extractTargetTypeFromElement(CtAbstractInvocation element) throws NullPointerException {
         CtTypeReference fromType;
         fromType = element.getExecutable().getDeclaringType();
         if (fromType == null) throw new NullPointerException();
@@ -332,21 +365,6 @@ public abstract class CallModel {
                 }
             }
         }
-    }
-
-    /**
-     * helper function which checks if a class is part of the JDK
-     *
-     * @param qualifiedName String name of class
-     * @return true if class is part of JDK
-     */
-    private boolean isPartOfJDKClasses(String qualifiedName) {
-        return (qualifiedName.startsWith("java.") || (qualifiedName.startsWith("javax.xml.parsers.")
-                || (qualifiedName.startsWith("com.sun.")) || (qualifiedName.startsWith("sun."))
-                || (qualifiedName.startsWith("oracle.")) || (qualifiedName.startsWith("org.xml"))
-                || (qualifiedName.startsWith("com.oracle.")) || (qualifiedName.startsWith("jdk."))
-                || (qualifiedName.startsWith("javax.xml.stream.")) || (qualifiedName.startsWith("javax.xml.transform."))
-                || (qualifiedName.startsWith("org.w3c.dom."))));
     }
 
     public String getCurrProjectPath() {

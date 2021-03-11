@@ -21,6 +21,7 @@ import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /*********************************
  Created by Fabian Oraze on 29.10.20
@@ -337,7 +338,17 @@ public abstract class DPUpdaterBase implements DPUpdater {
             Process p = pb.start();
 
             System.out.println("  Waiting for the build to end...");
-            p.waitFor();
+            int timeOut = 8;
+            while (!p.waitFor(timeOut, TimeUnit.SECONDS)) {
+                p.destroy();
+                p = pb.start();
+                timeOut += 4;
+                System.out.println("  Restarting build...");
+                if (timeOut > 30) {
+                    System.out.println("  Effective pom build not possible");
+                    break;
+                }
+            }
             System.out.println(" Build ended...");
         }
         return outputFile;

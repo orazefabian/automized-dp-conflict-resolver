@@ -137,8 +137,10 @@ public class FactBuilder {
             String name = inv.getMethodSignature().substring(0, inv.getMethodSignature().indexOf("("));
             String signature = inv.getMethodSignature().split(name)[1];
             int paramCount = computeParamCount(signature);
-            this.factsBuilder.append("\ninvocation(").append(fromID).append(",\"").append(fromClass).append("\",\"")
-                    .append(name).append("\",").append(paramCount).append(").\n");
+            if (!fromClass.endsWith(name)) {
+                this.factsBuilder.append("\ninvocation(").append(fromID).append(",\"").append(fromClass).append("\",\"")
+                        .append(name).append("\",").append(paramCount).append(").\n");
+            }
         }
     }
 
@@ -192,8 +194,10 @@ public class FactBuilder {
                     String name = invocation.getMethodSignature().substring(0, invocation.getMethodSignature().indexOf("("));
                     String signature = invocation.getMethodSignature().split(name)[1];
                     int paramCount = computeParamCount(signature);
-                    this.factsBuilder.append("\ninvocation(").append(fromID).append(",\"").append(fromClass).append("\",\"")
-                            .append(name).append("\",").append(paramCount).append(").\n");
+                    if (!fromClass.endsWith(name)) {
+                        this.factsBuilder.append("\ninvocation(").append(fromID).append(",\"").append(fromClass).append("\",\"")
+                                .append(name).append("\",").append(paramCount).append(").\n");
+                    }
                 }
             }
         } catch (NullPointerException e) {

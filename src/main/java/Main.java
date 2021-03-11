@@ -5,13 +5,11 @@ import dp.resolver.parse.exception.NoConflictException;
 import dp.resolver.tree.CallTree;
 import dp.resolver.tree.ConflictType;
 import dp.resolver.tree.Tree;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Scanner;
+import java.util.List;
 
 
 public class Main {
@@ -22,40 +20,14 @@ public class Main {
         String target = "/Users/fabian/Projects/Sample/fastjson/";
         String curr = "/Users/fabian/Projects/automized-DP-conflict-resolver/automized-dp-conflict-resolver/";
         String jar = "/Users/fabian/.m2/repository/org/runtime/conflict/Project_B/1.0/Project_B-1.0.jar";
-     /*
-        String target = "/Users/fabian/Projects/Sample/commons-collections/";
-        String target = "/Users/fabian/Projects/Sample/sample_project/";
-        String target = "/Users/fabian/Projects/Sample/conflict_sample/";
-    */
 
-    /*
-        dp.DPUpdaterBase impl = new dp.ImplNaive(sample, 2);
+        //String param = args[0];
 
-        impl.updateDependencies();
-        System.out.println(impl.getWorkingConfigurations());
-        dp.DPGraphCreator cf = new dp.DPGraphCreator(target);
-        cf.getDPJson(null);
-        cf.createPNG();
-
-    */
-        /*
-        try {
-            CentralMavenAPI.getAllVersionsFromCMR("javax.xml.bind", "jaxb-api", "/Users/fabian/.m2/repository/javax/xml/bind/jaxb-api/2.2.3/jaxb-api-2.2.3.jar");
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        } catch (SAXException e) {
-            e.printStackTrace();
-        }
-        System.out.println();
-        System.exit(0);
-        */
 
         long time = System.currentTimeMillis();
         Tree tree;
         AnswerObject answer = new AnswerObject();
-        CentralMavenAPI.setMaxVersionsNum(5);
+        CentralMavenAPI.setMaxVersionsNumFromCmr(5);
         try {
             tree = new CallTree(curr, answer);
             tree.computeCallTree();
@@ -66,12 +38,25 @@ public class Main {
             long currTime = (System.currentTimeMillis() - time) / 1000 / 60;
             System.out.println("Needed time: " + currTime + " min");
             System.out.println("Possible jar configurations: " + answer.getAnswers());
+
+            File output = new File("target/output.txt");
+            output.createNewFile();
+            FileWriter writer = new FileWriter(output);
+            for (List<String> configuration : answer.getAnswers()) {
+                writer.write("Possible dependency configuration:\n");
+                for (String dependency : configuration) {
+                    writer.write(dependency + "\n");
+                }
+                writer.write("\n");
+            }
+            writer.close();
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         } catch (NoConflictException e) {
             System.err.println("No conflicts to solve");
         } finally {
             System.out.println("Bloated jars: " + answer.getBloatedJars());
+
         }
 
 

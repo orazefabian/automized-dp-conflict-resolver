@@ -12,6 +12,8 @@ import javax.xml.bind.JAXBException;
 import java.io.*;
 import java.util.*;
 
+import static java.lang.Character.isDigit;
+
 /*********************************
  Created by Fabian Oraze on 03.12.20
  *********************************/
@@ -210,7 +212,7 @@ public class CallTree implements Tree {
     }
 
     /**
-     * helper function to create new {@link MavenSpoonModel} for next jar, after analyzing previous one
+     * helper function to create new {@link CallModel} for next jar, after analyzing previous one
      */
     private void createNewModel() throws NullPointerException {
         removeNonUsedOrNeededJars();
@@ -238,15 +240,18 @@ public class CallTree implements Tree {
         for (String jarPath : this.jars.keySet()) {
             // remove non used jars
             checkIfJarExists(jarPath);
-            if (checkIfJarUsed(jarPath)) jarsToRemove.add(jarPath);
+            if (checkIfJarUsedOrNeeded(jarPath)) jarsToRemove.add(jarPath);
         }
         for (String key : jarsToRemove) {
             this.jars.remove(key);
-            if (checkIfJarNeeded(key)) {
-                this.neededJars.add(key); // if jar is possibly needed it will get added to needed jars for safety reasons
-            } else if (this.model.getCurrProjectPath().equals(this.targetProjectPath)) {
-                this.answerObject.addBloatedJar(key);
-            }// add jars that are directly bloated (root pom)
+            if (this.model.getCurrProjectPath().equals(this.targetProjectPath)) {
+                if (this.model instanceof MavenSpoonModel && checkIfJarIsPossiblyNeeded(key)) {
+                    this.neededJars.add(key); // if jar is possibly needed it will get added to needed jars for safety reasons
+                } else {
+                    this.answerObject.addBloatedJar(key);
+                    // add jars that are directly bloated (root pom)
+                }
+            }
         }
     }
 
@@ -311,19 +316,25 @@ public class CallTree implements Tree {
     }
 
     /**
-     * function that checks if a given jar is used by any call of the current invocations
+     * function that checks if a given jar is used by any call of the current invocations or if its needed
      *
      * @param jarPath String representation of the complete path to the Jar to be checked for usage
-     * @return true if the given jar is not used
+     * @return true if the given jar is not used or its per default needed due to annotations
      */
-    private boolean checkIfJarUsed(String jarPath) throws NullPointerException {
+    private boolean checkIfJarUsedOrNeeded(String jarPath) throws NullPointerException {
+        if (JDKClassHelper.isPartOfJDKFromFullPath(jarPath)) return true;
         List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jarPath);
         boolean remove = true;
         for (Invocation invocation : this.currLeaves) {
             try {
                 for (ClazzWithMethodsDto clazz : jarClassList) {
-
-                    if (clazz.getClazzName().replace(".class", "").replace(File.separator, ".").equals(invocation.getDeclaringType())) {
+                    if (checkIfInvocationDeclaringTypeIsEqualToClass(invocation, clazz)) {
+                        remove = false;
+                        break;
+                    }
+                    // directly add jar to neededJars list if on its annotations was used by the model
+                    if (checkIfAnnotationIsUsedByRoot(clazz.getClazzName())) {
+                        addJarToNeededListIfNoOtherVersionConflict(jarPath);
                         remove = false;
                         break;
                     }
@@ -337,13 +348,42 @@ public class CallTree implements Tree {
         return remove;
     }
 
+    private void addJarToNeededListIfNoOtherVersionConflict(String jarPath) {
+        String[] construct = jarPath.split("/");
+        StringBuilder builder = new StringBuilder();
+        boolean mustAdd = true;
+        for (int i = 1; i < construct.length; i++) {
+            if (isDigit(construct[i].charAt(0))) {
+                for (String neededJar : this.neededJars) {
+                    if (neededJar.startsWith(builder.toString())) mustAdd = false;
+                }
+                break;
+            } else {
+                builder.append("/").append(construct[i]);
+            }
+        }
+        if (mustAdd) this.neededJars.add(jarPath);
+    }
+
+    private boolean checkIfInvocationDeclaringTypeIsEqualToClass(Invocation invocation, ClazzWithMethodsDto clazz) {
+        return clazz.getClazzName().replace(".class", "").replace(File.separator, ".").equals(invocation.getDeclaringType());
+    }
+
+    private boolean checkIfAnnotationIsUsedByRoot(String clazzName) {
+        if (this.model instanceof MavenSpoonModel) {
+            return this.model.getAllAnnotations().contains(clazzName.replace("/", ".").split(".class")[0]);
+        } else {
+            return false;
+        }
+    }
+
     /**
      * checks whether a pom file contains the string prefix of a groupID (does not have to bee a dependency) hence jar is possibly needed
      *
      * @param jarPath path from the jar to be checked
      * @return true if pom file contains the prefix
      */
-    private boolean checkIfJarNeeded(String jarPath) {
+    private boolean checkIfJarIsPossiblyNeeded(String jarPath) {
         for (Invocation invocation : this.currLeaves) {
             try {
                 String groupID = invocation.getDeclaringType()
