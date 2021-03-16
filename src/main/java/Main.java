@@ -23,7 +23,7 @@ public class Main {
         AnswerObject answer = new AnswerObject();
         CentralMavenAPI.setMaxVersionsNumFromCmr(5);
         try {
-            File output = new File("target/output.txt");
+            File output = new File("output.txt");
             output.createNewFile();
             FileWriter writer = new FileWriter(output);
 

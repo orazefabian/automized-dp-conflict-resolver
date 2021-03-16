@@ -40,3 +40,6 @@ effectivePom.xml
 # *.asp
 /automized-dp-conflict-resolver.iml
 /src/main/java/dp/api/database/EnvConfig.java
+
+# output file
+output.txt

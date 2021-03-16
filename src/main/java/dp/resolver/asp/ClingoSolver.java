@@ -5,8 +5,6 @@ package dp.resolver.asp;
  *********************************/
 
 import java.io.*;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +15,7 @@ public class ClingoSolver {
     //OPTIONS TO GIVE ALL OPTIMUM ANSWERS
     private static final String OPTIONS = "--opt-mode=optN --quiet=1,2";
     private static final String CMD = "clingo rules.lp facts.lp " + OPTIONS;
-    private static final String PATH = /*System.getProperty("user.dir") + */"src/main/java/dp/resolver/asp";
+    private static final String PATH = System.getProperty("user.dir")/* + "src/main/java/dp/resolver/asp"*/;
 
 
     /**
@@ -26,6 +24,7 @@ public class ClingoSolver {
      * @return the content of the process output
      */
     public static String runClingo() throws IOException, InterruptedException {
+        Rules.createAndGetRulesFile(); //create a file from the rule enums
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream buildOutputStream = new PrintStream(outputStream);
         ProcessBuilder pb;

@@ -28,7 +28,7 @@ public class FactBuilder {
     private List<CallNode> conflictNodes;
     private StringBuilder factsBuilder;
     private FileWriter writer;
-    private final static String ROOT_DIR = System.getProperty("user.dir") + "/src/main/java/dp/resolver/asp";
+    private final static String ROOT_DIR = System.getProperty("user.dir");
     private File factsFile;
     private Map<String, Integer> idMap;
     private Set<String> alreadyLoadedJars;
