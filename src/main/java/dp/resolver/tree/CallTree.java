@@ -2,7 +2,7 @@ package dp.resolver.tree;
 
 import dp.api.maven.CentralMavenAPI;
 import dp.resolver.parse.assist.AssistParser;
-import dp.resolver.parse.assist.ClazzWithMethodsDto;
+import dp.resolver.parse.entity.MessagingClazz;
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
 import dp.resolver.tree.model.*;
@@ -64,7 +64,7 @@ public class CallTree implements Tree {
     public void computeCallTree() {
         try {
             createNewModel();
-        } catch (Exception ignored) {
+        } catch (Exception ignore) {
         }
         this.model.analyzeModel();
         computeLeafElements();
@@ -323,17 +323,17 @@ public class CallTree implements Tree {
      */
     private boolean checkIfJarUsedOrNeeded(String jarPath) throws NullPointerException {
         if (JDKClassHelper.isPartOfJDKFromFullPath(jarPath)) return true;
-        List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jarPath);
+        List<MessagingClazz> jarClassList = AssistParser.getJarClassList(jarPath);
         boolean remove = true;
         for (Invocation invocation : this.currLeaves) {
             try {
-                for (ClazzWithMethodsDto clazz : jarClassList) {
+                for (MessagingClazz clazz : jarClassList) {
                     if (checkIfInvocationDeclaringTypeIsEqualToClass(invocation, clazz)) {
                         remove = false;
                         break;
                     }
                     // directly add jar to neededJars list if on its annotations was used by the model
-                    if (checkIfAnnotationIsUsedByRoot(clazz.getClazzName())) {
+                    if (checkIfAnnotationIsUsedByRoot(clazz.getFullQualifiedName())) {
                         addJarToNeededListIfNoOtherVersionConflict(jarPath);
                         remove = false;
                         break;
@@ -365,13 +365,13 @@ public class CallTree implements Tree {
         if (mustAdd) this.neededJars.add(jarPath);
     }
 
-    private boolean checkIfInvocationDeclaringTypeIsEqualToClass(Invocation invocation, ClazzWithMethodsDto clazz) {
-        return clazz.getClazzName().replace(".class", "").replace(File.separator, ".").equals(invocation.getDeclaringType());
+    private boolean checkIfInvocationDeclaringTypeIsEqualToClass(Invocation invocation, MessagingClazz clazz) {
+        return clazz.getFullQualifiedName().equals(invocation.getDeclaringType());
     }
 
     private boolean checkIfAnnotationIsUsedByRoot(String clazzName) {
         if (this.model instanceof MavenSpoonModel) {
-            return this.model.getAllAnnotations().contains(clazzName.replace("/", ".").split(".class")[0]);
+            return this.model.getAllAnnotations().contains(clazzName);
         } else {
             return false;
         }

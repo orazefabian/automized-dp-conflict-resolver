@@ -3,8 +3,8 @@ package dp.resolver.parse;
 import dp.resolver.base.ImplSpoon;
 import dp.api.maven.CentralMavenAPI;
 import dp.resolver.parse.assist.AssistParser;
-import dp.resolver.parse.assist.ClazzWithMethodsDto;
-import dp.resolver.parse.assist.MethodInformation;
+import dp.resolver.parse.entity.MessagingClazz;
+import dp.resolver.parse.entity.MessagingMethod;
 import dp.resolver.tree.CallTree;
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
@@ -239,8 +239,8 @@ public class FactBuilder {
      */
     private void parseClassFact(String jarPath) {
         //Object[] objects = JarParser.getClassNames(jarPath);
-        List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jarPath);
-        for (ClazzWithMethodsDto clazz : jarClassList) {
+        List<MessagingClazz> jarClassList = AssistParser.getJarClassList(jarPath);
+        for (MessagingClazz clazz : jarClassList) {
             this.factsBuilder.append("class(").append(this.idMap.get(jarPath)).append(",\"")
                     .append(clazz.getClazzName().replace(".class", "")).append("\").\n");
         }
@@ -255,12 +255,12 @@ public class FactBuilder {
     private void parseMethodFact(String jarPath) {
         try {
             if (this.alreadyParsedJars.add(jarPath)) { //already parsed jars are skipped
-                List<ClazzWithMethodsDto> jarClassList = AssistParser.getJarClassList(jarPath);
-                for (ClazzWithMethodsDto clazz : jarClassList) {
-                    for (MethodInformation methodInformation : clazz.getMethods()) {
+                List<MessagingClazz> jarClassList = AssistParser.getJarClassList(jarPath);
+                for (MessagingClazz clazz : jarClassList) {
+                    for (MessagingMethod methodInformation : clazz.getMethods()) {
                         String methodName = methodInformation.getMethodName();
                         Long numberOfParams = methodInformation.getNumberOfParams();
-                        this.factsBuilder.append("method(").append(this.idMap.get(jarPath)).append(",\"").append(clazz.getClazzName().replace(".class", "")
+                        this.factsBuilder.append("method(").append(this.idMap.get(jarPath)).append(",\"").append(clazz.getFullQualifiedName().replace(".class", "")
                                 .replace(File.separator, ".")).append("\",\"").
                                 append(methodName).append("\",").append(numberOfParams).append(").\n");
                     }
