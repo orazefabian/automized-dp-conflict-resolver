@@ -17,6 +17,7 @@ import spoon.reflect.declaration.CtAnnotation;
 import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtType;
 import spoon.reflect.reference.CtTypeReference;
+import spoon.reflect.visitor.filter.NamedElementFilter;
 import spoon.reflect.visitor.filter.TypeFilter;
 import spoon.support.reflect.code.CtLocalVariableImpl;
 import spoon.support.reflect.declaration.CtMethodImpl;
@@ -46,7 +47,9 @@ public abstract class CallModel {
     protected List<CallNode> callNodes;
     protected ImplSpoon baseModel; // the base pom model from the root project
     private String pathM2;
-    private ArrayList<String> allAnnotations;
+    private List<String> allAnnotations;
+    protected List<String> traversedClasses;
+
 
     protected CallModel(String pathToProject, List<Invocation> leafInvocations) {
         this.pomModels = new ArrayList<>();
@@ -55,6 +58,7 @@ public abstract class CallModel {
         this.currProjectPath = pathToProject;
         this.callNodes = new ArrayList<>();
         this.allAnnotations = new ArrayList<>();
+        this.traversedClasses = new ArrayList<>();
         this.leafInvocations = leafInvocations;
         setPathM2();
     }
@@ -77,7 +81,7 @@ public abstract class CallModel {
         }
     }
 
-    public ArrayList<String> getAllAnnotations() {
+    public List<String> getAllAnnotations() {
         return allAnnotations;
     }
 
@@ -179,12 +183,14 @@ public abstract class CallModel {
         for (Object type : this.ctModel.filterChildren(new TypeFilter<>(CtType.class)).list()) {
             CtType s = (CtType) type;
             try {
-                System.out.println("Searching class: " + s.getSimpleName());
-                for (Object obj : s.filterChildren(new TypeFilter<CtMethod>(CtMethod.class)).list()) {
-                    CtMethodImpl m = (CtMethodImpl) obj;
-                    searchMethodForInvocations(m, s);
+                if (!this.traversedClasses.contains(s.getQualifiedName())) {
+                    System.out.println("Searching class: " + s.getSimpleName());
+                    for (Object obj : s.filterChildren(new TypeFilter<CtMethod>(CtMethod.class)).list()) {
+                        CtMethodImpl m = (CtMethodImpl) obj;
+                        searchMethodForInvocations(m, s);
+                    }
+                    searchClassForAnnotations(s);
                 }
-                searchClassForAnnotations(s);
             } catch (SpoonException | NullPointerException e) {
                 e.printStackTrace();
                 System.err.println("could not iterate over methods in class: " + s.getSimpleName());
@@ -263,10 +269,32 @@ public abstract class CallModel {
                         currNode.addInvocation(invocation);
                         // checks if invocations may refer to an interface and changes it to the actual implementation object
                         checkIfInterfaceIsReferenced(invocation, constructorCalls);
+                        this.leafInvocations.add(invocation);
+                        checkIfLocalClassIsReferred(fromType.getSimpleName());
                     }
                 }
             } catch (NullPointerException e) {
                 // skip element
+            }
+        }
+    }
+
+    /**
+     * checks if the extracted fromType refers to a local class (same jar or project) then the referred class should be searched again afterwards, to complete call trace
+     *
+     * @param fromType the declaring type from a method invocation
+     */
+    private void checkIfLocalClassIsReferred(String fromType) {
+        if (this.classNames.contains(fromType)) {
+            List<Object> referredClasses = this.ctModel.filterChildren(new NamedElementFilter<>(CtType.class, fromType)).list();
+            for (Object referredClass : referredClasses) {
+                CtType s = (CtType) referredClass;
+                this.traversedClasses.add(s.getQualifiedName()); // should be marked as already double checked and therefore should not be traversed again
+                System.out.println("    Deep searching class: " + s.getSimpleName());
+                for (Object obj : s.filterChildren(new TypeFilter<CtMethod>(CtMethod.class)).list()) {
+                    CtMethodImpl m = (CtMethodImpl) obj;
+                    searchMethodForInvocations(m, s);
+                }
             }
         }
     }
@@ -349,8 +377,7 @@ public abstract class CallModel {
      */
     private void appendNodeToLeaf(CallNode currNode) {
         for (Invocation invocation : this.leafInvocations) {
-            if (currNode.getClassName().contains(invocation.getDeclaringType())
-                    && invocation.getParentNode().getCurrPomJarDependencies().contains(currNode.getFromJar()) && invocation.getNextNode() == null) {
+            if (checkIfMustBeAppended(currNode, invocation)) {
                 invocation.setNextNode(currNode);
                 if (currNode.getPrevious() == null) currNode.setPrevious(invocation.getParentNode());
                 // must check if parent node of invocations is same as the previous node of the nextNode
@@ -363,6 +390,12 @@ public abstract class CallModel {
                 }
             }
         }
+    }
+
+    private boolean checkIfMustBeAppended(CallNode currNode, Invocation invocation) {
+        return currNode.getClassName().contains(invocation.getDeclaringType())
+                && (invocation.getParentNode().getCurrPomJarDependencies().contains(currNode.getFromJar()) || this.traversedClasses.contains(currNode.getClassName()))
+                && invocation.getNextNode() == null;
     }
 
     public String getCurrProjectPath() {

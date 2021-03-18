@@ -35,8 +35,8 @@ public class TestOnSampleProject {
         answerTwo.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_C/1.0/Project_C-1.0.jar");
 
         expectedAnswer = new ArrayList<>();
-        expectedAnswer.add(answerTwo);
         expectedAnswer.add(answerOne);
+        expectedAnswer.add(answerTwo);
 
         Collections.sort(answerOne);
         Collections.sort(answerTwo);
@@ -95,7 +95,7 @@ public class TestOnSampleProject {
     }
 
     private void testNodeAt0(List<CallNode> conflicts) {
-        String extraObjectD = "conflict.ExtraObject_D";
+        String extraObjectD = "conflict.Object_D";
         String suffix = "3.0.jar";
         boolean found = false;
 
@@ -109,7 +109,7 @@ public class TestOnSampleProject {
 
     private void testNodeAt1(List<CallNode> conflicts) {
         String objectD = "conflict.Object_D";
-        String suffix = "2.0.jar";
+        String suffix = "3.0.jar";
         boolean found = false;
         for (CallNode node : conflicts) {
             if (node.getClassName().equals(objectD) && node.getFromJar().endsWith(suffix)) {
@@ -121,7 +121,7 @@ public class TestOnSampleProject {
 
     private void testNodeAt2(List<CallNode> conflicts) {
         String objectD = "conflict.Object_D";
-        String suffix = "3.0.jar";
+        String suffix = "2.0.jar";
         boolean found = false;
         for (CallNode node : conflicts) {
             if (node.getClassName().equals(objectD) && node.getFromJar().endsWith(suffix)) {
