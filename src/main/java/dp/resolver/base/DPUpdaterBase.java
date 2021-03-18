@@ -60,15 +60,18 @@ public abstract class DPUpdaterBase implements DPUpdater {
      */
     public DPUpdaterBase(String pathToRepo) {
         this.repo = new File(pathToRepo);
-        this.path = pathToRepo;
-        this.pomModel = createPomModel(pathToRepo);
+        if (pathToRepo.endsWith(File.separator) || pathToRepo.endsWith(".jar")) {
+            this.path = pathToRepo;
+        } else {
+            this.path = pathToRepo + File.separator;
+        }
+        this.pomModel = createPomModel(this.path);
         this.dpVersionList = new ArrayList<ArrayList<String>>();
         try {
             saveDependencies();
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
 

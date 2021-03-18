@@ -36,7 +36,11 @@ public class CallTree implements Tree {
      * @param targetProjectPath path to maven project which is to be analyzed, MUST end with a "/" (File separator)
      */
     public CallTree(String targetProjectPath, AnswerObject answerObject) {
-        this.targetProjectPath = targetProjectPath;
+        if (targetProjectPath.endsWith(File.separator)) {
+            this.targetProjectPath = targetProjectPath;
+        } else {
+            this.targetProjectPath = targetProjectPath + File.separator;
+        }
         this.answerObject = answerObject;
         this.modelFactory = new ModelFactoryImpl();
         this.startNodes = new ArrayList<>();

@@ -240,8 +240,6 @@ public abstract class CallModel {
         }
         // adds invocations called by current method to the current CallNode
         addPossibleInvocation(methodCalls, constructorCalls, currNode);
-        // delete node if it has no outgoing invocations
-        if (currNode != null && currNode.getInvocations().size() == 0) currNode = null;
     }
 
     /**

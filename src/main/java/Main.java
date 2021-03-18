@@ -1,4 +1,5 @@
 import dp.api.maven.CentralMavenAPI;
+import dp.resolver.base.ImplSpoon;
 import dp.resolver.tree.AnswerObject;
 import dp.resolver.parse.FactBuilder;
 import dp.resolver.parse.exception.NoConflictException;
@@ -14,14 +15,19 @@ import java.util.List;
 
 public class Main {
 
+    public static final int MAX_VERSIONS_NUM = 5;
+    public static final int POM_LIMIT = 5;
+
     public static void main(String[] args) {
 
         String param = args[0];
 
+        param = "/Users/fabian/Projects/automized-DP-conflict-resolver/automized-dp-conflict-resolver";
+
         long time = System.currentTimeMillis();
         Tree tree;
         AnswerObject answer = new AnswerObject();
-        CentralMavenAPI.setMaxVersionsNumFromCmr(5);
+        CentralMavenAPI.setMaxVersionsNumFromCmr(MAX_VERSIONS_NUM);
         try {
             File output = new File("output.txt");
             output.createNewFile();
@@ -37,6 +43,9 @@ public class Main {
             String timeInfo = "Needed time: " + currTime + " min";
             System.out.println("Possible jar configurations: " + answer.getAnswers());
             System.out.println(timeInfo);
+
+            ImplSpoon pomOld = new ImplSpoon(param);
+            pomOld.updateAndWritePomModels(answer.getAnswers(), POM_LIMIT);
 
             writer.write(timeInfo + "\n");
 

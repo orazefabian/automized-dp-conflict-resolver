@@ -1,6 +1,7 @@
 package dp.resolver.base;
 
-import dp.resolver.tree.model.CallModel;
+import dp.resolver.parse.entity.MessagingJar;
+import org.apache.maven.pom._4_0.Dependency;
 import org.apache.maven.pom._4_0.Model;
 import spoon.Launcher;
 import spoon.MavenLauncher;
@@ -13,6 +14,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /*********************************
@@ -60,12 +62,10 @@ public class ImplSpoon extends DPUpdaterBase {
 
     @Override
     public void saveDependencies() {
-        System.out.println("not saving dependencies from central maven repo");
     }
 
     @Override
     public void updateDependencies() {
-
     }
 
     @Override
@@ -103,4 +103,46 @@ public class ImplSpoon extends DPUpdaterBase {
 
         return pomModel;
     }
+
+
+    /**
+     * write a new pom for each answer from clingo
+     *
+     * @param answers the solution from clingo as a List of configurations
+     */
+    public void updateAndWritePomModels(List<List<String>> answers, int limit) {
+        int configCount = 0;
+        for (List<String> configuration : answers) {
+            List<Dependency> dpsNew = new ArrayList<>();
+            configCount++;
+            if (configCount > limit) break;
+            for (String jar : configuration) {
+                MessagingJar dependency = new MessagingJar();
+                dependency.fillJarFromFullPath(jar);
+                appendDps(dependency, dpsNew);
+            }
+            createNewPomConfig(dpsNew, configCount);
+        }
+    }
+
+    private void createNewPomConfig(List<Dependency> dependencies, int suffix) {
+        this.pomModel.getDependencies().getDependency().clear();
+        for (Dependency dp : dependencies) {
+            this.pomModel.getDependencies().getDependency().add(dp);
+        }
+        try {
+            writePom(new File("pom-config-" + suffix + ".xml"), this.pomModel);
+        } catch (JAXBException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void appendDps(MessagingJar dependency, List<Dependency> dpsNew) {
+        Dependency dp = new Dependency();
+        dp.setGroupId(dependency.getGroupId());
+        dp.setArtifactId(dependency.getArtifactId());
+        dp.setVersion(dependency.getVersion());
+        dpsNew.add(dp);
+    }
+
 }
