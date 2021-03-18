@@ -78,12 +78,12 @@ public enum Rules {
     /**
      * another weak constraint to filter
      */
-    WEAK_CONSTRAINT_METHODS {
+    /*WEAK_CONSTRAINT_METHODS {
         @Override
         public String txt() {
             return ":~includeMethod(C,N,S).[1,C,N,S]\n";
         }
-    },
+    },*/
 
     /**
      * the amount of clashes must be 0
@@ -124,7 +124,7 @@ public enum Rules {
     public static File createAndGetRulesFile() {
         File rulesFile = new File("rules.lp");
         StringBuilder builder = new StringBuilder();
-        stream().forEach(rule -> builder.append(rule.txt()));
+        stream().forEach(rules -> builder.append(rules.txt()));
         try {
             FileWriter writer = new FileWriter(rulesFile);
             writer.write(builder.toString());
