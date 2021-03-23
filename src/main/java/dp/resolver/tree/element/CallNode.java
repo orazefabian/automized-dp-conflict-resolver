@@ -1,5 +1,7 @@
 package dp.resolver.tree.element;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -8,7 +10,7 @@ import java.util.Set;
  Created by Fabian Oraze on 03.12.20
  *********************************/
 
-public class CallNode {
+public class CallNode implements Comparable<CallNode> {
 
     private String className;
     private String fromJar;
@@ -64,4 +66,9 @@ public class CallNode {
         return invocations;
     }
 
+    @Override
+    public int compareTo(@NotNull CallNode o) {
+        String compClassName = o.getClassName();
+        return compClassName.compareTo(className);
+    }
 }

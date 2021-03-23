@@ -1,10 +1,12 @@
 package dp.resolver.tree.element;
 
+import org.jetbrains.annotations.NotNull;
+
 /*********************************
  Created by Fabian Oraze on 03.12.20
  *********************************/
 
-public class Invocation {
+public class Invocation implements Comparable<Invocation> {
 
     private String methodSignature;
     private String declaringType;
@@ -48,5 +50,21 @@ public class Invocation {
 
     public void setNextNode(CallNode nextNode) {
         this.nextNode = nextNode;
+    }
+
+    public boolean isLeafInvocation() {
+        return this.nextNode == null;
+    }
+
+    @Override
+    public int compareTo(@NotNull Invocation o) {
+        String compMethodSignature = o.getMethodSignature();
+        return compMethodSignature.compareTo(this.methodSignature);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        Invocation compare = (Invocation) obj;
+        return compare.getDeclaringType().equals(this.declaringType) && compare.getMethodSignature().equals(this.methodSignature);
     }
 }
