@@ -1,6 +1,8 @@
 package dp.resolver.tree.model.entity;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /*********************************
@@ -9,14 +11,19 @@ import java.util.Set;
 
 public class MethodConnectionSet {
 
-    Set<MethodConnection> connections;
+    private List<MethodConnection> connections;
+    private boolean changed;
 
     public MethodConnectionSet() {
-        this.connections = new HashSet<>();
+        this.connections = new ArrayList<>();
+        this.changed = false;
     }
 
     public void addConnection(MethodConnection con) {
-        this.connections.add(con);
+        if (!this.connections.contains(con)) {
+            this.connections.add(con);
+            this.changed = true;
+        }
     }
 
     public boolean isConnectionAlreadyPresent(MethodConnection con) {
@@ -34,4 +41,10 @@ public class MethodConnectionSet {
         return false;
     }
 
+    public boolean hasChangedSinceLastCheck() {
+        boolean hasChanged = false;
+        if (this.changed) hasChanged = true;
+        this.changed = false;
+        return hasChanged;
+    }
 }

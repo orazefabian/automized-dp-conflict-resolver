@@ -47,8 +47,9 @@ public class CallTree implements Tree {
         this.jars = new HashMap<>();
         this.neededJars = new HashSet<>();
         this.conflicts = new ArrayList<>();
+        this.currLeaves = new ArrayList<>();
         initModel();
-        setInitialLeaves();
+        //setInitialLeaves();
     }
 
     private void setInitialLeaves() {
@@ -68,7 +69,8 @@ public class CallTree implements Tree {
     public void computeCallTree() {
         try {
             createNewModel();
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         this.model.analyzeModel();
         computeLeafElements();
@@ -212,7 +214,8 @@ public class CallTree implements Tree {
         } catch (IOException | InterruptedException | JAXBException e) {
             e.printStackTrace();
         }
-        this.startNodes.addAll(this.model.analyzeModel());
+        this.model.analyzeModel();
+        this.startNodes.addAll(this.model.getCallNodes());
     }
 
     /**
@@ -280,13 +283,14 @@ public class CallTree implements Tree {
      */
     private void computeLeafElements() {
         List<Invocation> toBeRemoved = new ArrayList<>();
-        for (int i = 0; i < this.currLeaves.size(); i++) {
-            Invocation invocation = this.currLeaves.get(i);
-            if (invocation.getNextNode() != null) {
-                this.currLeaves.addAll(invocation.getNextNode().getInvocations());
+        List<Invocation> toBeAdded = new ArrayList<>();
+        for (Invocation invocation : this.currLeaves) {
+            if (!invocation.isLeafInvocation()) {
+                toBeAdded.addAll(invocation.getNextNode().getInvocations());
                 toBeRemoved.add(invocation);
             }
         }
+        this.currLeaves.addAll(toBeAdded);
         this.currLeaves.removeAll(toBeRemoved);
     }
 
