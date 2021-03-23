@@ -113,11 +113,11 @@ public class FactBuilder {
             parseJarFact(node.getFromJar());
             generateOptionalJarFacts(node);
             parsePreviousNodes(node.getPrevious());
-            parseInvocationFact(node.getInvocations());
+            //parseInvocationFact(node.getInvocations());
             parseDPConnection(node);
         } else {
             try {
-                parseRoot(node);
+                parseRootInvocations(node);
             } catch (NullPointerException e) {
                 System.out.println("Not yet finished with tree traversal");
             }
@@ -130,7 +130,7 @@ public class FactBuilder {
      *
      * @param node the root node of the conflict tree
      */
-    private void parseRoot(CallNode node) throws NullPointerException {
+    private void parseRootInvocations(CallNode node) throws NullPointerException {
         for (Invocation inv : node.getInvocations()) {
             int fromID = 0;
             String fromClass = inv.getDeclaringType();
