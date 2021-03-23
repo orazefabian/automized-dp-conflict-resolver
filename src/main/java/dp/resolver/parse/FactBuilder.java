@@ -188,14 +188,14 @@ public class FactBuilder {
         try {
             for (Invocation invocation : invocations) {
                 // if it is null the next jar in call trace could not be determined and therefore no fact should be generated
-                if (invocation.getNextNode() != null) {
+                if (isInvocationNeededForFact(invocation)) {
                     int fromID = this.idMap.get(invocation.getParentNode().getFromJar());
-                    String fromClass = invocation.getDeclaringType();
+                    String declaringClass = invocation.getDeclaringType();
                     String name = invocation.getMethodSignature().substring(0, invocation.getMethodSignature().indexOf("("));
                     String signature = invocation.getMethodSignature().split(name)[1];
                     int paramCount = computeParamCount(signature);
-                    if (!fromClass.endsWith(name)) {
-                        this.factsBuilder.append("\ninvocation(").append(fromID).append(",\"").append(fromClass).append("\",\"")
+                    if (!declaringClass.endsWith(name)) {
+                        this.factsBuilder.append("\ninvocation(").append(fromID).append(",\"").append(declaringClass).append("\",\"")
                                 .append(name).append("\",").append(paramCount).append(").\n");
                     }
                 }
@@ -203,6 +203,15 @@ public class FactBuilder {
         } catch (NullPointerException e) {
             System.err.println("Parsing invocation not possible");
         }
+    }
+
+    private boolean isInvocationNeededForFact(Invocation invocation) {
+        if (invocation.getNextNode() != null) {
+            String fromJar = invocation.getParentNode().getFromJar();
+            String toJar = invocation.getNextNode().getFromJar();
+            return !fromJar.equals(toJar);
+        }
+        return false;
     }
 
     /**
