@@ -6,6 +6,7 @@ import spoon.MavenLauncher;
 
 import java.io.*;
 import java.util.List;
+import java.util.Set;
 
 /*********************************
  Created by Fabian Oraze on 27.11.20
@@ -21,7 +22,7 @@ public class MavenSpoonModel extends CallModel {
      * @param leafInvocations
      * @throws Exception if building the spoon model fails
      */
-    protected MavenSpoonModel(String pathToProject, List<Invocation> leafInvocations) throws Exception {
+    protected MavenSpoonModel(String pathToProject, Set<Invocation> leafInvocations) throws Exception {
         super(pathToProject, leafInvocations);
         System.out.println("Starting to build Maven spoon model from " + pathToProject + "...");
         initLauncherAndCreatePomModels();

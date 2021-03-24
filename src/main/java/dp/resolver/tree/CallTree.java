@@ -24,7 +24,7 @@ public class CallTree implements Tree {
     private final String targetProjectPath;
     private final ModelFactory modelFactory;
     private final Map<String, Boolean> jars;
-    private List<Invocation> currLeaves;
+    private Set<Invocation> currLeaves;
     private final List<CallNode> conflicts;
     private final Set<String> neededJars;
     private final AnswerObject answerObject;
@@ -47,14 +47,14 @@ public class CallTree implements Tree {
         this.jars = new HashMap<>();
         this.neededJars = new HashSet<>();
         this.conflicts = new ArrayList<>();
-        this.currLeaves = new ArrayList<>();
+        this.currLeaves = new HashSet<>();
         initModel();
         //setInitialLeaves();
     }
 
     private void setInitialLeaves() {
         // set current leaf elements
-        this.currLeaves = new ArrayList<>();
+        this.currLeaves = new HashSet<>();
         for (CallNode node : this.startNodes) {
             currLeaves.addAll(node.getInvocations());
         }
