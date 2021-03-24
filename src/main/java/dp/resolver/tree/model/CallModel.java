@@ -36,7 +36,7 @@ import java.util.*;
 public abstract class CallModel {
 
 
-    private final List<Invocation> leafInvocations;
+    private final Set<Invocation> leafInvocations;
     protected CtModel ctModel;
     protected final List<String> classNames;
     protected final Map<String, Boolean> jarPaths;
@@ -50,7 +50,7 @@ public abstract class CallModel {
     private List<String> classesToTraverseAgain;
     private MethodConnectionSet methodConnections;
 
-    protected CallModel(String pathToProject, List<Invocation> leafInvocations) {
+    protected CallModel(String pathToProject, Set<Invocation> leafInvocations) {
         this.pomModels = new ArrayList<>();
         this.classNames = new ArrayList<>();
         this.jarPaths = new HashMap<>();
@@ -364,8 +364,10 @@ public abstract class CallModel {
     private boolean shouldAddInvocationToCallNode(Invocation invocation, CallNode currNode) {
         if (!currNode.getInvocations().contains(invocation)
                 && !currNode.getClassName().equals(invocation.getDeclaringType())
-            /*&& !this.classNames.contains(invocation.getDeclaringType())*/) {
-            if (!this.leafInvocations.contains(invocation)) this.leafInvocations.add(invocation);
+                && this.methodConnections.isTransitiveOutgoing(currNode.getClassName(), invocation.getDeclaringType())) {
+            if (!this.leafInvocations.contains(invocation)) {
+                this.leafInvocations.add(invocation);
+            }
             return true;
         }
         return false;

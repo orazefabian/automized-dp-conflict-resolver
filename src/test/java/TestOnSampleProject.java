@@ -91,7 +91,6 @@ public class TestOnSampleProject {
         List<CallNode> conflicts = tree.getConflicts(ConflictType.TYPE_3);
         testNodeAt0(conflicts);
         testNodeAt1(conflicts);
-        testNodeAt2(conflicts);
     }
 
     private void testNodeAt0(List<CallNode> conflicts) {
@@ -108,18 +107,6 @@ public class TestOnSampleProject {
     }
 
     private void testNodeAt1(List<CallNode> conflicts) {
-        String objectD = "conflict.Object_D";
-        String suffix = "3.0.jar";
-        boolean found = false;
-        for (CallNode node : conflicts) {
-            if (node.getClassName().equals(objectD) && node.getFromJar().endsWith(suffix)) {
-                found = true;
-            }
-        }
-        Assertions.assertTrue(found);
-    }
-
-    private void testNodeAt2(List<CallNode> conflicts) {
         String objectD = "conflict.Object_D";
         String suffix = "2.0.jar";
         boolean found = false;
