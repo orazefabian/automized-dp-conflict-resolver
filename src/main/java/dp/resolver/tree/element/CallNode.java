@@ -71,4 +71,10 @@ public class CallNode implements Comparable<CallNode> {
         String compClassName = o.getClassName();
         return compClassName.compareTo(className);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        CallNode comp = (CallNode) o;
+        return comp.getFromJar().equals(this.fromJar) && comp.getClassName().equals(this.className);
+    }
 }

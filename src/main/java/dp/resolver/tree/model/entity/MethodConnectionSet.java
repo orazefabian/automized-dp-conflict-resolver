@@ -1,9 +1,7 @@
 package dp.resolver.tree.model.entity;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /*********************************
  Created by Fabian Oraze on 23.03.21
@@ -46,5 +44,16 @@ public class MethodConnectionSet {
         if (this.changed) hasChanged = true;
         this.changed = false;
         return hasChanged;
+    }
+
+    public boolean isTransitiveOutgoing(String className, String declaringType) {
+        boolean clazzPresent = false;
+        boolean declaringPresent = false;
+        for (MethodConnection connection : this.connections) {
+            if (connection.getToClass().equals(className)) clazzPresent = true;
+            if (connection.getFromClass().equals(declaringType)) declaringPresent = true;
+        }
+        if (!clazzPresent) return true;
+        return !declaringPresent;
     }
 }

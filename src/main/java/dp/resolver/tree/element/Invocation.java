@@ -65,6 +65,8 @@ public class Invocation implements Comparable<Invocation> {
     @Override
     public boolean equals(Object obj) {
         Invocation compare = (Invocation) obj;
-        return compare.getDeclaringType().equals(this.declaringType) && compare.getMethodSignature().equals(this.methodSignature);
+        return compare.getDeclaringType().equals(this.declaringType)
+                && compare.getMethodSignature().equals(this.methodSignature)
+                && compare.getParentNode().equals(this.parentNode);
     }
 }
