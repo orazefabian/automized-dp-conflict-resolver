@@ -373,35 +373,6 @@ public abstract class CallModel {
         return false;
     }
 
-    /*
-        /**
-         * checks if the extracted fromType refers to a local class (same jar or project) then the referred class should be searched again afterwards, to complete call trace
-         *
-         * @param fromType   the declaring type from a method invocation
-         * @param invocation
-
-    private void deepSearchInvocations(CtTypeReference fromType, Invocation invocation) {
-        if (checkIfDeepSearchWasAlreadyPerformed(fromType, invocation)) {
-            List<Object> referredClasses = this.ctModel.filterChildren(new NamedElementFilter<>(CtType.class, fromType.getSimpleName())).list();
-            for (Object referredClass : referredClasses) {
-                CtType s = (CtType) referredClass;
-                this.deepSearchedMethodCalls.add(new MethodConnection(invocation.getParentNode().getClassName(), invocation.getMethodSignature(), invocation.getDeclaringType()));
-                this.traversedClasses.add(s.getQualifiedName()); // should be marked as already double checked and therefore should not be traversed again
-                System.out.println("    Deep searching class: " + s.getSimpleName());
-                for (Object obj : s.filterChildren(new NamedElementFilter<>(CtMethod.class, invocation.getMethodSignature().split("\\(")[0])).list()) {
-                    CtMethodImpl m = (CtMethodImpl) obj;
-                    searchMethodForInvocations(m, s);
-                }
-            }
-        }
-    }*/
-
-    /*private boolean checkIfDeepSearchWasAlreadyPerformed(CtTypeReference fromType, Invocation invocation) {
-        return !this.deepSearchedMethodCalls.contains(
-                new MethodConnection(invocation.getParentNode().getClassName(), invocation.getMethodSignature(), invocation.getDeclaringType()));
-        //return this.classNames.contains(fromType.getQualifiedName()) && !invocation.getParentNode().getClassName().equals(fromType.getQualifiedName());
-    }*/
-
     private String getMethodSignature(CtAbstractInvocation element) {
         String signature = element.getExecutable().toString();
         if (signature.split("\\(")[0].contains(".")) {
@@ -491,9 +462,6 @@ public abstract class CallModel {
         }
     }
 
-    private void removeOldLeaf(Invocation invocation) {
-        this.leafInvocations.remove(invocation);
-    }
 
     private boolean checkIfMustBeAppended(CtType currNode, Invocation invocation) {
         return currNode.getQualifiedName().contains(invocation.getDeclaringType())
