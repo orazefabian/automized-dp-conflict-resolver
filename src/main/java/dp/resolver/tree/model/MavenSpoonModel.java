@@ -41,7 +41,7 @@ public class MavenSpoonModel extends CallModel {
      */
     protected void initLauncherAndCreatePomModels() {
 
-        this.launcher = new MavenLauncher(this.currProjectPath, MavenLauncher.SOURCE_TYPE.APP_SOURCE); // change source type to all_source to include tests
+        this.launcher = new MavenLauncher(this.currProjectPath, MavenLauncher.SOURCE_TYPE.ALL_SOURCE); // change source type to all_source to include tests
         this.baseModel = new ImplSpoon(this.currProjectPath);
         searchModulesForPom(new File(currProjectPath));
         this.ctModel = this.launcher.buildModel();

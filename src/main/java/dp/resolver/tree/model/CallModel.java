@@ -378,7 +378,6 @@ public abstract class CallModel {
      */
     private boolean shouldAddInvocationToCallNode(Invocation invocation, CallNode currNode) {
         if (!currNode.getInvocations().contains(invocation)
-                /*&& !currNode.getClassName().equals(invocation.getDeclaringType())*/
                 && this.methodConnections.isClassAndDeclaringTypePresent(currNode.getClassName(), invocation.getDeclaringType(), invocation.getMethodSignature())) {
             if (!this.leafInvocations.contains(invocation)) {
                 this.leafInvocations.add(invocation);
