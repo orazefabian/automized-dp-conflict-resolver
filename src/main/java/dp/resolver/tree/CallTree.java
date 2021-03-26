@@ -392,6 +392,7 @@ public class CallTree implements Tree {
      * @return true if pom file contains the prefix
      */
     private boolean checkIfJarIsPossiblyNeeded(String jarPath) {
+        if (JDKClassHelper.isPartOfJDKFromFullPath(jarPath)) return true;
         for (Invocation invocation : this.currLeaves) {
             try {
                 String groupID = invocation.getDeclaringType()
