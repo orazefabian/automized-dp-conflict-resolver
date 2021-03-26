@@ -46,14 +46,23 @@ public class MethodConnectionSet {
         return hasChanged;
     }
 
-    public boolean isTransitiveOutgoing(String className, String declaringType) {
+    public boolean isClassAndDeclaringTypePresent(String className, String declaringType, String methodSignature) {
         boolean clazzPresent = false;
         boolean declaringPresent = false;
+        boolean methodPresent = false;
         for (MethodConnection connection : this.connections) {
             if (connection.getToClass().equals(className)) clazzPresent = true;
             if (connection.getFromClass().equals(declaringType)) declaringPresent = true;
+            if (connection.getToMethodSignature().equals(methodSignature)) methodPresent = true;
         }
-        if (!clazzPresent) return true;
-        return !declaringPresent;
+        return !methodPresent || !clazzPresent || !declaringPresent;
+    }
+
+    public boolean isTransitiveReferenced(String className, String methodSignature) {
+        for (MethodConnection connection : this.connections) {
+            if (connection.getFromClass().equals(className) && connection.getToMethodSignature().equals(methodSignature))
+                return true;
+        }
+        return false;
     }
 }

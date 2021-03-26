@@ -37,18 +37,18 @@ public abstract class CallModel {
 
 
     private final Set<Invocation> leafInvocations;
-    protected CtModel ctModel;
+    private final List<String> allAnnotations;
+    private final List<String> classesToTraverseAgain;
+    private final MethodConnectionSet methodConnections;
     protected final List<String> classNames;
     protected final Map<String, Boolean> jarPaths;
     protected final String currProjectPath;
+    protected CtModel ctModel;
     protected List<ImplSpoon> pomModels; // holds all possible pom models of sub modules
     protected Launcher launcher;
     protected List<CallNode> callNodes;
     protected ImplSpoon baseModel; // the base pom model from the root project
     private String pathM2;
-    private List<String> allAnnotations;
-    private List<String> classesToTraverseAgain;
-    private MethodConnectionSet methodConnections;
 
     protected CallModel(String pathToProject, Set<Invocation> leafInvocations) {
         this.pomModels = new ArrayList<>();
@@ -232,8 +232,7 @@ public abstract class CallModel {
         } else {
             for (Invocation mustAppend : toBeAppended) {
                 CallNode nodeNew = getNodeByName(clazz.getQualifiedName());
-                nodes.add(nodeNew);
-                appendNodeToLeaf(nodeNew, mustAppend);
+                appendOldOrNewNodeToLeaf(nodeNew, mustAppend, nodes);
             }
         }
         return nodes;
@@ -247,6 +246,7 @@ public abstract class CallModel {
      * @return true if the class should be a CallNode
      */
     private boolean checkIfPossibleCallNode(CtType clazz, List<Invocation> neededLeafInvocations) {
+        if (this.launcher instanceof MavenLauncher) return true;
         if (this.methodConnections.isClassTransitiveReferenced(clazz.getQualifiedName())) {
             for (Invocation invocation : this.leafInvocations) {
                 if (checkIfMustBeAppended(clazz, invocation)) {
@@ -254,7 +254,8 @@ public abstract class CallModel {
                 }
             }
             return true;
-        } else if (this.leafInvocations.size() == 0) {
+        }
+        if (this.leafInvocations.size() == 0) {
             return true;
         }
         boolean needed = false;
@@ -303,11 +304,25 @@ public abstract class CallModel {
      * @param currNode CallNode object that represents the current class
      */
     private void searchMethodForInvocations(CtMethod method, CallNode currNode) {
+        if (isMethodCalledByCallNode(method, currNode)) {
+            List<CtAbstractInvocation> methodCalls = method.getElements(new TypeFilter<>(CtAbstractInvocation.class));
+            List<CtConstructorCall> constructorCalls = method.filterChildren(new TypeFilter<>(CtConstructorCall.class)).list();
+            // adds invocations called by current method to the current CallNode
+            addPossibleInvocation(methodCalls, constructorCalls, currNode);
+        }
+    }
 
-        List<CtAbstractInvocation> methodCalls = method.getElements(new TypeFilter<>(CtAbstractInvocation.class));
-        List<CtConstructorCall> constructorCalls = method.filterChildren(new TypeFilter<>(CtConstructorCall.class)).list();
-        // adds invocations called by current method to the current CallNode
-        addPossibleInvocation(methodCalls, constructorCalls, currNode);
+    private boolean isMethodCalledByCallNode(CtMethod method, CallNode currNode) {
+        if (this.launcher instanceof MavenLauncher) return true;
+        for (Invocation call : currNode.getPrevious().getInvocations()) {
+            if (call.getMethodSignature().equals(method.getSignature())
+                    && call.getDeclaringType().equals(method.getDeclaringType().getQualifiedName())) {
+                return true;
+            } else if (this.methodConnections.isTransitiveReferenced(currNode.getClassName(), method.getSignature())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -333,10 +348,10 @@ public abstract class CallModel {
                             // checks if invocations may refer to an interface and changes it to the actual implementation object
                             checkIfInterfaceIsReferenced(invocation, constructorCalls);
                         } else {
-                            MethodConnection connection = new MethodConnection(invocation.getParentNode().getClassName(), invocation.getMethodSignature(), invocation.getDeclaringType());
-                            this.methodConnections.addConnection(connection);
                             appendToBeTraversedClass(invocation);
                         }
+                        MethodConnection connection = new MethodConnection(invocation.getParentNode().getClassName(), invocation.getMethodSignature(), invocation.getDeclaringType());
+                        this.methodConnections.addConnection(connection);
                     }
                 }
             } catch (NullPointerException e) {
@@ -363,8 +378,8 @@ public abstract class CallModel {
      */
     private boolean shouldAddInvocationToCallNode(Invocation invocation, CallNode currNode) {
         if (!currNode.getInvocations().contains(invocation)
-                && !currNode.getClassName().equals(invocation.getDeclaringType())
-                && this.methodConnections.isTransitiveOutgoing(currNode.getClassName(), invocation.getDeclaringType())) {
+                /*&& !currNode.getClassName().equals(invocation.getDeclaringType())*/
+                && this.methodConnections.isClassAndDeclaringTypePresent(currNode.getClassName(), invocation.getDeclaringType(), invocation.getMethodSignature())) {
             if (!this.leafInvocations.contains(invocation)) {
                 this.leafInvocations.add(invocation);
             }
@@ -423,13 +438,13 @@ public abstract class CallModel {
      * @return {@link CallNode}
      */
     private CallNode getNodeByName(String currClass) {
-        /*for (CallNode n : this.callNodes) {
-            if (n.getClassName().equals(currClass) && n.getFromJar().equals(this.currProjectPath)) {
-                if (n.getPrevious() == null) return n;
-            }
-        }*/
         int indexOfNode = Collections.binarySearch(this.callNodes, new CallNode(currClass, null, null, null));
-        if (indexOfNode >= 0) return this.callNodes.get(indexOfNode);
+        if (indexOfNode >= 0) {
+            CallNode node = this.callNodes.get(indexOfNode);
+            if (node.isLeafNode()) {
+                return node;
+            }
+        }
         return getNewCallNode(currClass);
     }
 
@@ -451,8 +466,20 @@ public abstract class CallModel {
      *
      * @param currNode   CallNode which corresponds to current Class
      * @param invocation leafInvocation that should be used for the CallNode to be appended to
+     * @param nodes
      */
-    private void appendNodeToLeaf(CallNode currNode, Invocation invocation) {
+    private void appendOldOrNewNodeToLeaf(CallNode currNode, Invocation invocation, List<CallNode> nodes) {
+        if (invocation.getParentNode().getClassName().equals(currNode.getClassName())) {
+            CallNode newCallNode = getNewCallNode(currNode.getClassName());
+            appendNodeToInvocation(newCallNode, invocation);
+            nodes.add(newCallNode);
+        } else {
+            appendNodeToInvocation(currNode, invocation);
+            nodes.add(currNode);
+        }
+    }
+
+    private void appendNodeToInvocation(CallNode currNode, Invocation invocation) {
         invocation.setNextNode(currNode);
         if (currNode.getPrevious() == null) currNode.setPrevious(invocation.getParentNode());
         // must check if parent node of invocations is same as the previous node of the nextNode

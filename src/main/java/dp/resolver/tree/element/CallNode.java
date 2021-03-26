@@ -66,6 +66,13 @@ public class CallNode implements Comparable<CallNode> {
         return invocations;
     }
 
+    public boolean isLeafNode() {
+        for (Invocation invocation : this.invocations) {
+            if (invocation.getNextNode() != null) return false;
+        }
+        return true;
+    }
+
     @Override
     public int compareTo(@NotNull CallNode o) {
         String compClassName = o.getClassName();
