@@ -16,6 +16,7 @@ import spoon.reflect.code.CtAbstractInvocation;
 import spoon.reflect.code.CtConstructorCall;
 import spoon.reflect.code.CtInvocation;
 import spoon.reflect.declaration.CtAnnotation;
+import spoon.reflect.declaration.CtConstructor;
 import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtType;
 import spoon.reflect.reference.CtTypeReference;
@@ -33,6 +34,7 @@ import java.util.*;
  Created by Fabian Oraze on 12.02.21
  *********************************/
 
+@SuppressWarnings("rawtypes")
 public abstract class CallModel {
 
 
@@ -186,6 +188,10 @@ public abstract class CallModel {
         searchLeftClassesToBeTraversed();
     }
 
+    /**
+     * checks if there are still classes to be traversed again, if so it calls the iterateOverClass method on the class which should
+     * be analyzed again and removes it from the list, after finishing it calls itself until there are no more classes to be traversed
+     */
     private void searchLeftClassesToBeTraversed() {
         if (!this.classesToTraverseAgain.isEmpty()) {
             String nameClass = this.classesToTraverseAgain.get(0);
@@ -203,19 +209,60 @@ public abstract class CallModel {
         }
     }
 
+    /**
+     * given a class, this method iterates over the elements of that class and analyzes methods and constructors
+     *
+     * @param clazz {@link CtType}
+     * @throws SpoonException       when Spoon throws an internal error
+     * @throws NullPointerException could happen when leaf invocations are malformed
+     */
     private void iterateOverClass(CtType clazz) throws SpoonException, NullPointerException {
         List<Invocation> toBeAppended = new ArrayList<>();
         if (checkIfPossibleCallNode(clazz, toBeAppended)) {
             System.out.println("Searching class: " + clazz.getSimpleName());
             List<CallNode> currNodes = createCallNodesForClass(clazz, toBeAppended);
             for (CallNode currNode : currNodes) {
-                for (Object obj : clazz.filterChildren(new TypeFilter<CtMethod>(CtMethod.class)).list()) {
-                    CtMethodImpl m = (CtMethodImpl) obj;
-                    searchMethodForInvocations(m, currNode);
+                // iterate methods
+                for (Object obj : clazz.filterChildren(new TypeFilter<>(CtMethod.class)).list()) {
+                    CtMethodImpl method = (CtMethodImpl) obj;
+                    if (checkIfInvocationCallToMethod(method, currNode)) {
+                        searchMethodForInvocations(method, currNode);
+                    }
+                }
+                // iterate constructors
+                for (Object obj : clazz.filterChildren(new TypeFilter<>(CtConstructor.class)).list()) {
+                    CtConstructor constructor = (CtConstructor) obj;
+                    if (checkIfInvocationCallToConstructor(constructor, currNode)) {
+                        searchConstructorForInvocations(constructor, currNode);
+                    }
                 }
                 searchClassForAnnotations(clazz);
             }
         }
+    }
+
+    private boolean checkIfInvocationCallToConstructor(CtConstructor constructor, CallNode currNode) {
+        if (isRootProject()) return true;
+        boolean isCalled = false;
+        for (Invocation call : currNode.getPrevious().getInvocations()) {
+            if (constructor.getSignature().endsWith(call.getMethodSignature())) {
+                isCalled = true;
+                break;
+            }
+        }
+        return isCalled;
+    }
+
+    private boolean checkIfInvocationCallToMethod(CtMethod method, CallNode currNode) {
+        if (isRootProject()) return true;
+        boolean isCalled = false;
+        for (Invocation call : currNode.getPrevious().getInvocations()) {
+            if (call.getMethodSignature().equals(method.getSignature()) && call.getNextNode() == currNode) {
+                isCalled = true;
+                break;
+            }
+        }
+        return isCalled;
     }
 
     /**
@@ -231,7 +278,7 @@ public abstract class CallModel {
             nodes.add(getNodeByName(clazz.getQualifiedName()));
         } else {
             for (Invocation mustAppend : toBeAppended) {
-                CallNode nodeNew = getNodeByName(clazz.getQualifiedName());
+                CallNode nodeNew = getNewCallNode(clazz.getQualifiedName());
                 appendOldOrNewNodeToLeaf(nodeNew, mustAppend, nodes);
             }
         }
@@ -246,15 +293,7 @@ public abstract class CallModel {
      * @return true if the class should be a CallNode
      */
     private boolean checkIfPossibleCallNode(CtType clazz, List<Invocation> neededLeafInvocations) {
-        if (this.launcher instanceof MavenLauncher) return true;
-        if (this.methodConnections.isClassTransitiveReferenced(clazz.getQualifiedName())) {
-            for (Invocation invocation : this.leafInvocations) {
-                if (checkIfMustBeAppended(clazz, invocation)) {
-                    neededLeafInvocations.add(invocation);
-                }
-            }
-            return true;
-        }
+        if (isRootProject()) return true;
         if (this.leafInvocations.size() == 0) {
             return true;
         }
@@ -269,6 +308,11 @@ public abstract class CallModel {
     }
 
 
+    /**
+     * searches a class for annotations and if it finds any they are appended to the allAnnotations list
+     *
+     * @param currClass {@link CtType}
+     */
     private void searchClassForAnnotations(CtType currClass) {
         List<CtAnnotation> annotations = currClass.filterChildren(new TypeFilter<>(CtAnnotation.class)).list();
         for (CtAnnotation annotation : annotations) {
@@ -280,24 +324,7 @@ public abstract class CallModel {
     }
 
     /**
-     * helper function that check if a method is part of current call chain
-     *
-     * @param method currently iterated method
-     * @return true if method is part of call chain
-     */
-    private boolean checkMethodFromCallChain(CtMethod method) {
-        if (this.leafInvocations == null) return true;
-        for (Invocation invocation : this.leafInvocations) {
-            if (invocation.getMethodSignature().split("\\(")[0].equals(method.getSimpleName())
-                    && !JDKClassHelper.isPartOfJDKClassesFromQualifiedName(method.getDeclaringType().getQualifiedName())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * called by iterateClasses for each method that is part of call chain, than searches for invocations that point to non-local classes and if needed adds them
+     * called by iterateClasses for each method that is part of call chain, than searches for invocations and if needed adds them
      * to the call chain of the call tree
      *
      * @param method   current method to analyze
@@ -309,15 +336,29 @@ public abstract class CallModel {
             List<CtConstructorCall> constructorCalls = method.filterChildren(new TypeFilter<>(CtConstructorCall.class)).list();
             // adds invocations called by current method to the current CallNode
             for (CtAbstractInvocation methodCall : methodCalls) {
-                /*if (this.launcher instanceof MavenLauncher || checkIfMethodCallIsFromCorrectParentNode(methodCall, currNode)) {*/
                 addPossibleInvocation(methodCall, constructorCalls, currNode);
-                //}
             }
         }
     }
 
+    /**
+     * called by iterateClasses for each constructor that is part of call chain, than searches for invocations and if needed adds them
+     * to the call chain of the call tree
+     *
+     * @param constructor current constructor element to be analyzed
+     * @param currNode    CallNode object that represents the current class
+     */
+    private void searchConstructorForInvocations(CtConstructor constructor, CallNode currNode) {
+        List<CtAbstractInvocation> methodCalls = constructor.getElements(new TypeFilter<>(CtAbstractInvocation.class));
+        List<CtConstructorCall> constructorCalls = constructor.filterChildren(new TypeFilter<>(CtConstructorCall.class)).list();
+        // adds invocations called by current method to the current CallNode
+        for (CtAbstractInvocation methodCall : methodCalls) {
+            addPossibleInvocation(methodCall, constructorCalls, currNode);
+        }
+    }
+
     private boolean isMethodCalledByCallNode(CtMethod method, CallNode currNode) {
-        if (this.launcher instanceof MavenLauncher) return true;
+        if (isRootProject()) return true;
         for (Invocation call : currNode.getPrevious().getInvocations()) {
             if (call.getMethodSignature().equals(method.getSignature())
                     && call.getDeclaringType().equals(method.getDeclaringType().getQualifiedName())) {
@@ -343,13 +384,16 @@ public abstract class CallModel {
             fromType = extractTargetTypeFromElement(call);
             if (!JDKClassHelper.isPartOfJDKClassesFromQualifiedName(fromType.getQualifiedName()) && checkForValidDeclaringType(fromType.getQualifiedName())) {
                 // if maven project is analyzed and the referred Object from the curr method is contained in the project
-                if (!(this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getQualifiedName()))) {
+                if (!(isRootProject() && this.classNames.contains(fromType.getQualifiedName()))) {
                     String methodSignature = getMethodSignature(call);
                     Invocation invocation = new Invocation(methodSignature, fromType.getQualifiedName(), currNode);
                     if (shouldAddInvocationToCallNode(invocation, currNode)) {
                         currNode.addInvocation(invocation);
                         // checks if invocations may refer to an interface and changes it to the actual implementation object
                         checkIfInterfaceIsReferenced(invocation, constructorCalls);
+                        if (this.classNames.contains(invocation.getDeclaringType())) {
+                            appendToBeTraversedClass(invocation);
+                        }
                     } else {
                         appendToBeTraversedClass(invocation);
                     }
@@ -361,6 +405,10 @@ public abstract class CallModel {
             // skip element
         }
 
+    }
+
+    private boolean isRootProject() {
+        return this.launcher instanceof MavenLauncher;
     }
 
     private void appendToBeTraversedClass(Invocation invocation) {
@@ -450,18 +498,6 @@ public abstract class CallModel {
         return getNewCallNode(currClass);
     }
 
-
-    /**
-     * overloaded method to get CallNode based on the Invocation it should be appended to, if not present a new one is created and returned
-     *
-     * @param currClass    name of current class
-     * @param toBeAppended the Invocation where the CallNode should be appended to
-     * @return {@link CallNode}
-     */
-    private CallNode getNodeByName(String currClass, Invocation toBeAppended) {
-
-        return getNewCallNode(currClass);
-    }
 
     /**
      * creates a new call node and appends it to the list of local callNodes
