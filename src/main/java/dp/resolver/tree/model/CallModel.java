@@ -219,7 +219,7 @@ public abstract class CallModel {
     }
 
     /**
-     * creates nodes for current classes and append them to the given invocations
+     * creates nodes for current classes and appends them to the given invocations
      *
      * @param clazz        the Current Class
      * @param toBeAppended list of invocation where the nodes then should be appended
@@ -308,7 +308,11 @@ public abstract class CallModel {
             List<CtAbstractInvocation> methodCalls = method.getElements(new TypeFilter<>(CtAbstractInvocation.class));
             List<CtConstructorCall> constructorCalls = method.filterChildren(new TypeFilter<>(CtConstructorCall.class)).list();
             // adds invocations called by current method to the current CallNode
-            addPossibleInvocation(methodCalls, constructorCalls, currNode);
+            for (CtAbstractInvocation methodCall : methodCalls) {
+                /*if (this.launcher instanceof MavenLauncher || checkIfMethodCallIsFromCorrectParentNode(methodCall, currNode)) {*/
+                addPossibleInvocation(methodCall, constructorCalls, currNode);
+                //}
+            }
         }
     }
 
@@ -328,36 +332,35 @@ public abstract class CallModel {
     /**
      * checks whether a call from a list of method calls should be appended as an invocation to a CallNode
      *
-     * @param methodCalls      {@link CtInvocation} list of outgoing calls inside a method
+     * @param call             {@link CtInvocation} outgoing call inside a method
      * @param constructorCalls {@link CtConstructorCall} list of all constructor calls inside a method, is used to check if an invocation
      *                         is referring to an interface
      * @param currNode         {@link CallNode} the curr node which should be the parentNode of the possibly appended invocations
      */
-    private void addPossibleInvocation(List<CtAbstractInvocation> methodCalls, List<CtConstructorCall> constructorCalls, CallNode currNode) {
-        for (CtAbstractInvocation element : methodCalls) {
-            CtTypeReference fromType;
-            try {
-                fromType = extractTargetTypeFromElement(element);
-                if (!JDKClassHelper.isPartOfJDKClassesFromQualifiedName(fromType.getQualifiedName()) && checkForValidDeclaringType(fromType.getQualifiedName())) {
-                    // if maven project is analyzed and the referred Object from the curr method is contained in the project
-                    if (!(this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getQualifiedName()))) {
-                        String methodSignature = getMethodSignature(element);
-                        Invocation invocation = new Invocation(methodSignature, fromType.getQualifiedName(), currNode);
-                        if (shouldAddInvocationToCallNode(invocation, currNode)) {
-                            currNode.addInvocation(invocation);
-                            // checks if invocations may refer to an interface and changes it to the actual implementation object
-                            checkIfInterfaceIsReferenced(invocation, constructorCalls);
-                        } else {
-                            appendToBeTraversedClass(invocation);
-                        }
-                        MethodConnection connection = new MethodConnection(invocation.getParentNode().getClassName(), invocation.getMethodSignature(), invocation.getDeclaringType());
-                        this.methodConnections.addConnection(connection);
+    private void addPossibleInvocation(CtAbstractInvocation call, List<CtConstructorCall> constructorCalls, CallNode currNode) {
+        CtTypeReference fromType;
+        try {
+            fromType = extractTargetTypeFromElement(call);
+            if (!JDKClassHelper.isPartOfJDKClassesFromQualifiedName(fromType.getQualifiedName()) && checkForValidDeclaringType(fromType.getQualifiedName())) {
+                // if maven project is analyzed and the referred Object from the curr method is contained in the project
+                if (!(this.launcher instanceof MavenLauncher && this.classNames.contains(fromType.getQualifiedName()))) {
+                    String methodSignature = getMethodSignature(call);
+                    Invocation invocation = new Invocation(methodSignature, fromType.getQualifiedName(), currNode);
+                    if (shouldAddInvocationToCallNode(invocation, currNode)) {
+                        currNode.addInvocation(invocation);
+                        // checks if invocations may refer to an interface and changes it to the actual implementation object
+                        checkIfInterfaceIsReferenced(invocation, constructorCalls);
+                    } else {
+                        appendToBeTraversedClass(invocation);
                     }
+                    MethodConnection connection = new MethodConnection(invocation.getParentNode().getClassName(), invocation.getMethodSignature(), invocation.getDeclaringType());
+                    this.methodConnections.addConnection(connection);
                 }
-            } catch (NullPointerException e) {
-                // skip element
             }
+        } catch (NullPointerException e) {
+            // skip element
         }
+
     }
 
     private void appendToBeTraversedClass(Invocation invocation) {
@@ -431,7 +434,7 @@ public abstract class CallModel {
     }
 
     /**
-     * helper function that gets a CallNode from local list of callNodes
+     * helper function that gets a CallNode from local list of callNodes, if no node with the className is present a new is created and returned
      *
      * @param currClass String name of current class
      * @return {@link CallNode}
@@ -447,8 +450,21 @@ public abstract class CallModel {
         return getNewCallNode(currClass);
     }
 
+
     /**
-     * creates a new call node and appends it to class list of callNodes
+     * overloaded method to get CallNode based on the Invocation it should be appended to, if not present a new one is created and returned
+     *
+     * @param currClass    name of current class
+     * @param toBeAppended the Invocation where the CallNode should be appended to
+     * @return {@link CallNode}
+     */
+    private CallNode getNodeByName(String currClass, Invocation toBeAppended) {
+
+        return getNewCallNode(currClass);
+    }
+
+    /**
+     * creates a new call node and appends it to the list of local callNodes
      *
      * @param currClass the class which the node should be bound to
      * @return a {@link CallNode}
@@ -465,7 +481,7 @@ public abstract class CallModel {
      *
      * @param currNode   CallNode which corresponds to current Class
      * @param invocation leafInvocation that should be used for the CallNode to be appended to
-     * @param nodes
+     * @param nodes      list of newly created Nodes
      */
     private void appendOldOrNewNodeToLeaf(CallNode currNode, Invocation invocation, List<CallNode> nodes) {
         if (invocation.getParentNode().getClassName().equals(currNode.getClassName())) {
