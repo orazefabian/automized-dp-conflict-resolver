@@ -45,6 +45,20 @@ public enum Rules {
         }
     },
 
+    TRANSITIVE_JAR {
+        @Override
+        public String txt() {
+            return "transitiveIncludedJar(X2) :- includeJar(X1), connection(X1,X2), jar(X2,_,_,_).\n";
+        }
+    },
+
+    TRANSITIVE_2_JAR {
+        @Override
+        public String txt() {
+            return "transitiveIncludedJar(X2) :- transitiveIncludedJar(X1), connection(X1,X2), jar(X2,_,_,_).\n";
+        }
+    },
+
     /**
      * generate clash facts based on the usage of methods with same names and different signatures
      */
@@ -61,7 +75,14 @@ public enum Rules {
     CLASH_CONNECTION {
         @Override
         public String txt() {
-            return "clash(D,D2,C,N):-includeJar(X),includeJar(X2),connection(X,D),connection(X2,D2),jar(D,Y,Z,V),jar(D2,Y,Z,V2),method(D,C,N,S),method(D2,C,N,S2),D!=D2,S!=S2.\n";
+            return "clash(X,X2,C,N) :- includeJar(X), transitiveIncludedJar(X2), jar(X,Y,Z,V), jar(X2,Y,Z,V2), method(X,C,N,S), method(X2,C,N,S2), X != X2, S != S2.\n";
+        }
+    },
+
+    CLASH_TRANSITIVE {
+        @Override
+        public String txt() {
+            return "clash(X,X2,C,N) :- transitiveIncludedJar(X), transitiveIncludedJar(X2), jar(X,Y,Z,V), jar(X2,Y,Z,V2), method(X,C,N,S), method(X2,C,N,S2), X != X2, S != S2.\n";
         }
     },
 
