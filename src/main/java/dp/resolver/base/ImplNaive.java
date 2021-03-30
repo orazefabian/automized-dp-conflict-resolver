@@ -16,6 +16,10 @@ import java.util.List;
  */
 public class ImplNaive extends DPUpdaterBase {
 
+    /**
+     * final distance measure list, specifies how deep a single configuration can be switched back
+     */
+    protected final List<Integer> DISTANCE_MEASURE = new ArrayList<>(Arrays.asList(0, 1, 2, 3, 4, 5));
     private List<Object> configurations;
     private List<Object> workingConfigurations;
     private int maxDistanceDepth;
@@ -25,11 +29,6 @@ public class ImplNaive extends DPUpdaterBase {
      * class configuration, if true each build output will be printed to console, default false
      */
     static boolean PRINT_OUTPUT = false;
-
-    /**
-     * final distance measure list, specifies how deep a single configuration can be switched back
-     */
-    private final List<Integer> DISTANCE_MEASURE = new ArrayList<>(Arrays.asList(0, 1, 2, 3, 4, 5));
 
     /**
      * Default constructor, generates impl of a given repo and sets maxConfigurations to 0 which

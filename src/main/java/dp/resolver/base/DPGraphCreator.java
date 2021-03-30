@@ -9,6 +9,7 @@ import javax.xml.bind.JAXBException;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /*********************************
@@ -19,7 +20,6 @@ public class DPGraphCreator extends DPUpdaterBase {
 
 
     public static final String CURR_DIRECTORY = System.getProperty("user.dir");
-
     public DPGraphCreator(String pathToRepo) {
         super(pathToRepo);
         insertPlugin();

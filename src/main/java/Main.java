@@ -15,14 +15,24 @@ import java.util.List;
 
 public class Main {
 
-    public static final int MAX_VERSIONS_NUM = 5;
-    public static final int POM_LIMIT = 5;
 
     public static void main(String[] args) {
+        int MAX_VERSIONS_NUM = 5;
+        int POM_LIMIT = 5;
+
+        if (args.length == 0 || args[0].startsWith("-Xmx")) {
+            printHelp();
+            System.exit(0);
+        }
 
         String param = args[0];
-
-        param = "/Users/fabian/Projects/automized-DP-conflict-resolver/automized-dp-conflict-resolver";
+        for (int i = 1; i < args.length; i++) {
+            if (args[i].startsWith("-m")) {
+                MAX_VERSIONS_NUM = Integer.parseInt(args[i].split("-m")[1]);
+            } else if (args[i].startsWith("-p")) {
+                POM_LIMIT = Integer.parseInt(args[i].split("-p")[1]);
+            }
+        }
 
         long time = System.currentTimeMillis();
         Tree tree;
@@ -72,6 +82,16 @@ public class Main {
         }
 
 
+    }
+
+    private static void printHelp() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Usage: java -cp acr.jar Main [path-to-project] [-m<max-maven-downloads>] [-p<max-pom-generations>] [max-heap-space]\n");
+        builder.append("\n  path-to-project:        full path to the project to be analyzed (has to be specified)");
+        builder.append("\n  max-maven-downloads:    upper limit of newest jar version to be downloaded during the process (default = 5)");
+        builder.append("\n  max-pom-generations:    max number of poms generated as a solution output (default = 5)");
+        builder.append("\n  max-heap-space:         max heap space available to the jvm, schema: [-Xmx<space>] where space is e.g. 8g or 16g");
+        System.out.println(builder.toString());
     }
 
 

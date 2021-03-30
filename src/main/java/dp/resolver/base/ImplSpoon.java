@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /*********************************
@@ -112,17 +113,55 @@ public class ImplSpoon extends DPUpdaterBase {
      */
     public void updateAndWritePomModels(List<List<String>> answers, int limit) {
         int configCount = 0;
+        List<Dependency>[] allDependencyConfigs = new List[limit];
         for (List<String> configuration : answers) {
             List<Dependency> dpsNew = new ArrayList<>();
             configCount++;
-            if (configCount > limit) break;
             for (String jar : configuration) {
                 MessagingJar dependency = new MessagingJar();
                 dependency.fillJarFromFullPath(jar);
                 appendDps(dependency, dpsNew);
             }
-            createNewPomConfig(dpsNew, configCount);
+            appendNewDps(allDependencyConfigs, dpsNew);
         }
+        for (int i = 0; i < allDependencyConfigs.length; i++) {
+            List<Dependency> curr = allDependencyConfigs[i];
+            if (curr == null) {
+                break;
+            } else {
+                createNewPomConfig(curr, i + 1);
+            }
+        }
+    }
+
+    private void appendNewDps(List<Dependency>[] allDependencyConfigs, List<Dependency> dpsNew) {
+        for (int i = 0; i < allDependencyConfigs.length; i++) {
+            if (allDependencyConfigs[i] == null) {
+                allDependencyConfigs[i] = dpsNew;
+                break;
+            } else if (checkIfNewDistanceIsBetter(allDependencyConfigs[i], dpsNew)) {
+                swapNewDpsIn(allDependencyConfigs, i, dpsNew);
+                break;
+            }
+        }
+    }
+
+    private void swapNewDpsIn(List<Dependency>[] allDependencyConfigs, int indexToSwapIn, List<Dependency> dpsNew) {
+        for (int i = indexToSwapIn; i < allDependencyConfigs.length; i++) {
+            List<Dependency> swapDp = allDependencyConfigs[i];
+            allDependencyConfigs[i] = dpsNew;
+            dpsNew = swapDp;
+        }
+    }
+
+    private boolean checkIfNewDistanceIsBetter(List<Dependency> dpsOld, List<Dependency> dpsNew) {
+        int distanceOld = 0;
+        int distanceNew = 0;
+        for (int i = 0; i < dpsOld.size(); i++) {
+            distanceOld += Integer.parseInt(dpsOld.get(i).getVersion().replaceAll("\\.", ""));
+            distanceNew += Integer.parseInt(dpsNew.get(i).getVersion().replaceAll("\\.", ""));
+        }
+        return distanceNew > distanceOld;
     }
 
     private void createNewPomConfig(List<Dependency> dependencies, int suffix) {
