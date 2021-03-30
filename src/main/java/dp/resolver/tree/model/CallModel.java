@@ -336,7 +336,11 @@ public abstract class CallModel {
             List<CtConstructorCall> constructorCalls = method.filterChildren(new TypeFilter<>(CtConstructorCall.class)).list();
             // adds invocations called by current method to the current CallNode
             for (CtAbstractInvocation methodCall : methodCalls) {
-                addPossibleInvocation(methodCall, constructorCalls, currNode);
+                try {
+                    addPossibleInvocation(methodCall, constructorCalls, currNode);
+                } catch (NullPointerException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -378,33 +382,28 @@ public abstract class CallModel {
      *                         is referring to an interface
      * @param currNode         {@link CallNode} the curr node which should be the parentNode of the possibly appended invocations
      */
-    private void addPossibleInvocation(CtAbstractInvocation call, List<CtConstructorCall> constructorCalls, CallNode currNode) {
+    private void addPossibleInvocation(CtAbstractInvocation call, List<CtConstructorCall> constructorCalls, CallNode currNode) throws NullPointerException {
         CtTypeReference fromType;
-        try {
-            fromType = extractTargetTypeFromElement(call);
-            if (!JDKClassHelper.isPartOfJDKClassesFromQualifiedName(fromType.getQualifiedName()) && checkForValidDeclaringType(fromType.getQualifiedName())) {
-                // if maven project is analyzed and the referred Object from the curr method is contained in the project
-                if (!(isRootProject() && this.classNames.contains(fromType.getQualifiedName()))) {
-                    String methodSignature = getMethodSignature(call);
-                    Invocation invocation = new Invocation(methodSignature, fromType.getQualifiedName(), currNode);
-                    if (shouldAddInvocationToCallNode(invocation, currNode)) {
-                        currNode.addInvocation(invocation);
-                        // checks if invocations may refer to an interface and changes it to the actual implementation object
-                        checkIfInterfaceIsReferenced(invocation, constructorCalls);
-                        if (this.classNames.contains(invocation.getDeclaringType())) {
-                            appendToBeTraversedClass(invocation);
-                        }
-                    } else {
+        fromType = extractTargetTypeFromElement(call);
+        if (!JDKClassHelper.isPartOfJDKClassesFromQualifiedName(fromType.getQualifiedName()) && checkForValidDeclaringType(fromType.getQualifiedName())) {
+            // if maven project is analyzed and the referred Object from the curr method is contained in the project
+            if (!(isRootProject() && this.classNames.contains(fromType.getQualifiedName()))) {
+                String methodSignature = getMethodSignature(call);
+                Invocation invocation = new Invocation(methodSignature, fromType.getQualifiedName(), currNode);
+                if (shouldAddInvocationToCallNode(invocation, currNode)) {
+                    currNode.addInvocation(invocation);
+                    // checks if invocations may refer to an interface and changes it to the actual implementation object
+                    checkIfInterfaceIsReferenced(invocation, constructorCalls);
+                    if (this.classNames.contains(invocation.getDeclaringType())) {
                         appendToBeTraversedClass(invocation);
                     }
-                    MethodConnection connection = new MethodConnection(invocation.getParentNode().getClassName(), invocation.getMethodSignature(), invocation.getDeclaringType());
-                    this.methodConnections.addConnection(connection);
+                } else {
+                    appendToBeTraversedClass(invocation);
                 }
+                MethodConnection connection = new MethodConnection(invocation.getParentNode().getClassName(), invocation.getMethodSignature(), invocation.getDeclaringType());
+                this.methodConnections.addConnection(connection);
             }
-        } catch (NullPointerException e) {
-            // skip element
         }
-
     }
 
     private boolean isRootProject() {
@@ -438,6 +437,12 @@ public abstract class CallModel {
         return false;
     }
 
+    /**
+     * get the signature from a CtAbstractInvocation that can be a method call or a constructor call
+     *
+     * @param element invocation element
+     * @return the method signature as a String representation
+     */
     private String getMethodSignature(CtAbstractInvocation element) {
         String signature = element.getExecutable().toString();
         if (signature.split("\\(")[0].contains(".")) {
@@ -453,6 +458,13 @@ public abstract class CallModel {
         return signature;
     }
 
+    /**
+     * gets the declaring target from an invocation (on what object is the method or constructor called upon)
+     *
+     * @param element the invocation element (can be a method or constructor call)
+     * @return a {@link CtTypeReference} which refers to the target of the call
+     * @throws NullPointerException in case the declaring target is Null
+     */
     private CtTypeReference extractTargetTypeFromElement(CtAbstractInvocation element) throws NullPointerException {
         CtTypeReference fromType;
         fromType = element.getExecutable().getDeclaringType();
