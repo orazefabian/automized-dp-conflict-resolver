@@ -339,7 +339,7 @@ public abstract class CallModel {
                 try {
                     addPossibleInvocation(methodCall, constructorCalls, currNode);
                 } catch (NullPointerException e) {
-                    e.printStackTrace();
+                    System.err.println(e.getMessage());
                 }
             }
         }
@@ -468,7 +468,7 @@ public abstract class CallModel {
     private CtTypeReference extractTargetTypeFromElement(CtAbstractInvocation element) throws NullPointerException {
         CtTypeReference fromType;
         fromType = element.getExecutable().getDeclaringType();
-        if (fromType == null) throw new NullPointerException();
+        if (fromType == null) throw new NullPointerException("No fromType for: " + element.toString());
         return fromType;
     }
 

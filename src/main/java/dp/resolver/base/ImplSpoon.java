@@ -24,6 +24,7 @@ import java.util.List;
 
 public class ImplSpoon extends DPUpdaterBase {
 
+    private final int[] distanceMultipliers = {10000, 100, 1};
 
     /**
      * @param pathToRepo String pointing to the root repo directory
@@ -158,10 +159,29 @@ public class ImplSpoon extends DPUpdaterBase {
         int distanceOld = 0;
         int distanceNew = 0;
         for (int i = 0; i < dpsOld.size(); i++) {
-            distanceOld += Integer.parseInt(dpsOld.get(i).getVersion().replaceAll("\\.", ""));
-            distanceNew += Integer.parseInt(dpsNew.get(i).getVersion().replaceAll("\\.", ""));
+            String[] majorMinorNumbsOld = dpsOld.get(i).getVersion().split("\\.");
+            String[] majorMinorNumbsNew = dpsNew.get(i).getVersion().split("\\.");
+            distanceOld += computeDistances(majorMinorNumbsOld);
+            distanceNew += computeDistances(majorMinorNumbsNew);
         }
         return distanceNew > distanceOld;
+    }
+
+    private int computeDistances(String[] majorMinorNumbs) {
+        int distance = 0;
+        for (int j = 0; j < majorMinorNumbs.length; j++) {
+            int version;
+            try {
+                version = Integer.parseInt(majorMinorNumbs[j]);
+                distance += (version * distanceMultipliers[j]);
+            } catch (Exception e) {
+                if (majorMinorNumbs[j].contains("-")) {
+                    version = Integer.parseInt(majorMinorNumbs[j].split("-")[0]);
+                    distance += (version * distanceMultipliers[j]);
+                }
+            }
+        }
+        return distance;
     }
 
     private void createNewPomConfig(List<Dependency> dependencies, int suffix) {
