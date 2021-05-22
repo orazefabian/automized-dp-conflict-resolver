@@ -239,7 +239,7 @@ public abstract class DPUpdaterBase implements DPUpdater {
 
         ProcessBuilder pb;
 
-        if (System.getProperty("os.name").startsWith("Windows")) {
+        if (isWindowsOS()) {
             pb = new ProcessBuilder("cmd.exe", "/c", "cd " + repoFolder + " && " + cmd);
         } else {
             pb = new ProcessBuilder("/bin/bash", "-c", "cd " + repoFolder + " ; " + cmd);
@@ -267,6 +267,10 @@ public abstract class DPUpdaterBase implements DPUpdater {
         buildOutputStream.flush();
         System.out.println("  Build ended...");
 
+    }
+
+    private boolean isWindowsOS() {
+        return System.getProperty("os.name").startsWith("Windows");
     }
 
     /**
@@ -337,7 +341,7 @@ public abstract class DPUpdaterBase implements DPUpdater {
             System.out.println("OutputFile: " + outputFile.getAbsolutePath());
             String cmd = "mvn help:effective-pom -Doutput=" + outputFile.getAbsolutePath();
 
-            ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", "cd " + baseFolder.getAbsolutePath() + " ; " + cmd);
+            ProcessBuilder pb = getProcessBuilder(baseFolder, cmd);
             Process p = pb.start();
 
             System.out.println("  Waiting for the build to end...");
@@ -355,6 +359,17 @@ public abstract class DPUpdaterBase implements DPUpdater {
             System.out.println(" Build ended...");
         }
         return outputFile;
+    }
+
+    @NotNull
+    private ProcessBuilder getProcessBuilder(File baseFolder, String cmd) {
+        ProcessBuilder pb;
+        if (isWindowsOS()) {
+            pb = new ProcessBuilder("CMD", "/C", "cd " + baseFolder.getAbsolutePath() + " & " + cmd);
+        } else {
+            pb = new ProcessBuilder("/bin/bash", "-c", "cd " + baseFolder.getAbsolutePath() + " ; " + cmd);
+        }
+        return pb;
     }
 
     /**

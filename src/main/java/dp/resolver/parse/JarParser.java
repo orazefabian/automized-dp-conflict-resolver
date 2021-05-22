@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /*********************************
  Created by Fabian Oraze on 22.12.20
@@ -27,7 +28,7 @@ public class JarParser {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream buildOutputStream = new PrintStream(outputStream);
 
-        String[] structure = jarPath.split(File.separator);
+        String[] structure = jarPath.split(Pattern.quote(File.separator));
         StringBuilder folder = new StringBuilder();
         String jar = structure[structure.length - 1];
         for (int i = 0; i < structure.length - 1; i++) {
@@ -51,6 +52,11 @@ public class JarParser {
         List<String> lines = new ArrayList<>();
         String line = "";
         System.out.println("Processing jar: " + jarPath + "  --> class: " + fullyQualifiedClass + "...");
+        return getStringContentFromProcessOutput(outputStream, buildOutputStream, p, reader, lines);
+    }
+
+    private static String getStringContentFromProcessOutput(ByteArrayOutputStream outputStream, PrintStream buildOutputStream, Process p, BufferedReader reader, List<String> lines) throws IOException, InterruptedException {
+        String line;
         while ((line = reader.readLine()) != null) {
             lines.add(line);
             // content = content + line + System.getProperty("line.separator");
@@ -81,7 +87,7 @@ public class JarParser {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream buildOutputStream = new PrintStream(outputStream);
 
-        String[] structure = jarPath.split(File.separator);
+        String[] structure = jarPath.split(Pattern.quote(File.separator));
         StringBuilder folder = new StringBuilder();
         String jar = structure[structure.length - 1];
         for (int i = 0; i < structure.length - 1; i++) {
@@ -103,21 +109,7 @@ public class JarParser {
         List<String> lines = new ArrayList<>();
         String line = "";
         System.out.println("Preprocessing jar: " + jarPath + "...");
-        while ((line = reader.readLine()) != null) {
-            lines.add(line);
-            //content = content + line + System.getProperty("line.separator");
-            if (buildOutputStream != null) {
-                buildOutputStream.println(line);
-                //listener //Refactor that only listeners get called here (and make a listener for the print stream
-                String finalLine = line;
-                // this.repairListeners.forEach(x->x.newBuildLine(finalLine));
-            }
-        }
-        p.waitFor();
-        String content = outputStream.toString(StandardCharsets.UTF_8);
-        outputStream.flush();
-        buildOutputStream.flush();
-        return content;
+        return getStringContentFromProcessOutput(outputStream, buildOutputStream, p, reader, lines);
     }
 
     /**

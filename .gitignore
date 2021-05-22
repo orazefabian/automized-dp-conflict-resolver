@@ -43,3 +43,6 @@ effectivePom.xml
 
 # output file
 output.txt
+
+#configs
+pom-config-*

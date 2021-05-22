@@ -26,6 +26,8 @@ public class Main {
         }
 
         String param = args[0];
+
+
         for (int i = 1; i < args.length; i++) {
             if (args[i].startsWith("-m")) {
                 MAX_VERSIONS_NUM = Integer.parseInt(args[i].split("-m")[1]);
@@ -33,6 +35,8 @@ public class Main {
                 POM_LIMIT = Integer.parseInt(args[i].split("-p")[1]);
             }
         }
+
+        param = "/Users/fabian/Projects/automized-DP-conflict-resolver/automized-dp-conflict-resolver";
 
         long time = System.currentTimeMillis();
         Tree tree;

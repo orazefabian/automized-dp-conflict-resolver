@@ -179,7 +179,7 @@ public abstract class CallModel {
         for (Object type : this.ctModel.filterChildren(new TypeFilter<>(CtType.class)).list()) {
             CtType clazz = (CtType) type;
             try {
-                iterateOverClass(clazz);
+                iterateOverClassElements(clazz);
             } catch (SpoonException | NullPointerException e) {
                 e.printStackTrace();
                 System.err.println("could not iterate over methods in class: " + clazz.getSimpleName());
@@ -199,7 +199,7 @@ public abstract class CallModel {
             for (Object type : this.ctModel.filterChildren(new NamedElementFilter<>(CtType.class, nameClass)).list()) {
                 CtType clazz = (CtType) type;
                 try {
-                    iterateOverClass(clazz);
+                    iterateOverClassElements(clazz);
                 } catch (SpoonException | NullPointerException e) {
                     e.printStackTrace();
                     System.err.println("could not iterate over methods in class: " + clazz.getSimpleName());
@@ -216,7 +216,7 @@ public abstract class CallModel {
      * @throws SpoonException       when Spoon throws an internal error
      * @throws NullPointerException could happen when leaf invocations are malformed
      */
-    private void iterateOverClass(CtType clazz) throws SpoonException, NullPointerException {
+    private void iterateOverClassElements(CtType clazz) throws SpoonException, NullPointerException {
         List<Invocation> toBeAppended = new ArrayList<>();
         if (checkIfPossibleCallNode(clazz, toBeAppended)) {
             System.out.println("Searching class: " + clazz.getSimpleName());

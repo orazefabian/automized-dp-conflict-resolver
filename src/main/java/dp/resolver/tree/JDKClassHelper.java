@@ -20,7 +20,7 @@ public class JDKClassHelper {
      * @return true if jar is part of JDK
      */
     public static boolean isPartOfJDKFromFullPath(String pathToJar) {
-        String qualifiedNameWithoutPrefix = pathToJar.split("repository/")[1];
+        String qualifiedNameWithoutPrefix = pathToJar.split("repository" + File.separator)[1];
         qualifiedNameWithoutPrefix = qualifiedNameWithoutPrefix.replace(File.separator, ".");
         return isPartOfJDK(qualifiedNameWithoutPrefix);
     }

@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 
 /*********************************
@@ -154,7 +155,7 @@ public class FactBuilder {
         if (this.alreadyLoadedJars.add(jarPath)) {
             try {
                 String repoSeparator = "repository" + File.separator;
-                String[] construct = jarPath.split(File.separator);
+                String[] construct = jarPath.split(Pattern.quote(File.separator));
                 String artifactID = construct[construct.length - 3];
                 String groupID = jarPath.substring(jarPath.indexOf(repoSeparator) + repoSeparator.length(), jarPath.indexOf(artifactID) - 1).replace(File.separator, ".");
                 try {
@@ -222,7 +223,7 @@ public class FactBuilder {
      */
     private void parseJarFact(String jarPath) {
         String repoSeparator = "repository" + File.separator;
-        String[] construct = jarPath.split(File.separator);
+        String[] construct = jarPath.split(Pattern.quote(File.separator));
         String version = construct[construct.length - 2];
         String artifactID = construct[construct.length - 3];
         String groupID;
@@ -351,7 +352,7 @@ public class FactBuilder {
         if (!this.idMap.containsKey(jarPath)) {
             this.factsBuilder.append("\n");
             String repoSeparator = "repository" + File.separator;
-            String[] construct = jarPath.split(File.separator);
+            String[] construct = jarPath.split(Pattern.quote(File.separator));
             String version = construct[construct.length - 2];
             String artifactID = construct[construct.length - 3];
             String groupID = jarPath.substring(jarPath.indexOf(repoSeparator) + repoSeparator.length(), jarPath.indexOf(artifactID) - 1).replace(File.separator, ".");

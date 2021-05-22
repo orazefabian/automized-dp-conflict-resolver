@@ -6,7 +6,6 @@ import dp.resolver.parse.entity.MessagingClazz;
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
 import dp.resolver.tree.model.*;
-import spoon.compiler.ModelBuildingException;
 
 import javax.xml.bind.JAXBException;
 import java.io.*;
@@ -49,7 +48,6 @@ public class CallTree implements Tree {
         this.conflicts = new ArrayList<>();
         this.currLeaves = new HashSet<>();
         initModel();
-        //setInitialLeaves();
     }
 
     private void setInitialLeaves() {
@@ -229,14 +227,13 @@ public class CallTree implements Tree {
             this.model = modelFactory.createCallModelFromJar(nextJar, this.currLeaves);
             //this.model.setCallNodes(prevCallNodes);
             this.jars.putAll(this.model.getDependenciesToJarPaths());
-        } catch (ModelBuildingException e) {
-            System.err.println("Error building models: " + e.getMessage());
         } catch (NullPointerException e) {
             System.out.println("No Dependencies found for given project");
         } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         } catch (Exception e) {
             System.err.println("New launcher model could not be built for: " + nextJar);
+            System.err.println(e.getMessage());
             e.printStackTrace();
         }
 

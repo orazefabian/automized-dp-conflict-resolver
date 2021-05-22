@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class MessagingJar implements Serializable {
     private List<MessagingClazz> clazzes = new ArrayList<MessagingClazz>();
@@ -17,7 +18,7 @@ public class MessagingJar implements Serializable {
     private String downloadUrl;
 
     public void fillJarFromFullPath(String pathToJar) {
-        String[] components = pathToJar.substring(pathToJar.indexOf("repository")).split(File.separator);
+        String[] components = pathToJar.substring(pathToJar.indexOf("repository")).split(Pattern.quote(File.separator));
         int count = components.length - 1;
         setClazzes(new ArrayList<>());
         setFileName(components[count--]);
@@ -27,7 +28,7 @@ public class MessagingJar implements Serializable {
         StringBuilder builder = new StringBuilder();
         for (int i = 1; i <= count; i++) {
             builder.append(components[i]);
-            if (i != count)builder.append(".");
+            if (i != count) builder.append(".");
         }
         setGroupId(builder.toString());
     }
