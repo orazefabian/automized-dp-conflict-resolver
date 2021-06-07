@@ -10,6 +10,7 @@ import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
 import org.apache.maven.pom._4_0.Dependency;
 import org.apache.maven.pom._4_0.Model;
+import org.jetbrains.annotations.NotNull;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -134,7 +135,7 @@ public class FactBuilder {
         for (Invocation inv : node.getInvocations()) {
             int fromID = 0;
             String fromClass = inv.getDeclaringType();
-            String name = inv.getMethodSignature().substring(0, inv.getMethodSignature().indexOf("("));
+            String name = getMethodName(inv);
             String signature = inv.getMethodSignature().split(name)[1];
             int paramCount = computeParamCount(signature);
             if (!fromClass.endsWith(name)) {
@@ -142,6 +143,15 @@ public class FactBuilder {
                         .append(name).append("\",").append(paramCount).append(").\n");
             }
         }
+    }
+
+    @NotNull
+    private String getMethodName(Invocation inv) {
+        String name = inv.getMethodSignature().substring(0, inv.getMethodSignature().indexOf("("));
+        if (name.contains("$")) {
+            name = name.replace("$", "\\$");
+        }
+        return name;
     }
 
     /**
@@ -191,7 +201,7 @@ public class FactBuilder {
                 if (isInvocationNeededForFact(invocation)) {
                     int fromID = this.idMap.get(invocation.getParentNode().getFromJar());
                     String declaringClass = invocation.getDeclaringType();
-                    String name = invocation.getMethodSignature().substring(0, invocation.getMethodSignature().indexOf("("));
+                    String name = getMethodName(invocation);
                     String signature = invocation.getMethodSignature().split(name)[1];
                     int paramCount = computeParamCount(signature);
                     if (!declaringClass.endsWith(name)) {

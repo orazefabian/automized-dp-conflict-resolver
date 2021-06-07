@@ -24,7 +24,7 @@ public class TestOnSampleProject {
     public static void setup() {
         answer = new AnswerObject();
         CentralMavenAPI.setMaxVersionsNumFromCmr(5);
-        tree = new CallTree(testProjectPath, answer, false);
+        tree = new CallTree(testProjectPath, answer);
 
         answerOne = new ArrayList<>();
         answerOne.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_B/2.0/Project_B-2.0.jar");

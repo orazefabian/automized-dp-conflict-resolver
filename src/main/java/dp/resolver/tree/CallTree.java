@@ -34,10 +34,10 @@ public class CallTree implements Tree {
      *
      * @param targetProjectPath path to maven project or a jar which is to be analyzed, MUST end with a "/" (File separator)
      * @param answerObject      holds the result of the later executed clingo program
-     * @param isFromJar         if true the root CallModel is created from a jar file
      */
-    public CallTree(String targetProjectPath, AnswerObject answerObject, boolean isFromJar) {
-        if (targetProjectPath.endsWith(File.separator)) {
+    public CallTree(String targetProjectPath, AnswerObject answerObject) {
+        boolean isFromJar = targetProjectPath.endsWith(".jar");
+        if (targetProjectPath.endsWith(File.separator) || isFromJar) {
             this.targetProjectPath = targetProjectPath;
         } else {
             this.targetProjectPath = targetProjectPath + File.separator;

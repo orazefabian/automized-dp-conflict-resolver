@@ -37,6 +37,7 @@ public class Main {
         }
 
         param = "/Users/fabian/Projects/automized-DP-conflict-resolver/automized-dp-conflict-resolver";
+        String wicket = "/Users/fabian/Projects/Github_sample_repos/wicket-core/wicket-core-9.3.0.jar";
 
         long time = System.currentTimeMillis();
         Tree tree;
@@ -47,7 +48,7 @@ public class Main {
             output.createNewFile();
             FileWriter writer = new FileWriter(output);
 
-            tree = new CallTree(param, answer, false);
+            tree = new CallTree(param, answer);
             tree.computeCallTree();
             FactBuilder parser;
             parser = new FactBuilder(tree.getConflicts(ConflictType.TYPE_3), tree.getNeededJars());
