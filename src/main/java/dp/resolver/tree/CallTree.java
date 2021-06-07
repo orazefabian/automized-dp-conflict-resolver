@@ -32,9 +32,11 @@ public class CallTree implements Tree {
     /**
      * Tree data structure which contains all method call traces from a given root project
      *
-     * @param targetProjectPath path to maven project which is to be analyzed, MUST end with a "/" (File separator)
+     * @param targetProjectPath path to maven project or a jar which is to be analyzed, MUST end with a "/" (File separator)
+     * @param answerObject      holds the result of the later executed clingo program
+     * @param isFromJar         if true the root CallModel is created from a jar file
      */
-    public CallTree(String targetProjectPath, AnswerObject answerObject) {
+    public CallTree(String targetProjectPath, AnswerObject answerObject, boolean isFromJar) {
         if (targetProjectPath.endsWith(File.separator)) {
             this.targetProjectPath = targetProjectPath;
         } else {
@@ -47,7 +49,7 @@ public class CallTree implements Tree {
         this.neededJars = new HashSet<>();
         this.conflicts = new ArrayList<>();
         this.currLeaves = new HashSet<>();
-        initModel();
+        initModel(isFromJar);
     }
 
     private void setInitialLeaves() {
@@ -199,11 +201,17 @@ public class CallTree implements Tree {
 
     /**
      * initialize first spoon model from a maven launcher for a targetProject
+     *
+     * @param isFromJar if true the root model is computed from a jar
      */
-    private void initModel() {
+    private void initModel(boolean isFromJar) {
         // compute starting nodes for call tree
         try {
-            this.model = modelFactory.createCallModelFromMaven(targetProjectPath, this.currLeaves);
+            if (isFromJar) {
+                this.model = modelFactory.createRootCallModelFromJar(targetProjectPath, this.currLeaves);
+            } else {
+                this.model = modelFactory.createRootCallModelFromMaven(targetProjectPath, this.currLeaves);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -249,7 +257,7 @@ public class CallTree implements Tree {
         for (String key : jarsToRemove) {
             this.jars.remove(key);
             if (this.model.getCurrProjectPath().equals(this.targetProjectPath)) {
-                if (this.model instanceof MavenSpoonModel && checkIfJarIsPossiblyNeeded(key)) {
+                if (isRootModel() && checkIfJarIsPossiblyNeeded(key)) {
                     this.neededJars.add(key); // if jar is possibly needed it will get added to needed jars for safety reasons
                 } else {
                     this.answerObject.addBloatedJar(key);
@@ -375,12 +383,17 @@ public class CallTree implements Tree {
     }
 
     private boolean checkIfAnnotationIsUsedByRoot(String clazzName) {
-        if (this.model instanceof MavenSpoonModel) {
+        if (isRootModel()) {
             return this.model.getAllAnnotations().contains(clazzName);
         } else {
             return false;
         }
     }
+
+    private boolean isRootModel() {
+        return this.model instanceof MavenSpoonModel;
+    }
+
 
     /**
      * checks whether a pom file contains the string prefix of a groupID (does not have to bee a dependency) hence jar is possibly needed

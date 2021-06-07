@@ -45,6 +45,7 @@ public abstract class CallModel {
     protected final List<String> classNames;
     protected final Map<String, Boolean> jarPaths;
     protected final String currProjectPath;
+    private final boolean isRoot;
     protected CtModel ctModel;
     protected List<ImplSpoon> pomModels; // holds all possible pom models of sub modules
     protected Launcher launcher;
@@ -52,7 +53,7 @@ public abstract class CallModel {
     protected ImplSpoon baseModel; // the base pom model from the root project
     private String pathM2;
 
-    protected CallModel(String pathToProject, Set<Invocation> leafInvocations) {
+    protected CallModel(String pathToProject, Set<Invocation> leafInvocations, boolean isRoot) {
         this.pomModels = new ArrayList<>();
         this.classNames = new ArrayList<>();
         this.jarPaths = new HashMap<>();
@@ -62,6 +63,7 @@ public abstract class CallModel {
         this.classesToTraverseAgain = new ArrayList<>();
         this.methodConnections = new MethodConnectionSet();
         this.leafInvocations = leafInvocations;
+        this.isRoot = isRoot;
         setPathM2();
     }
 
@@ -407,7 +409,7 @@ public abstract class CallModel {
     }
 
     private boolean isRootProject() {
-        return this.launcher instanceof MavenLauncher;
+        return this.isRoot;
     }
 
     private void appendToBeTraversedClass(Invocation invocation) {

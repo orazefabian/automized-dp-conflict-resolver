@@ -47,7 +47,7 @@ public class Main {
             output.createNewFile();
             FileWriter writer = new FileWriter(output);
 
-            tree = new CallTree(param, answer);
+            tree = new CallTree(param, answer, false);
             tree.computeCallTree();
             FactBuilder parser;
             parser = new FactBuilder(tree.getConflicts(ConflictType.TYPE_3), tree.getNeededJars());

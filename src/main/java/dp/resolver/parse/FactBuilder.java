@@ -114,7 +114,6 @@ public class FactBuilder {
             parseJarFact(node.getFromJar());
             generateOptionalJarFacts(node);
             parsePreviousNodes(node.getPrevious());
-            //parseInvocationFact(node.getInvocations());
             parseDPConnection(node);
         } else {
             try {

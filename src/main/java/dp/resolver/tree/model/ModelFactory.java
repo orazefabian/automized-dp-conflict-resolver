@@ -29,4 +29,18 @@ public interface ModelFactory {
     CallModel createCallModelFromJar(String pathToJar, Set<Invocation> leafInvocations) throws Exception;
 
 
+    /**
+     * create a root instance of a CallModel from a jar
+     * @param pathToJar the full path to the local jar ending with .jar
+     * @return {@link CallModel}
+     */
+    CallModel createRootCallModelFromJar(String pathToJar, Set<Invocation> leafInvocations) throws Exception;
+
+
+    /**
+     * create a root instance of a CallModel from a maven project
+     * @param pathToMaven the full path to the root of the local maven projectr
+     * @return {@link CallModel}
+     */
+    CallModel createRootCallModelFromMaven(String pathToMaven, Set<Invocation> leafInvocations) throws Exception;
 }

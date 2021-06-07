@@ -19,10 +19,11 @@ public class JarSpoonModel extends CallModel {
      * object which builds a new spoon launcher which provides a AST
      *
      * @param pathToProject String to a project, can be maven root folder or path to .jar file
+     * @param isRoot
      * @throws Exception if building the spoon model fails
      */
-    protected JarSpoonModel(String pathToProject, Set<Invocation> leafInvocations) throws Exception {
-        super(pathToProject, leafInvocations);
+    protected JarSpoonModel(String pathToProject, Set<Invocation> leafInvocations, boolean isRoot) throws Exception {
+        super(pathToProject, leafInvocations, isRoot);
         System.out.println("Starting to build Maven spoon model from " + pathToProject + "...");
         initLauncherAndCreatePomModels();
         System.out.println("Building spoon model finished");

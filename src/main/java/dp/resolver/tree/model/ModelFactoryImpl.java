@@ -13,11 +13,22 @@ public class ModelFactoryImpl implements ModelFactory {
 
     @Override
     public CallModel createCallModelFromMaven(String pathToMaven, Set<Invocation> leafInvocations) throws Exception {
-        return new MavenSpoonModel(pathToMaven, leafInvocations);
+        return new MavenSpoonModel(pathToMaven, leafInvocations, false);
     }
 
     @Override
     public CallModel createCallModelFromJar(String pathToJar, Set<Invocation> leafInvocations) throws Exception {
-        return new JarSpoonModel(pathToJar, leafInvocations);
+        return new JarSpoonModel(pathToJar, leafInvocations, false);
+    }
+
+    @Override
+    public CallModel createRootCallModelFromJar(String pathToJar, Set<Invocation> leafInvocations) throws Exception {
+        return new JarSpoonModel(pathToJar, leafInvocations, true);
+    }
+
+    @Override
+    public CallModel createRootCallModelFromMaven(String pathToMaven, Set<Invocation> leafInvocations) throws Exception{
+        return new MavenSpoonModel(pathToMaven, leafInvocations, true);
+
     }
 }
