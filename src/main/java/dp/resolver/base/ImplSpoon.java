@@ -3,8 +3,6 @@ package dp.resolver.base;
 import dp.resolver.parse.entity.MessagingJar;
 import org.apache.maven.pom._4_0.Dependency;
 import org.apache.maven.pom._4_0.Model;
-import spoon.Launcher;
-import spoon.MavenLauncher;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -77,17 +75,17 @@ public class ImplSpoon extends DPUpdaterBase {
     /**
      * creates effective pom via the ImplSpoon object and retrieves the version from it
      *
-     * @param launcher
+     * @param isFromMavenProject if true if we want effective pom model from a maven source, otherwise from a jar
      * @return the version from the effective pom
      * @throws JAXBException        if marshalling fails
      * @throws IOException          if reading or writing file fails
      * @throws InterruptedException if process gets interrupted
      */
-    public Model getEffectivePomModel(Launcher launcher) throws JAXBException, IOException, InterruptedException {
+    public Model getEffectivePomModel(boolean isFromMavenProject) throws JAXBException, IOException, InterruptedException {
         File currPro = new File(getPath());
         String currPath;
         boolean fromMaven;
-        if (launcher instanceof MavenLauncher) {
+        if (isFromMavenProject) {
             currPath = currPro.getAbsolutePath();
             fromMaven = true;
         } else {

@@ -9,6 +9,7 @@ import dp.resolver.tree.model.entity.MethodConnectionSet;
 import org.apache.maven.pom._4_0.Dependency;
 import org.apache.maven.pom._4_0.Model;
 import spoon.Launcher;
+import spoon.MavenLauncher;
 import spoon.SpoonException;
 import spoon.reflect.CtModel;
 import spoon.reflect.code.CtAbstractInvocation;
@@ -145,7 +146,7 @@ public abstract class CallModel {
      * @throws InterruptedException if process gets interrupted
      */
     private void checkModelForDPs(ImplSpoon model) throws JAXBException, IOException, InterruptedException {
-        Model effPom = model.getEffectivePomModel(this.launcher);
+        Model effPom = model.getEffectivePomModel(isMavenLauncher());
         try {
             for (Dependency dp : model.getPomModel().getDependencies().getDependency()) {
                 String version = null;
@@ -168,6 +169,10 @@ public abstract class CallModel {
         } catch (NullPointerException e) {
             System.err.println("No dependencies, skipping pom...");
         }
+    }
+
+    private boolean isMavenLauncher() {
+        return this.launcher instanceof MavenLauncher;
     }
 
     /**
