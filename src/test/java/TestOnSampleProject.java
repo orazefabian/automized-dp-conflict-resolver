@@ -1,9 +1,9 @@
 import dp.api.maven.CentralMavenAPI;
 import dp.resolver.parse.FactBuilder;
 import dp.resolver.tree.AnswerSetData;
-import dp.resolver.tree.CallTreeImpl;
-import dp.resolver.tree.ConflictType;
-import dp.resolver.tree.CallTree;
+import dp.resolver.tree.generator.TreeGeneratorImpl;
+import dp.resolver.tree.generator.ConflictType;
+import dp.resolver.tree.generator.TreeGenerator;
 import dp.resolver.tree.element.CallNode;
 import org.junit.jupiter.api.*;
 
@@ -12,7 +12,7 @@ import java.util.*;
 
 public class TestOnSampleProject {
 
-    private static CallTree tree;
+    private static TreeGenerator tree;
     private static final String testProjectPath = "/Users/fabian/Projects/Sample/runtime_conflict_sample/Project_A/";
     private static AnswerSetData answer;
 
@@ -24,7 +24,7 @@ public class TestOnSampleProject {
     public static void setup() {
         answer = new AnswerSetData();
         CentralMavenAPI.setMaxVersionsNumFromCmr(5);
-        tree = new CallTreeImpl(testProjectPath, answer);
+        tree = new TreeGeneratorImpl(testProjectPath, answer);
 
         answerOne = new ArrayList<>();
         answerOne.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_B/2.0/Project_B-2.0.jar");

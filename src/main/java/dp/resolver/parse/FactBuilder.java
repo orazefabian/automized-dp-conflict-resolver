@@ -5,7 +5,7 @@ import dp.api.maven.CentralMavenAPI;
 import dp.resolver.parse.assist.AssistParser;
 import dp.resolver.parse.entity.MessagingClazz;
 import dp.resolver.parse.entity.MessagingMethod;
-import dp.resolver.tree.CallTreeImpl;
+import dp.resolver.tree.generator.TreeGeneratorImpl;
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
 import org.apache.maven.pom._4_0.Dependency;
@@ -79,7 +79,7 @@ public class FactBuilder {
     }
 
     /**
-     * computes logical facts for given conflict Nodes {@link CallNode} from a {@link CallTreeImpl}
+     * computes logical facts for given conflict Nodes {@link CallNode} from a {@link TreeGeneratorImpl}
      */
     private void generateFacts() {
         // compute facts for call tree

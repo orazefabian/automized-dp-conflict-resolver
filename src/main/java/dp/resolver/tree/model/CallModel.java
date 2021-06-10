@@ -1,7 +1,7 @@
 package dp.resolver.tree.model;
 
 import dp.resolver.base.ImplSpoon;
-import dp.resolver.tree.JDKClassHelper;
+import dp.resolver.tree.generator.JDKClassHelper;
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
 import dp.resolver.tree.model.entity.MethodConnection;
@@ -9,7 +9,6 @@ import dp.resolver.tree.model.entity.MethodConnectionSet;
 import org.apache.maven.pom._4_0.Dependency;
 import org.apache.maven.pom._4_0.Model;
 import spoon.Launcher;
-import spoon.MavenLauncher;
 import spoon.SpoonException;
 import spoon.reflect.CtModel;
 import spoon.reflect.code.CtAbstractInvocation;

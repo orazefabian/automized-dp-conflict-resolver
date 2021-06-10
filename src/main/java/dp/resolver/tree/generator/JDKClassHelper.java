@@ -1,4 +1,4 @@
-package dp.resolver.tree;
+package dp.resolver.tree.generator;
 
 import java.io.File;
 

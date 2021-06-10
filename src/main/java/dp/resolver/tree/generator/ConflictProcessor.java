@@ -1,4 +1,4 @@
-package dp.resolver.tree;
+package dp.resolver.tree.generator;
 
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
