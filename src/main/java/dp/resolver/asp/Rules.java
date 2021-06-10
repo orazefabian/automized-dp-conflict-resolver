@@ -156,15 +156,3 @@ public enum Rules {
         return rulesFile;
     }
 }
-
-
-
-/*
-%GENERATION OF ADDITIONAL FACTS
-
-        %#show mustIncludeMethod/3.
-        #show missingMethod/3.
-        #show clash/4.
-
-        %COMMAND
-        %clingo rules.lp facts.lp--opt-mode=optN--quiet=1,2*/

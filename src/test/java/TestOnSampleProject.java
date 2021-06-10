@@ -1,9 +1,9 @@
 import dp.api.maven.CentralMavenAPI;
 import dp.resolver.parse.FactBuilder;
-import dp.resolver.tree.AnswerObject;
-import dp.resolver.tree.CallTree;
+import dp.resolver.tree.AnswerSetData;
+import dp.resolver.tree.CallTreeImpl;
 import dp.resolver.tree.ConflictType;
-import dp.resolver.tree.Tree;
+import dp.resolver.tree.CallTree;
 import dp.resolver.tree.element.CallNode;
 import org.junit.jupiter.api.*;
 
@@ -12,9 +12,9 @@ import java.util.*;
 
 public class TestOnSampleProject {
 
-    private static Tree tree;
+    private static CallTree tree;
     private static final String testProjectPath = "/Users/fabian/Projects/Sample/runtime_conflict_sample/Project_A/";
-    private static AnswerObject answer;
+    private static AnswerSetData answer;
 
     private static List<String> answerOne;
     private static List<String> answerTwo;
@@ -22,9 +22,9 @@ public class TestOnSampleProject {
 
     @BeforeAll
     public static void setup() {
-        answer = new AnswerObject();
+        answer = new AnswerSetData();
         CentralMavenAPI.setMaxVersionsNumFromCmr(5);
-        tree = new CallTree(testProjectPath, answer);
+        tree = new CallTreeImpl(testProjectPath, answer);
 
         answerOne = new ArrayList<>();
         answerOne.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_B/2.0/Project_B-2.0.jar");
@@ -56,7 +56,7 @@ public class TestOnSampleProject {
         sortAnswer(answer);
     }
 
-    private static void sortAnswer(AnswerObject answer) {
+    private static void sortAnswer(AnswerSetData answer) {
         for (List<String> list : answer.getAnswers()) {
             Collections.sort(list);
         }

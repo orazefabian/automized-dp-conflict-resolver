@@ -2,7 +2,7 @@ package dp.resolver.tree;
 
 public enum ConflictType {
     /**
-     * Different conflict(issue) types, that can occur in the finished {@link CallTree}
+     * Different conflict(issue) types, that can occur in the finished {@link CallTreeImpl}
      * !!! TYPE_1 and TYPE_2 are still experimental, safest to use is TYPE_3 !!!
      * <p>
      * TYPE_1: a method is called at least twice with different signatures from two distinct versions af a dependency

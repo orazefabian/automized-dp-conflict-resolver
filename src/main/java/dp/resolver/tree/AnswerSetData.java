@@ -10,7 +10,7 @@ import java.util.*;
  Created by Fabian Oraze on 21.01.21
  *********************************/
 
-public class AnswerObject {
+public class AnswerSetData {
 
     private Map<String, Integer> idMap;
     private String stdOut;
@@ -20,13 +20,13 @@ public class AnswerObject {
     /**
      * Object that represents the answer set of a clingo command
      */
-    public AnswerObject() {
+    public AnswerSetData() {
         this.answers = new ArrayList<>();
         this.bloatedJars = new HashSet<>();
     }
 
     /**
-     * calls {@link ClingoSolver} to run the clingo command with present facts.lp and rules.lp files
+     * calls {@link ClingoSolver} to run the clingo command with present facts.lp and rules.lp files and parses the answer upon completion
      *
      * @throws IOException          when reading the input files fails
      * @throws InterruptedException when clingo process gets interrupted

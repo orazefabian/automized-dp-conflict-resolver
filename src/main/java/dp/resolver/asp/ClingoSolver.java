@@ -52,7 +52,6 @@ public class ClingoSolver {
             }
         }
         p.waitFor();
-        //System.out.println(outputStream.toString(StandardCharsets.UTF_8));
         outputStream.flush();
         buildOutputStream.flush();
         System.out.println("  Build ended...");

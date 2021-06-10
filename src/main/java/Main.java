@@ -1,11 +1,11 @@
 import dp.api.maven.CentralMavenAPI;
 import dp.resolver.base.ImplSpoon;
-import dp.resolver.tree.AnswerObject;
+import dp.resolver.tree.AnswerSetData;
 import dp.resolver.parse.FactBuilder;
 import dp.resolver.parse.exception.NoConflictException;
-import dp.resolver.tree.CallTree;
+import dp.resolver.tree.CallTreeImpl;
 import dp.resolver.tree.ConflictType;
-import dp.resolver.tree.Tree;
+import dp.resolver.tree.CallTree;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -40,15 +40,15 @@ public class Main {
         String wicket = "/Users/fabian/Projects/Github_sample_repos/wicket-core/wicket-core-9.3.0.jar";
 
         long time = System.currentTimeMillis();
-        Tree tree;
-        AnswerObject answer = new AnswerObject();
+        CallTree tree;
+        AnswerSetData answer = new AnswerSetData();
         CentralMavenAPI.setMaxVersionsNumFromCmr(MAX_VERSIONS_NUM);
         try {
             File output = new File("output.txt");
             output.createNewFile();
             FileWriter writer = new FileWriter(output);
 
-            tree = new CallTree(param, answer);
+            tree = new CallTreeImpl(param, answer);
             tree.computeCallTree();
             FactBuilder parser;
             parser = new FactBuilder(tree.getConflicts(ConflictType.TYPE_3), tree.getNeededJars());
