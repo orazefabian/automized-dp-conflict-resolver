@@ -1,6 +1,5 @@
-package dp.resolver.tree;
+package dp.resolver.asp;
 
-import dp.resolver.asp.ClingoSolver;
 import dp.resolver.parse.exception.NoConflictException;
 
 import java.io.IOException;

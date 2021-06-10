@@ -3,7 +3,7 @@ package dp.resolver.tree.generator;
 import dp.api.maven.CentralMavenAPI;
 import dp.resolver.parse.assist.AssistParser;
 import dp.resolver.parse.entity.MessagingClazz;
-import dp.resolver.tree.AnswerSetData;
+import dp.resolver.asp.AnswerSetData;
 import dp.resolver.tree.CallTree;
 import dp.resolver.tree.CallTreeImpl;
 import dp.resolver.tree.element.CallNode;

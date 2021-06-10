@@ -1,6 +1,6 @@
 import dp.api.maven.CentralMavenAPI;
 import dp.resolver.parse.FactBuilder;
-import dp.resolver.tree.AnswerSetData;
+import dp.resolver.asp.AnswerSetData;
 import dp.resolver.tree.generator.TreeGeneratorImpl;
 import dp.resolver.tree.generator.ConflictType;
 import dp.resolver.tree.generator.TreeGenerator;
