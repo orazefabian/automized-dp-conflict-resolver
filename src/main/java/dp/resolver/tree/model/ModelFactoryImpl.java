@@ -1,9 +1,6 @@
 package dp.resolver.tree.model;
 
-import dp.resolver.tree.element.Invocation;
-
-import java.util.List;
-import java.util.Set;
+import dp.resolver.tree.CallTree;
 
 /*********************************
  Created by Fabian Oraze on 12.02.21
@@ -12,23 +9,23 @@ import java.util.Set;
 public class ModelFactoryImpl implements ModelFactory {
 
     @Override
-    public CallModel createCallModelFromMaven(String pathToMaven, Set<Invocation> leafInvocations) throws Exception {
-        return new MavenSpoonModel(pathToMaven, leafInvocations, false);
+    public CallModel createCallModelFromMaven(String pathToMaven, CallTree callTree) throws Exception {
+        return new MavenSpoonModel(pathToMaven, callTree, false);
     }
 
     @Override
-    public CallModel createCallModelFromJar(String pathToJar, Set<Invocation> leafInvocations) throws Exception {
-        return new JarSpoonModel(pathToJar, leafInvocations, false);
+    public CallModel createCallModelFromJar(String pathToJar, CallTree callTree) throws Exception {
+        return new JarSpoonModel(pathToJar, callTree, false);
     }
 
     @Override
-    public CallModel createRootCallModelFromJar(String pathToJar, Set<Invocation> leafInvocations) throws Exception {
-        return new JarSpoonModel(pathToJar, leafInvocations, true);
+    public CallModel createRootCallModelFromJar(String pathToJar, CallTree callTree) throws Exception {
+        return new JarSpoonModel(pathToJar, callTree, true);
     }
 
     @Override
-    public CallModel createRootCallModelFromMaven(String pathToMaven, Set<Invocation> leafInvocations) throws Exception{
-        return new MavenSpoonModel(pathToMaven, leafInvocations, true);
+    public CallModel createRootCallModelFromMaven(String pathToMaven, CallTree callTree) throws Exception{
+        return new MavenSpoonModel(pathToMaven, callTree, true);
 
     }
 }

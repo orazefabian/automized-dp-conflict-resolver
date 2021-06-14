@@ -1,6 +1,7 @@
 package dp.resolver.tree.model;
 
 import dp.resolver.base.ImplSpoon;
+import dp.resolver.tree.CallTree;
 import dp.resolver.tree.generator.JDKClassHelper;
 import dp.resolver.tree.element.CallNode;
 import dp.resolver.tree.element.Invocation;
@@ -53,7 +54,7 @@ public abstract class CallModel {
     protected ImplSpoon baseModel; // the base pom model from the root project
     private String pathM2;
 
-    protected CallModel(String pathToProject, Set<Invocation> leafInvocations, boolean isRoot) {
+    protected CallModel(String pathToProject, CallTree callTree, boolean isRoot) {
         this.pomModels = new ArrayList<>();
         this.classNames = new ArrayList<>();
         this.jarPaths = new HashMap<>();
@@ -62,7 +63,7 @@ public abstract class CallModel {
         this.allAnnotations = new ArrayList<>();
         this.classesToTraverseAgain = new ArrayList<>();
         this.methodConnections = new MethodConnectionSet();
-        this.leafInvocations = leafInvocations;
+        this.leafInvocations = callTree.getCurrLeaves();
         this.isRoot = isRoot;
         setPathM2();
     }

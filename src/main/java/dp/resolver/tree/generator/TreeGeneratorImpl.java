@@ -147,9 +147,9 @@ public class TreeGeneratorImpl implements TreeGenerator {
         // compute starting nodes for call tree
         try {
             if (isFromJar) {
-                this.model = modelFactory.createRootCallModelFromJar(targetProjectPath, this.callTree.getCurrLeaves());
+                this.model = modelFactory.createRootCallModelFromJar(targetProjectPath, this.callTree);
             } else {
-                this.model = modelFactory.createRootCallModelFromMaven(targetProjectPath, this.callTree.getCurrLeaves());
+                this.model = modelFactory.createRootCallModelFromMaven(targetProjectPath, this.callTree);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -171,7 +171,7 @@ public class TreeGeneratorImpl implements TreeGenerator {
         String nextJar = getNonTraversedJar();
         // save already traversed jars for later conflict search
         try {
-            this.model = modelFactory.createCallModelFromJar(nextJar, this.callTree.getCurrLeaves());
+            this.model = modelFactory.createCallModelFromJar(nextJar, this.callTree);
             //this.model.setCallNodes(prevCallNodes);
             this.jars.putAll(this.model.getDependenciesToJarPaths());
         } catch (NullPointerException e) {
