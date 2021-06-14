@@ -36,8 +36,8 @@ public class Main {
             }
         }
 
-        param = "/Users/fabian/Projects/automized-DP-conflict-resolver/automized-dp-conflict-resolver";
-        String wicket = "/Users/fabian/Projects/Github_sample_repos/wicket-core/wicket-core-9.3.0.jar";
+        //param = "/Users/fabian/Projects/automized-DP-conflict-resolver/automized-dp-conflict-resolver"; //mac
+        param = "/home/fabian/Desktop/Projects/GitHub/automized-dp-conflict-resolver"; //linux
 
         long time = System.currentTimeMillis();
         TreeGenerator tree;

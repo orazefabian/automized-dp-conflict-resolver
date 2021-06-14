@@ -13,7 +13,7 @@ import java.util.*;
 public class TestOnSampleProject {
 
     private static TreeGenerator tree;
-    private static final String testProjectPath = "/Users/fabian/Projects/Sample/runtime_conflict_sample/Project_A/";
+    private static String testProjectPath;
     private static AnswerSetData answer;
 
     private static List<String> answerOne;
@@ -22,17 +22,19 @@ public class TestOnSampleProject {
 
     @BeforeAll
     public static void setup() {
+        initTargetPath();
+
         answer = new AnswerSetData();
         CentralMavenAPI.setMaxVersionsNumFromCmr(5);
         tree = new TreeGeneratorImpl(testProjectPath, answer);
 
         answerOne = new ArrayList<>();
-        answerOne.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_B/2.0/Project_B-2.0.jar");
-        answerOne.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_C/2.0/Project_C-2.0.jar");
+        answerOne.add(getOSPrefixForM2Repo() + "/.m2/repository/org/runtime/conflict/Project_B/2.0/Project_B-2.0.jar");
+        answerOne.add(getOSPrefixForM2Repo() + "/.m2/repository/org/runtime/conflict/Project_C/2.0/Project_C-2.0.jar");
 
         answerTwo = new ArrayList<>();
-        answerTwo.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_B/2.0/Project_B-2.0.jar");
-        answerTwo.add("/Users/fabian/.m2/repository/org/runtime/conflict/Project_C/1.0/Project_C-1.0.jar");
+        answerTwo.add(getOSPrefixForM2Repo() + "/.m2/repository/org/runtime/conflict/Project_B/2.0/Project_B-2.0.jar");
+        answerTwo.add(getOSPrefixForM2Repo() + "/.m2/repository/org/runtime/conflict/Project_C/1.0/Project_C-1.0.jar");
 
         expectedAnswer = new ArrayList<>();
         expectedAnswer.add(answerOne);
@@ -42,6 +44,26 @@ public class TestOnSampleProject {
         Collections.sort(answerTwo);
 
         start();
+    }
+
+    private static void initTargetPath() {
+        if (isLinuxOS()) {
+            testProjectPath = "/home/" + System.getProperty("user.name") + "/Desktop/Projects/runtime_conflict_sample/Project_A/";
+        } else {
+            testProjectPath = "/Users/" + System.getProperty("user.name") + "/Projects/Sample/runtime_conflict_sample/Project_A/";
+        }
+    }
+
+    private static boolean isLinuxOS() {
+        return System.getProperty("os.name").startsWith("Linux");
+    }
+
+    private static String getOSPrefixForM2Repo() {
+        if (isLinuxOS()) {
+            return "/home/" + System.getProperty("user.name");
+        } else {
+            return "/Users/" + System.getProperty("user.name");
+        }
     }
 
     private static void start() {

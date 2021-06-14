@@ -17,4 +17,5 @@ public interface CallTree {
 
     void addLeaves(Collection<Invocation> leaves);
 
+    void removeLeaves(Collection<Invocation> leaves);
 }

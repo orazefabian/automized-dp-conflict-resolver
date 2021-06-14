@@ -14,8 +14,8 @@ import java.util.List;
 public class ClingoSolver {
     //OPTIONS TO GIVE ALL OPTIMUM ANSWERS
     private static final String OPTIONS = "--opt-mode=optN --quiet=1,2";
-    private static final String CMD = "clingo rules.lp facts.lp " + OPTIONS;
     private static final String PATH = System.getProperty("user.dir")/* + "src/main/java/dp/resolver/asp"*/;
+    private static final String CMD = PATH + "/binary/clingo rules.lp facts.lp " + OPTIONS;
 
 
     /**
@@ -38,17 +38,19 @@ public class ClingoSolver {
         Process p = pb.start();
 
         System.out.println("Calling clingo...");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        String content;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
 
-        String content = "";
-        List<String> lines = new ArrayList<>();
-        String line = "";
+            content = "";
+            List<String> lines = new ArrayList<>();
+            String line = "";
 
-        while ((line = reader.readLine()) != null) {
-            lines.add(line);
-            content = content + line + System.getProperty("line.separator");
-            if (buildOutputStream != null) {
-                buildOutputStream.println(line);
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+                content = content + line + System.getProperty("line.separator");
+                if (buildOutputStream != null) {
+                    buildOutputStream.println(line);
+                }
             }
         }
         p.waitFor();

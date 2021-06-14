@@ -236,7 +236,7 @@ public class TreeGeneratorImpl implements TreeGenerator {
             }
         }
         this.callTree.addLeaves(toBeAdded);
-        this.callTree.addLeaves(toBeRemoved);
+        this.callTree.removeLeaves(toBeRemoved);
     }
 
     /**

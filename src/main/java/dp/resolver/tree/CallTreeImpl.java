@@ -34,4 +34,9 @@ public class CallTreeImpl implements CallTree {
     public void addLeaves(Collection<Invocation> leaves) {
         this.leafInvocations.addAll(leaves);
     }
+
+    @Override
+    public void removeLeaves(Collection<Invocation> leaves) {
+        this.leafInvocations.removeAll(leaves);
+    }
 }
