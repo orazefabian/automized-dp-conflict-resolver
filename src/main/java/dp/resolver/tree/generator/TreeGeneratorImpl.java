@@ -66,7 +66,7 @@ public class TreeGeneratorImpl implements TreeGenerator {
             e.printStackTrace();
         }
         this.model.analyzeModel();
-        computeLeafElements();
+        callTree.computeLeafElements();
         if (jarsToTraverseLeft())
             computeCallTree();
     }
@@ -191,7 +191,7 @@ public class TreeGeneratorImpl implements TreeGenerator {
         for (String jarPath : this.jars.keySet()) {
             // remove non used jars
             checkIfJarExists(jarPath);
-            if (checkIfJarUsedOrNeeded(jarPath)) jarsToRemove.add(jarPath);
+            if (jarNotUsedOrNeeded(jarPath)) jarsToRemove.add(jarPath);
         }
         for (String key : jarsToRemove) {
             this.jars.remove(key);
@@ -218,25 +218,6 @@ public class TreeGeneratorImpl implements TreeGenerator {
             System.out.println("Jar and/or pom not found... proceeding with download");
             CentralMavenAPI.downloadMissingFiles(nextJar);
         }
-    }
-
-    /**
-     * helper function to compute the current leaf elements of the whole call tree
-     * new leaf elements are appended via the next() method from callNodes class to invocation objects
-     * old leaves are then removed
-     */
-    private void computeLeafElements() {
-        List<Invocation> toBeRemoved = new ArrayList<>();
-        List<Invocation> toBeAdded = new ArrayList<>();
-        for (Invocation invocation : this.callTree
-        .getCurrLeaves()) {
-            if (!invocation.isLeafInvocation()) {
-                toBeAdded.addAll(invocation.getNextNode().getInvocations());
-                toBeRemoved.add(invocation);
-            }
-        }
-        this.callTree.addLeaves(toBeAdded);
-        this.callTree.removeLeaves(toBeRemoved);
     }
 
     /**
@@ -274,7 +255,7 @@ public class TreeGeneratorImpl implements TreeGenerator {
      * @param jarPath String representation of the complete path to the Jar to be checked for usage
      * @return true if the given jar is not used or its per default needed due to annotations
      */
-    private boolean checkIfJarUsedOrNeeded(String jarPath) throws NullPointerException {
+    private boolean jarNotUsedOrNeeded(String jarPath) throws NullPointerException {
         if (JDKClassHelper.isPartOfJDKFromFullPath(jarPath)) return true;
         List<MessagingClazz> jarClassList = AssistParser.getJarClassList(jarPath);
         boolean remove = true;
