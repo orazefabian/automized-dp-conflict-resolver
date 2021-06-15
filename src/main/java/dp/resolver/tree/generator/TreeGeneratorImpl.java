@@ -117,7 +117,7 @@ public class TreeGeneratorImpl implements TreeGenerator {
     }
 
     @Override
-    public Set getNeededJars() {
+    public Set<String> getNeededJars() {
         return this.neededJars;
     }
 

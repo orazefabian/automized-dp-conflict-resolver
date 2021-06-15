@@ -23,15 +23,15 @@ public interface TreeGenerator {
     void computeCallTree();
 
     /**
-     * computes the conflicts if called the first time
+     * computes the list of nodes that possibly cause conflicts
      *
      * @param type {@link ConflictType} enumeration of the type of conflict that should be determined
-     * @return {@link List<CallNode>} which cause an issue
+     * @return {@link List<CallNode>} which possibly cause an issue
      */
     List<CallNode> getConflicts(ConflictType type);
 
     /**
      * @return set of needed jars that could not be fully analyzed
      */
-    Set getNeededJars();
+    Set<String> getNeededJars();
 }
